@@ -1411,4 +1411,41 @@
    -->
   <attr path="/api/package[@name='android.os']/class[@name='Build']/method[@name='getSerial']" name="propertyName"></attr>
 
+
+  <!--
+  Covariant Return Types
+
+  See: https://github.com/xamarin/java.interop/pull/216
+  Once this change was added to generator, there were several types that had manual C# additions already.
+  To keep API compatibility, the following fixups restore the old APIs under the new generator code.
+  -->
+  <attr path="/api/package[@name='android.animation']/class[@name='Animator']/method[@name='clone']" name="managedReturn">Android.Animation.Animator</attr>
+  <attr path="/api/package[@name='android.animation']/class[@name='Keyframe']/method[@name='clone']" name="managedReturn">Android.Animation.Keyframe</attr>
+  <attr path="/api/package[@name='android.animation']/class[@name='PropertyValuesHolder']/method[@name='clone']" name="managedReturn">Android.Animation.PropertyValuesHolder</attr>
+  <attr path="/api/package[@name='android.animation']/class[@name='StateListAnimator']/method[@name='clone']" name="managedReturn">Android.Animation.StateListAnimator</attr>
+  <attr path="/api/package[@name='android.app']/class[@name='Notification.Action.WearableExtender']/method[@name='clone']" name="managedReturn">Android.App.Notification.Action.WearableExtender</attr>
+  <attr path="/api/package[@name='android.app']/class[@name='Notification.Action']/method[@name='clone']" name="managedReturn">Android.App.Notification.Action</attr>
+  <attr path="/api/package[@name='android.app']/class[@name='Notification.WearableExtender']/method[@name='clone']" name="managedReturn">Android.App.Notification.WearableExtender</attr>
+  <attr path="/api/package[@name='android.app']/class[@name='Notification']/method[@name='clone']" name="managedReturn">Android.App.Notification</attr>
+  <attr path="/api/package[@name='android.app']/class[@name='NotificationChannelGroup']/method[@name='clone']" name="managedReturn">Android.App.NotificationChannelGroup</attr>
+  <attr path="/api/package[@name='android.app']/class[@name='RemoteAction']/method[@name='clone']" name="managedReturn">Android.App.RemoteAction</attr>
+  <attr path="/api/package[@name='android.appwidget']/class[@name='AppWidgetProviderInfo']/method[@name='clone']" name="managedReturn">Android.Appwidget.AppWidgetProviderInfo</attr>
+  <attr path="/api/package[@name='android.content']/class[@name='ComponentName']/method[@name='clone']" name="managedReturn">Android.Content.ComponentName</attr>
+  <attr path="/api/package[@name='android.graphics.drawable.shapes']/class[@name='Shape']/method[@name='clone']" name="managedReturn">Android.Graphics.Drawables.Shapes.Shape</attr>
+  <attr path="/api/package[@name='android.media']/class[@name='RemoteControlClient.MetadataEditor']/method[@name='putBitmap']" name="managedReturn">Android.Media.RemoteControlClient.MetadataEditor</attr>
+  <attr path="/api/package[@name='android.media']/class[@name='RemoteControlClient.MetadataEditor']/method[@name='putLong']" name="managedReturn">Android.Media.RemoteControlClient.MetadataEditor</attr>
+  <attr path="/api/package[@name='android.media']/class[@name='RemoteControlClient.MetadataEditor']/method[@name='putString']" name="managedReturn">Android.Media.RemoteControlClient.MetadataEditor</attr>
+  <attr path="/api/package[@name='android.service.notification']/class[@name='StatusBarNotification']/method[@name='clone']" name="managedReturn">Android.Service.Notification.StatusBarNotification</attr>
+  <attr path="/api/package[@name='android.transition']/class[@name='Transition']/method[@name='clone']" name="managedReturn">Android.Transitions.Transition</attr>
+  <attr path="/api/package[@name='android.util']/class[@name='SparseBooleanArray']/method[@name='clone']" name="managedReturn">Android.Util.SparseBooleanArray</attr>
+  <attr path="/api/package[@name='android.util']/class[@name='SparseIntArray']/method[@name='clone']" name="managedReturn">Android.Util.SparseIntArray</attr>
+  <attr path="/api/package[@name='android.util']/class[@name='SparseLongArray']/method[@name='clone']" name="managedReturn">Android.Util.SparseLongArray</attr>
+  <attr path="/api/package[@name='android.view.accessibility']/class[@name='AccessibilityEvent']/method[@name='obtain']" name="managedReturn">Android.Views.Accessibility.AccessibilityEvent</attr>
+  <attr path="/api/package[@name='android.webkit']/class[@name='WebBackForwardList']/method[@name='clone']" name="managedReturn">Android.Webkit.WebBackForwardList</attr>
+  <attr path="/api/package[@name='android.webkit']/class[@name='WebHistoryItem']/method[@name='clone']" name="managedReturn">Android.Webkit.WebHistoryItem</attr>
+  <attr path="/api/package[@name='android.widget']/class[@name='RemoteViews']/method[@name='clone']" name="managedReturn">Android.Widget.RemoteViews</attr>
+  <attr path="/api/package[@name='java.nio.channels']/class[@name='FileChannel']/method[@name='position' and count(parameter)=1]" name="managedReturn">Java.Nio.Channels.FileChannel</attr>
+  <attr path="/api/package[@name='java.nio.channels']/class[@name='FileChannel']/method[@name='truncate' and count(parameter)=1]" name="managedReturn">Java.Nio.Channels.FileChannel</attr>
+  <attr path="/api/package[@name='java.nio']/class[@name='CharBuffer']/method[@name='append']" name="managedReturn">Java.Nio.CharBuffer</attr>
+
 </metadata>
