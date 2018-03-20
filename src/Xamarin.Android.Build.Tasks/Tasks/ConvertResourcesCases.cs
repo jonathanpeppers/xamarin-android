@@ -13,7 +13,7 @@ namespace Xamarin.Android.Tasks
 	public class ConvertResourcesCases : Task
 	{
 		[Required]
-		public ITaskItem[] ResourceDirectories { get; set; }
+		public ITaskItem [] ResourceDirectories { get; set; }
 
 		[Required]
 		public string AcwMapFile { get; set; }
@@ -39,16 +39,39 @@ namespace Xamarin.Android.Tasks
 				FixupResources (dir, acwMap);
 		}
 
+		IEnumerable<DirectoryInfo> EnumerateDirectories (string resdir)
+		{
+			var directory = new DirectoryInfo (resdir);
+			yield return directory;
+
+			foreach (var subdirectory in directory.EnumerateDirectories ()) {
+				if (subdirectory.Name.StartsWith ("color", StringComparison.OrdinalIgnoreCase) ||
+					subdirectory.Name.StartsWith ("raw", StringComparison.OrdinalIgnoreCase)) {
+					continue;
+				}
+
+				yield return subdirectory;
+
+				foreach (var d in subdirectory.EnumerateDirectories ("*", SearchOption.AllDirectories)) {
+					yield return d;
+				}
+			}
+		}
+
+		IEnumerable<string> EnumerateFiles (DirectoryInfo directory)
+		{
+			foreach (var file in directory.EnumerateFiles ()) {
+				if (file.Name.EndsWith (".xml", StringComparison.OrdinalIgnoreCase) ||
+					file.Name.EndsWith (".axml", StringComparison.OrdinalIgnoreCase)) {
+					yield return file.FullName;
+				}
+			}
+		}
+
 		void FixupResources (ITaskItem item, Dictionary<string, string> acwMap)
 		{
 			var resdir = item.ItemSpec;
-			// Find all the xml and axml files
-			var xmls = new[] { resdir }
-				.Concat (Directory.EnumerateDirectories (resdir, "*", SearchOption.AllDirectories)
-					.Except (Directory.EnumerateDirectories (resdir, "color*", SearchOption.TopDirectoryOnly))
-					.Except (Directory.EnumerateDirectories (resdir, "raw*", SearchOption.TopDirectoryOnly)))
-				.SelectMany (dir => Directory.EnumerateFiles (dir, "*.xml")
-					.Concat (Directory.EnumerateFiles (dir, "*.axml")));
+			var xmls = EnumerateDirectories (resdir).SelectMany (EnumerateFiles);
 
 			// Fix up each file
 			foreach (string file in xmls) {
