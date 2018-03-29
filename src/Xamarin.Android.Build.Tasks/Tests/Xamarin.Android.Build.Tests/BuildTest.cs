@@ -694,17 +694,28 @@ namespace UnamedProject
 
 		[Test]
 		[TestCaseSource ("ProguardChecks")]
-		public void BuildProguardEnabledProject (bool isRelease, bool enableProguard, bool useLatestSdk)
+		public void BuildProguardEnabledProject (bool isRelease, bool enableProguard, bool useLatestSdk, bool useD8)
 		{
-			var proj = new XamarinAndroidApplicationProject () { IsRelease = isRelease, EnableProguard = enableProguard, UseLatestPlatformSdk = useLatestSdk, TargetFrameworkVersion = useLatestSdk ? "v7.1" : "v5.0" };
-			using (var b = CreateApkBuilder (Path.Combine ("temp", $"BuildProguard Enabled Project(1){isRelease}{enableProguard}{useLatestSdk}"))) {
+			var proj = new XamarinAndroidApplicationProject {
+				IsRelease = isRelease,
+				EnableProguard = enableProguard,
+				UseLatestPlatformSdk = useLatestSdk,
+				TargetFrameworkVersion = useLatestSdk ? "v7.1" : "v5.0",
+				DexGenerator = useD8 ? "d8" : "dx",
+			};
+			using (var b = CreateApkBuilder (Path.Combine ("temp", $"BuildProguard Enabled Project(1){isRelease}{enableProguard}{useLatestSdk}{useD8}"))) {
 				Assert.IsTrue (b.Build (proj), "Build should have succeeded.");
 
 				if (isRelease && enableProguard) {
 					var proguardProjectPrimary = Path.Combine (Root, b.ProjectDirectory, proj.IntermediateOutputPath, "proguard", "proguard_project_primary.cfg");
 					FileAssert.Exists (proguardProjectPrimary);
-					StringAssertEx.ContainsText (File.ReadAllLines (proguardProjectPrimary), "-keep class md52d9cf6333b8e95e8683a477bc589eda5.MainActivity");
+					Assert.IsTrue (StringAssertEx.ContainsText (File.ReadAllLines (proguardProjectPrimary), "-keep class md52d9cf6333b8e95e8683a477bc589eda5.MainActivity"), "`md52d9cf6333b8e95e8683a477bc589eda5.MainActivity` should exist in `proguard_project_primary.cfg`!");
 				}
+
+				var className = "Lmono/MonoRuntimeProvider;";
+				var dexFile = b.Output.GetIntermediaryPath (Path.Combine ("android", "bin", "classes.dex"));
+				FileAssert.Exists (dexFile);
+				Assert.IsTrue (DexUtils.ContainsClass (className, dexFile, b.AndroidSdkDirectory), $"`{dexFile}` should include `{className}`!");
 			}
 		}
 
@@ -818,10 +829,13 @@ namespace UnamedProject
 			}
 		}
 
-		[Test]
-		public void MultiDexCustomMainDexFileList ()
-		{
-			var expected = @"android/support/multidex/ZipUtil$CentralDirectory.class
+#pragma warning disable 414
+		static object [] ExpectedMultiDex = new object [] {
+			new object [] {
+				// useD8
+				false,
+				// expected
+				@"android/support/multidex/ZipUtil$CentralDirectory.class
 android/support/multidex/MultiDexApplication.class
 android/support/multidex/MultiDex$V19.class
 android/support/multidex/MultiDex$V4.class
@@ -830,13 +844,30 @@ android/support/multidex/MultiDexExtractor$1.class
 android/support/multidex/MultiDexExtractor.class
 android/support/multidex/MultiDex$V14.class
 android/support/multidex/MultiDex.class
-MyTest
-";
+MyTest.class
+",
+			},
+			new object [] {
+				// useD8
+				true,
+				// expected
+				@"MyTest.class
+r8/GeneratedOutlineSupport.class
+",
+			},
+		};
+#pragma warning restore 414
+
+		[Test]
+		[TestCaseSource ("ExpectedMultiDex")]
+		public void MultiDexCustomMainDexFileList (bool useD8, string expected)
+		{
 			var proj = CreateMultiDexRequiredApplication ();
+			proj.DexGenerator = useD8 ? "d8" : "dx";
 			proj.SetProperty ("AndroidEnableMultiDex", "True");
-			proj.OtherBuildItems.Add (new BuildItem ("MultiDexMainDexList", "mymultidex.keep") { TextContent = () => "MyTest", Encoding = Encoding.ASCII });
+			proj.OtherBuildItems.Add (new BuildItem ("MultiDexMainDexList", "mymultidex.keep") { TextContent = () => "MyTest.class", Encoding = Encoding.ASCII });
 			proj.OtherBuildItems.Add (new BuildItem ("AndroidJavaSource", "MyTest.java") { TextContent = () => "public class MyTest {}", Encoding = Encoding.ASCII });
-			var b = CreateApkBuilder ("temp/MultiDexCustomMainDexFileList");
+			var b = CreateApkBuilder (Path.Combine ("temp", $"{nameof(MultiDexCustomMainDexFileList)}{useD8}"));
 			b.ThrowOnBuildFailure = false;
 			Assert.IsTrue (b.Build (proj), "build should succeed. Run will fail.");
 			var data = File.ReadAllText (Path.Combine (Root, b.ProjectDirectory, proj.IntermediateOutputPath, "multidex.keep"));
@@ -2187,12 +2218,13 @@ public class Test
 		}
 
 		[Test]
-		public void BuildApplicationWithSpacesInPath ([Values (true, false)] bool isRelease, [Values (true, false)] bool enableProguard, [Values (true, false)] bool enableMultiDex)
+		public void BuildApplicationWithSpacesInPath ([Values (true, false)] bool isRelease, [Values (true, false)] bool enableProguard, [Values (true, false)] bool enableMultiDex, [Values (true, false)] bool useD8)
 		{
 			var proj = new XamarinAndroidApplicationProject () {
 				IsRelease = isRelease,
 				AotAssemblies = isRelease,
 				EnableProguard = enableProguard,
+				DexGenerator = useD8 ? "d8" : "dx",
 			};
 			proj.OtherBuildItems.Add (new BuildItem ("AndroidJavaLibrary", "Hello (World).jar") { BinaryContent = () => Convert.FromBase64String (@"
 UEsDBBQACAgIAMl8lUsAAAAAAAAAAAAAAAAJAAQATUVUQS1JTkYv/soAAAMAUEsHCAAAAAACAAAAA
@@ -2224,9 +2256,14 @@ AAMMAAABzYW1wbGUvSGVsbG8uY2xhc3NQSwUGAAAAAAMAAwC9AAAA1gEAAAAA") });
 ",
 				});
 			}
-			using (var b = CreateApkBuilder (Path.Combine ("temp", $"BuildReleaseAppWithA InIt({isRelease}{enableProguard}{enableMultiDex})"))) {
+			using (var b = CreateApkBuilder (Path.Combine ("temp", $"BuildReleaseAppWithA InIt({isRelease}{enableProguard}{enableMultiDex}{useD8})"))) {
 				Assert.IsTrue (b.Build (proj), "Build should have succeeded.");
 				Assert.IsFalse (b.LastBuildOutput.ContainsText ("Duplicate zip entry"), "Should not get warning about [META-INF/MANIFEST.MF]");
+
+				var className = "Lmono/MonoRuntimeProvider;";
+				var dexFile = b.Output.GetIntermediaryPath (Path.Combine ("android", "bin", "classes.dex"));
+				FileAssert.Exists (dexFile);
+				Assert.IsTrue (DexUtils.ContainsClass (className, dexFile, b.AndroidSdkDirectory), $"`{dexFile}` should include `{className}`!");
 			}
 		}
 
@@ -3172,6 +3209,7 @@ AAAAAAAAAAAAPQAAAE1FVEEtSU5GL01BTklGRVNULk1GUEsBAhQAFAAICAgAJZFnS7uHtAn+AQAA
 				if (enableDesugar) {
 					var className = "Lmono/MonoRuntimeProvider;";
 					var dexFile = builder.Output.GetIntermediaryPath (Path.Combine ("android", "bin", "classes.dex"));
+					FileAssert.Exists (dexFile);
 					Assert.IsTrue (DexUtils.ContainsClass (className, dexFile, builder.AndroidSdkDirectory), $"`{dexFile}` should include `{className}`!");
 				}
 			}

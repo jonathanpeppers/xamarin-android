@@ -60,21 +60,49 @@ namespace Xamarin.Android.Build.Tests
 				/* isRelease */ true,
 				/* enableProguard */ true,
 				/* useLatestSdk */ true,
+				/* useD8 */ false,
 			},
 			new Object [] {
 				/* isRelease */ true,
 				/* enableProguard */ false,
 				/* useLatestSdk */ true,
+				/* useD8 */ false,
 			},
 			new Object [] {
 				/* isRelease */ false,
 				/* enableProguard */ true,
 				/* useLatestSdk */ true,
+				/* useD8 */ false,
 			},
 			new Object [] {
 				/* isRelease */ false,
 				/* enableProguard */ false,
 				/* useLatestSdk */ true,
+				/* useD8 */ false,
+			},
+			new Object [] {
+				/* isRelease */ true,
+				/* enableProguard */ true,
+				/* useLatestSdk */ true,
+				/* useD8 */ true,
+			},
+			new Object [] {
+				/* isRelease */ true,
+				/* enableProguard */ false,
+				/* useLatestSdk */ true,
+				/* useD8 */ true,
+			},
+			new Object [] {
+				/* isRelease */ false,
+				/* enableProguard */ true,
+				/* useLatestSdk */ true,
+				/* useD8 */ true,
+			},
+			new Object [] {
+				/* isRelease */ false,
+				/* enableProguard */ false,
+				/* useLatestSdk */ true,
+				/* useD8 */ true,
 			},
 		};
 		static object [] TakeSimpleFlag = new object [] {
