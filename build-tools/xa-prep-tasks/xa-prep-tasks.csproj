@@ -32,6 +32,8 @@
     <Reference Include="System.IO.Compression" />
     <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
     <Reference Include="Microsoft.Build.Framework" />
     <Reference Include="Microsoft.Build.Utilities.v4.0" />
   </ItemGroup>
@@ -46,6 +48,7 @@
     <Compile Include="Xamarin.Android.BuildTools.PrepTasks\HashFileContents.cs" />
     <Compile Include="Xamarin.Android.BuildTools.PrepTasks\JdkInfo.cs" />
     <Compile Include="Xamarin.Android.BuildTools.PrepTasks\PathToolTask.cs" />
+    <Compile Include="Xamarin.Android.BuildTools.PrepTasks\ProcessMSBuildTiming.cs" />
     <Compile Include="Xamarin.Android.BuildTools.PrepTasks\SetEnvironmentVariable.cs" />
     <Compile Include="Xamarin.Android.BuildTools.PrepTasks\SystemUnzip.cs" />
     <Compile Include="Xamarin.Android.BuildTools.PrepTasks\Which.cs" />

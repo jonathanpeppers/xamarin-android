@@ -6,23 +6,24 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
   <Import Project="..\..\Configuration.props" />
+  <Import Project="timing.targets" />
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <OutputPath>..\..\bin\Debug</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <OutputPath>..\..\bin\Release</OutputPath>
   </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Xamarin.Android.Tools.BootstrapTasks\Xamarin.Android.Tools.BootstrapTasks.csproj">
+      <Project>{E8492EFB-D14A-4F32-AA28-88848322ECEA}</Project>
+      <Name>Xamarin.Android.Tools.BootstrapTasks</Name>
+      <ReferenceOutputAssembly>False</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\..\tests\Xamarin.Android.Timing\Xamarin.Android.Timing.csproj">
+      <Project>{B5E42232-0B27-44B7-8FA6-1244230BB6EE}</Project>
+      <Name>Xamarin.Android.Timing</Name>
+      <ReferenceOutputAssembly>False</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.Common.targets" />
-  <Import Project="..\scripts\TestApks.targets" />
-  <Target Name="LogcatTiming">
-    <Exec Command="&quot;$(AdbToolPath)\$(AdbToolExe)&quot; $(_AdbTarget) $(AdbOptions) logcat -v threadtime -d > tmp-logcat-timing.log" />
-    <ProcessLogcatTiming
-        InputFilename="tmp-logcat-timing.log"
-        ApplicationPackageName="$(Package)"
-        PID="$(PID)"
-        ResultsFilename="tmp-timing-results.csv"
-        DefinitionsFilename="..\scripts\TimingDefinitions.txt"
-        AddResults="true"
-        Activity="$(Activity)" />
-  </Target>
 </Project>
