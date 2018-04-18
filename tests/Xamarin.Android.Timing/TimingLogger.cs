@@ -151,7 +151,8 @@ namespace Xamarin.Android.Timing
 			if (!String.IsNullOrEmpty (solutionDir))
 				AddAttribute (e, "solution-dir", solutionDir);
 			AddAttribute (e, "file-id", ShortenFilePath (args.ProjectFile));
-			AddAttribute (e, "id", args.ProjectId.ToString ());
+			//NOTE: MissingMethodException on xbuild
+			//AddAttribute (e, "id", args.ProjectId.ToString ());
 		}
 
 		void OnProjectFinished (object sender, ProjectFinishedEventArgs args)
