@@ -12,6 +12,12 @@
     <_Test Condition=" '$(TEST)' != '' ">--test=&quot;$(TEST)&quot;</_Test>
     <_XABuild>$(_TopDir)\bin\$(Configuration)\bin\xabuild</_XABuild>
     <_XABuildProperties>/p:Configuration=$(Configuration) /p:XAIntegratedTests=$(XAIntegratedTests)</_XABuildProperties>
+    <RunAllTestsDependsOn>
+      RunNUnitTests;
+      RunJavaInteropTests;
+      RunApkTests;
+      RunPerformanceTests;
+    </RunAllTestsDependsOn>
   </PropertyGroup>
   <ItemGroup>
     <_TestAssembly Include="$(_TopDir)\bin\Test$(Configuration)\Xamarin.Android.Build.Tests.dll" />
@@ -86,5 +92,5 @@
   <Target Name="RunPerformanceTests">
     <MSBuild Projects="$(MSBuildThisFileDirectory)..\timing\timing.csproj" Targets="MSBuildTiming" />
   </Target>
-  <Target Name="RunAllTests" DependsOnTargets="RunNUnitTests;RunJavaInteropTests;RunApkTests;RunPerformanceTests" />
+  <Target Name="RunAllTests" DependsOnTargets="$(RunAllTestsDependsOn)" />
 </Project>
