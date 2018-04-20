@@ -8,6 +8,10 @@
     <RootNamespace>Xamarin.ProjectTools</RootNamespace>
     <AssemblyName>Xamarin.ProjectTools</AssemblyName>
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
+    <_MSBuildExtension Condition=" '$(OS)' == 'Windows_NT' ">exe</_MSBuildExtension>
+    <_MSBuildExtension Condition=" '$(OS)' != 'Windows_NT' ">dll</_MSBuildExtension>
+    <_MSBuildToolsPath Condition=" !$(MSBuildToolsPath.Contains('xbuild')) ">$(MSBuildToolsPath)</_MSBuildToolsPath>
+    <_MSBuildToolsPath Condition=" $(MSBuildToolsPath.Contains('xbuild')) ">$([System.IO.Path]::GetFullPath ('$(MSBuildToolsPath)\..\..\..\msbuild\15.0\bin'))</_MSBuildToolsPath>
   </PropertyGroup>
   <Import Project="..\..\..\..\Configuration.props" />
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -32,9 +36,18 @@
     <Reference Include="System" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
-    <Reference Include="Microsoft.Build.Framework" />
-    <Reference Include="Microsoft.Build" />
-    <Reference Include="Microsoft.Build.Engine" />
+    <Reference Include="Microsoft.Build.Framework">
+      <HintPath>$(_MSBuildToolsPath)\Microsoft.Build.Framework.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Build">
+      <HintPath>$(_MSBuildToolsPath)\Microsoft.Build.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Build.Engine">
+      <HintPath>$(_MSBuildToolsPath)\Microsoft.Build.Engine.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Build.Utilities.Core">
+      <HintPath>$(_MSBuildToolsPath)\Microsoft.Build.Utilities.Core.dll</HintPath>
+    </Reference>
     <Reference Include="System.Drawing" />
     <Reference Include="Microsoft.Web.XmlTransform">
       <HintPath>..\..\..\..\packages\Microsoft.Web.Xdt.2.1.1\lib\net40\Microsoft.Web.XmlTransform.dll</HintPath>

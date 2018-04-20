@@ -1212,9 +1212,9 @@ namespace UnnamedProject
 			protected override void OnCreate (Bundle bundle)
 			{
 				base.OnCreate (bundle);
-				InitializeContentView ();
-				myButton.Click += delegate {
-					myButton.Text = string.Format (""{0} clicks!"", count++);
+				var widgets = SetContentView <Binding.Main> ();
+				widgets.myButton.Click += delegate {
+					widgets.myButton.Text = string.Format (""{0} clicks!"", count++);
 				};
 			}
 		}
@@ -1223,9 +1223,9 @@ namespace UnnamedProject
 			};
 			using (var builder = CreateApkBuilder (path)) {
 				Assert.IsTrue (builder.Build (proj), "Build should have succeeded.");
-				FileAssert.Exists (Path.Combine (Root, path, proj.IntermediateOutputPath, "generated", "Main-UnnamedProject.MainActivity.g.cs"));
+				FileAssert.Exists (Path.Combine (Root, path, proj.IntermediateOutputPath, "generated", "Binding.Main.g.cs"));
 				Assert.IsTrue (builder.Build (proj), "Second build should have succeeded.");
-				FileAssert.Exists (Path.Combine (Root, path, proj.IntermediateOutputPath, "generated", "Main-UnnamedProject.MainActivity.g.cs"));
+				FileAssert.Exists (Path.Combine (Root, path, proj.IntermediateOutputPath, "generated", "Binding.Main.g.cs"));
 			}
 		}
 	}
