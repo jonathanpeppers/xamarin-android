@@ -2041,6 +2041,38 @@ AAMMAAABzYW1wbGUvSGVsbG8uY2xhc3NQSwUGAAAAAAMAAwC9AAAA1gEAAAAA") });
 		}
 
 		[Test]
+		public void BuildAfterUpgradingNuget ()
+		{
+			var proj = new XamarinAndroidApplicationProject ();
+			proj.MainActivity = proj.DefaultMainActivity.Replace ("public class MainActivity : Activity", "public class MainActivity : Xamarin.Forms.Platform.Android.FormsAppCompatActivity");
+			proj.PackageReferences.Add (KnownPackages.XamarinForms_2_3_4_231);
+			proj.PackageReferences.Add (KnownPackages.AndroidSupportV4_25_4_0_1);
+			proj.PackageReferences.Add (KnownPackages.SupportCompat_25_4_0_1);
+			proj.PackageReferences.Add (KnownPackages.SupportDesign_25_4_0_1);
+			proj.PackageReferences.Add (KnownPackages.SupportV7CardView_25_4_0_1);
+			proj.PackageReferences.Add (KnownPackages.SupportV7MediaRouter_25_4_0_1);
+
+			using (var b = CreateApkBuilder (Path.Combine ("temp", TestContext.CurrentContext.Test.Name))) {
+				b.RequiresMSBuild = true;
+				b.Target = "Restore,Build";
+				var projectDir = Path.Combine (Root, b.ProjectDirectory);
+				if (Directory.Exists (projectDir))
+					Directory.Delete (projectDir, true);
+				Assert.IsTrue (b.Build (proj), "first build should have succeeded.");
+
+				proj.PackageReferences.Clear ();
+				proj.PackageReferences.Add (KnownPackages.XamarinForms_3_0_0_561731);
+				proj.PackageReferences.Add (KnownPackages.AndroidSupportV4_27_0_2_1);
+				proj.PackageReferences.Add (KnownPackages.SupportCompat_27_0_2_1);
+				proj.PackageReferences.Add (KnownPackages.SupportDesign_27_0_2_1);
+				proj.PackageReferences.Add (KnownPackages.SupportV7CardView_27_0_2_1);
+				proj.PackageReferences.Add (KnownPackages.SupportV7MediaRouter_27_0_2_1);
+				b.Save (proj, doNotCleanupOnUpdate: true);
+				Assert.IsTrue (b.Build (proj), "second build should have succeeded.");
+			}
+		}
+
+		[Test]
 		public void CheckTargetFrameworkVersion ()
 		{
 			var proj = new XamarinAndroidApplicationProject () {
