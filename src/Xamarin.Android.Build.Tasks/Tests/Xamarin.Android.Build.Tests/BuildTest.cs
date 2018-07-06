@@ -2261,7 +2261,7 @@ AAMMAAABzYW1wbGUvSGVsbG8uY2xhc3NQSwUGAAAAAAMAAwC9AAAA1gEAAAAA") });
 				ProjectName = "App1",
 			};
 			proj.References.Add (new BuildItem ("ProjectReference", $"..\\Library1\\Library1.csproj"));
-			proj.SetProperty ("_AndroidLibrayProjectIntermediatePath", Path.Combine (proj.IntermediateOutputPath, "__library_projects__"));
+			proj.SetProperty ("_AndroidLibraryProjectIntermediatePath", Path.Combine (proj.IntermediateOutputPath, "__library_projects__"));
 			proj.SetProperty (proj.ActiveConfigurationProperties, "UseShortFileNames", useShortFileNames);
 			using (var libb = CreateDllBuilder (Path.Combine (path, libproj.ProjectName), false, false)) {
 				Assert.IsTrue (libb.Build (libproj), "Build should have succeeded.");
@@ -2270,7 +2270,7 @@ AAMMAAABzYW1wbGUvSGVsbG8uY2xhc3NQSwUGAAAAAAMAAwC9AAAA1gEAAAAA") });
 					Assert.IsTrue (builder.Build (proj), "Build should have succeeded.");
 					Assert.IsTrue (Directory.Exists (Path.Combine (Root, path, proj.ProjectName, proj.IntermediateOutputPath, "__library_projects__")),
 						"The __library_projects__ directory should exist.");
-					proj.RemoveProperty ("_AndroidLibrayProjectIntermediatePath");
+					proj.RemoveProperty ("_AndroidLibraryProjectIntermediatePath");
 					Assert.IsTrue (builder.Build (proj), "Build should have succeeded.");
 					if (useShortFileNames) {
 						Assert.IsFalse (Directory.Exists (Path.Combine (Root, path, proj.ProjectName, proj.IntermediateOutputPath, "__library_projects__")),

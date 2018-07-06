@@ -266,9 +266,9 @@ Copyright (C) 2011-2012 Xamarin. All rights reserved.
 	<_AndroidResourcePathsCache>$(IntermediateOutputPath)resourcepaths.cache</_AndroidResourcePathsCache>
 	<_AndroidLibraryImportsCache>$(IntermediateOutputPath)libraryimports.cache</_AndroidLibraryImportsCache>
 	<_AndroidLibraryProjectImportsCache>$(IntermediateOutputPath)libraryprojectimports.cache</_AndroidLibraryProjectImportsCache>
-	<_AndroidLibrayProjectIntermediatePath Condition=" '$(_AndroidLibrayProjectIntermediatePath)' == '' And '$(UseShortFileNames)' == 'True' ">$(IntermediateOutputPath)lp\</_AndroidLibrayProjectIntermediatePath>
-	<_AndroidLibrayProjectIntermediatePath Condition=" '$(_AndroidLibrayProjectIntermediatePath)' == '' ">$(IntermediateOutputPath)__library_projects__\</_AndroidLibrayProjectIntermediatePath>
-	<_AndroidLibrayProjectAssemblyMapFile>$(_AndroidLibrayProjectIntermediatePath)map.cache</_AndroidLibrayProjectAssemblyMapFile>
+	<_AndroidLibraryProjectIntermediatePath Condition=" '$(_AndroidLibraryProjectIntermediatePath)' == '' And '$(UseShortFileNames)' == 'True' ">$(IntermediateOutputPath)lp\</_AndroidLibraryProjectIntermediatePath>
+	<_AndroidLibraryProjectIntermediatePath Condition=" '$(_AndroidLibraryProjectIntermediatePath)' == '' ">$(IntermediateOutputPath)__library_projects__\</_AndroidLibraryProjectIntermediatePath>
+	<_AndroidLibraryProjectAssemblyMapFile>$(_AndroidLibraryProjectIntermediatePath)map.cache</_AndroidLibraryProjectAssemblyMapFile>
 	<_AndroidProguardInputJarFilter>(!META-INF/MANIFEST.MF)</_AndroidProguardInputJarFilter>
 	<_AndroidAapt2VersionFile>$(IntermediateOutputPath)aapt2.version</_AndroidAapt2VersionFile>
 	<_AndroidNuGetStampFile>$(IntermediateOutputPath)$(MSBuildProjectName).nuget.stamp</_AndroidNuGetStampFile>
@@ -1301,8 +1301,8 @@ because xbuild doesn't support framework reference assemblies.
 		ImportsDirectory="$(_LibraryProjectImportsDirectoryName)"
 		UseShortFileNames="$(UseShortFileNames)"
 		OutputDirectory="$(IntermediateOutputPath)"
-		AssemblyIdentityMapFile="$(_AndroidLibrayProjectAssemblyMapFile)"
-		OutputImportDirectory="$(_AndroidLibrayProjectIntermediatePath)">
+		AssemblyIdentityMapFile="$(_AndroidLibraryProjectAssemblyMapFile)"
+		OutputImportDirectory="$(_AndroidLibraryProjectIntermediatePath)">
 	</ResolveLibraryProjectImports>
 </Target>
 
@@ -1427,7 +1427,7 @@ because xbuild doesn't support framework reference assemblies.
 <Target Name="_BuildLibraryImportsCache"
 		Inputs="$(MSBuildProjectFullPath);@(ReferencePath);@(ReferenceDependencyPaths);$(_AndroidBuildPropertiesCache)"
 		Outputs="$(_AndroidLibraryImportsCache)">
-	<GetImportedLibraries TargetDirectory="$(_AndroidLibrayProjectIntermediatePath)"
+	<GetImportedLibraries TargetDirectory="$(_AndroidLibraryProjectIntermediatePath)"
 			CacheFile="$(_AndroidLibraryImportsCache)">
 	</GetImportedLibraries>
 </Target>
@@ -1498,7 +1498,7 @@ because xbuild doesn't support framework reference assemblies.
    Condition="'$(_AndroidUseAapt2)' != 'True'"
    ContinueOnError="$(DesignTimeBuild)"
    ImportsDirectory="$(_LibraryProjectImportsDirectoryName)"
-   OutputImportDirectory="$(_AndroidLibrayProjectIntermediatePath)"
+   OutputImportDirectory="$(_AndroidLibraryProjectIntermediatePath)"
    UseShortFileNames="$(UseShortFileNames)"
    ManifestFiles="@(_AdditonalAndroidResourceCachePaths->'%(Identity)\AndroidManifest.xml');@(LibraryResourceDirectories->'%(Identity)\..\AndroidManifest.xml')"
    ApplicationName="$(_AndroidPackage)"
@@ -1514,7 +1514,7 @@ because xbuild doesn't support framework reference assemblies.
    ApiLevel="$(_AndroidTargetSdkVersion)"
    AndroidUseLatestPlatformSdk="$(AndroidUseLatestPlatformSdk)"
    ResourceNameCaseMap="$(_AndroidResourceNameCaseMap)"
-   AssemblyIdentityMapFile="$(_AndroidLibrayProjectAssemblyMapFile)"
+   AssemblyIdentityMapFile="$(_AndroidLibraryProjectAssemblyMapFile)"
    YieldDuringToolExecution="$(YieldDuringToolExecution)"
    ExplicitCrunch="$(AndroidExplicitCrunch)"
  />
@@ -1524,7 +1524,7 @@ because xbuild doesn't support framework reference assemblies.
    AndroidComponentResgenFlagFile="$(_AndroidComponentResgenFlagFile)"
    UseShortFileNames="$(UseShortFileNames)"
    ImportsDirectory="$(_LibraryProjectImportsDirectoryName)"
-   OutputImportDirectory="$(_AndroidLibrayProjectIntermediatePath)"
+   OutputImportDirectory="$(_AndroidLibraryProjectIntermediatePath)"
    AdditionalResourceDirectories="@(LibraryResourceDirectories)"
    AdditionalAndroidResourcePaths="@(_AdditonalAndroidResourceCachePaths)"
    ApplicationName="$(_AndroidPackage)"
@@ -1532,7 +1532,7 @@ because xbuild doesn't support framework reference assemblies.
    JavaDesignerOutputDirectory="$(IntermediateOutputPath)android\src"
    ResourceNameCaseMap="$(_AndroidResourceNameCaseMap)"
    ResourceDirectories="$(MonoAndroidResDirIntermediate)"
-   AssemblyIdentityMapFile="$(_AndroidLibrayProjectAssemblyMapFile)"
+   AssemblyIdentityMapFile="$(_AndroidLibraryProjectAssemblyMapFile)"
    ManifestFiles="@(_AdditonalAndroidResourceCachePaths->'%(Identity)\AndroidManifest.xml');@(LibraryResourceDirectories->'%(Identity)\..\AndroidManifest.xml')"
    YieldDuringToolExecution="$(YieldDuringToolExecution)"
    ToolPath="$(Aapt2ToolPath)"
@@ -1656,7 +1656,7 @@ because xbuild doesn't support framework reference assemblies.
 	<!-- Run aapt to generate R.java -->
 	<Aapt Condition="'$(_AndroidResourceDesignerFile)' != '' And '$(_AndroidUseAapt2)' != 'True'"
 		ImportsDirectory="$(_LibraryProjectImportsDirectoryName)"
-		OutputImportDirectory="$(_AndroidLibrayProjectIntermediatePath)"
+		OutputImportDirectory="$(_AndroidLibraryProjectIntermediatePath)"
 		UseShortFileNames="$(UseShortFileNames)"
 		JavaPlatformJarPath="$(JavaPlatformJarPath)"
 		ManifestFiles="$(ResgenTemporaryDirectory)\AndroidManifest.xml"
@@ -1675,7 +1675,7 @@ because xbuild doesn't support framework reference assemblies.
 		ApiLevel="$(_AndroidTargetSdkVersion)"
 		AndroidUseLatestPlatformSdk="$(AndroidUseLatestPlatformSdk)"
 		ResourceNameCaseMap="$(_AndroidResourceNameCaseMap)"
-		AssemblyIdentityMapFile="$(_AndroidLibrayProjectAssemblyMapFile)"
+		AssemblyIdentityMapFile="$(_AndroidLibraryProjectAssemblyMapFile)"
 		YieldDuringToolExecution="$(YieldDuringToolExecution)"
 		ExplicitCrunch="$(AndroidExplicitCrunch)"
 		SupportedAbis="$(_BuildTargetAbis)"
@@ -1687,10 +1687,10 @@ because xbuild doesn't support framework reference assemblies.
 		Condition="'$(_AndroidResourceDesignerFile)' != '' And '$(_AndroidUseAapt2)' == 'True' And Exists ('$(IntermediateOutputPath)\compiled.flata')"
 		ContinueOnError="$(DesignTimeBuild)"
 		ResourceNameCaseMap="$(_AndroidResourceNameCaseMap)"
-		AssemblyIdentityMapFile="$(_AndroidLibrayProjectAssemblyMapFile)"
+		AssemblyIdentityMapFile="$(_AndroidLibraryProjectAssemblyMapFile)"
 		ImportsDirectory="$(_LibraryProjectImportsDirectoryName)"
 		UseShortFileNames="$(UseShortFileNames)"
-		OutputImportDirectory="$(_AndroidLibrayProjectIntermediatePath)"
+		OutputImportDirectory="$(_AndroidLibraryProjectIntermediatePath)"
 		OutputFile="$(ResgenTemporaryDirectory)\resources.apk"
 		PackageName="$(_AndroidPackage)"
 		ApplicationName="$(_AndroidPackage)"
@@ -2267,7 +2267,7 @@ because xbuild doesn't support framework reference assemblies.
   <Aapt
 	Condition="'$(_AndroidUseAapt2)' != 'True'"
 	ImportsDirectory="$(_LibraryProjectImportsDirectoryName)"
-	OutputImportDirectory="$(_AndroidLibrayProjectIntermediatePath)"
+	OutputImportDirectory="$(_AndroidLibraryProjectIntermediatePath)"
 	UseShortFileNames="$(UseShortFileNames)"
     JavaPlatformJarPath="$(JavaPlatformJarPath)"
     ManifestFiles="$(IntermediateOutputPath)android\AndroidManifest.xml"
@@ -2287,7 +2287,7 @@ because xbuild doesn't support framework reference assemblies.
     ApiLevel="$(_AndroidTargetSdkVersion)"
     AndroidUseLatestPlatformSdk="$(AndroidUseLatestPlatformSdk)"
 	ResourceNameCaseMap="$(_AndroidResourceNameCaseMap)"
-    AssemblyIdentityMapFile="$(_AndroidLibrayProjectAssemblyMapFile)"
+    AssemblyIdentityMapFile="$(_AndroidLibraryProjectAssemblyMapFile)"
     SupportedAbis="$(_BuildTargetAbis)"
     CreatePackagePerAbi="$(AndroidCreatePackagePerAbi)"
     YieldDuringToolExecution="$(YieldDuringToolExecution)"
@@ -2301,10 +2301,10 @@ because xbuild doesn't support framework reference assemblies.
     CompiledResourceFlatArchive="$(IntermediateOutputPath)\compiled.flata"
     ResourceNameCaseMap="$(_AndroidResourceNameCaseMap)"
     ResourceDirectories="$(MonoAndroidResDirIntermediate)"
-    AssemblyIdentityMapFile="$(_AndroidLibrayProjectAssemblyMapFile)"
+    AssemblyIdentityMapFile="$(_AndroidLibraryProjectAssemblyMapFile)"
     UseShortFileNames="$(UseShortFileNames)"
     ImportsDirectory="$(_LibraryProjectImportsDirectoryName)"
-    OutputImportDirectory="$(_AndroidLibrayProjectIntermediatePath)"
+    OutputImportDirectory="$(_AndroidLibraryProjectIntermediatePath)"
     OutputFile="$(_PackagedResources)"
     AdditionalResourceDirectories="@(LibraryResourceDirectories)"
     AdditionalAndroidResourcePaths="@(_AdditonalAndroidResourceCachePaths)"
@@ -2997,7 +2997,7 @@ because xbuild doesn't support framework reference assemblies.
 	<RemoveDirFixed Directories="$(MonoAndroidIntermediate)aidl" Condition="Exists ('$(MonoAndroidIntermediate)aidl')" />
 	<RemoveDirFixed Directories="$(MonoAndroidIntermediate)bundles" Condition="Exists ('$(MonoAndroidIntermediate)bundles')" />
 	<RemoveDirFixed Directories="$(MonoAndroidIntermediate)__library_projects__" Condition="Exists ('$(MonoAndroidIntermediate)__library_projects__')" />
-	<RemoveDirFixed Directories="$(_AndroidLibrayProjectIntermediatePath)" Condition="Exists ('$(_AndroidLibrayProjectIntermediatePath)')" />
+	<RemoveDirFixed Directories="$(_AndroidLibraryProjectIntermediatePath)" Condition="Exists ('$(_AndroidLibraryProjectIntermediatePath)')" />
 	<RemoveDirFixed Directories="$(MonoAndroidIntermediate)$(_LibraryProjectImportsDirectoryName)" Condition="Exists ('$(MonoAndroidIntermediate)$(_LibraryProjectImportsDirectoryName)')" />
 	<RemoveDirFixed Directories="$(MonoAndroidIntermediate)$(_NativeLibraryImportsDirectoryName)" Condition="Exists ('$(MonoAndroidIntermediate)$(_NativeLibraryImportsDirectoryName)')" />
 	<RemoveDirFixed Directories="$(MonoAndroidIntermediate)assets" Condition="Exists ('$(MonoAndroidIntermediate)assets')" />
@@ -3028,7 +3028,7 @@ because xbuild doesn't support framework reference assemblies.
 	<Delete Files="$(_AndroidLibraryImportsCache)" />
 	<Delete Files="$(_AndroidStaticResourcesFlag)" />
 	<Delete Files="$(_AndroidLibraryProjectImportsCache)" />
-	<Delete Files="$(_AndroidLibrayProjectAssemblyMapFile)" />
+	<Delete Files="$(_AndroidLibraryProjectAssemblyMapFile)" />
 	<Delete Files="$(_AndroidAapt2VersionFile)" />
 	<Delete Files="$(IntermediateOutputPath)R.txt" />
 </Target>
