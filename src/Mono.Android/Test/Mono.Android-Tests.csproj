@@ -19,8 +19,8 @@
     <AndroidSupportedAbis>armeabi-v7a;x86</AndroidSupportedAbis>
     <AndroidUseSharedRuntime>False</AndroidUseSharedRuntime>
     <AndroidUseLatestPlatformSdk>false</AndroidUseLatestPlatformSdk>
-    <AndroidUseR8>true</AndroidUseR8>
-    <AndroidEnableD8>true</AndroidEnableD8>
+    <AndroidUseR8 Condition="'$(AndroidUseR8)' == ''">True</AndroidUseR8>
+    <AndroidEnableD8 Condition="'$(AndroidEnableD8)' == ''">True</AndroidEnableD8>
   </PropertyGroup>
   <Import Project="..\..\..\Configuration.props" />
   <PropertyGroup>

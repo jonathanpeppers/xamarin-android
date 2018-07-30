@@ -2639,7 +2639,7 @@ because xbuild doesn't support framework reference assemblies.
     JavaOptions="$(JavaOptions)"
     R8JarPath="$(R8JarPath)"
     AndroidManifestFile="$(IntermediateOutputPath)android\AndroidManifest.xml"
-    OutputDirectory="$(IntermediateOutputPath)android\"
+    OutputDirectory="$(IntermediateOutputPath)android\bin"
     Configuration="$(Configuration)"
     JavaPlatformJarPath="$(JavaPlatformJarPath)"
     ClassesZip="$(IntermediateOutputPath)android\bin\classes.zip"
@@ -2656,10 +2656,10 @@ because xbuild doesn't support framework reference assemblies.
     EnableMultiDex="$(AndroidEnableMultiDex)"
     MultiDexMainDexListFile="$(_AndroidMainDexListFile)"
     R8ExtraArguments="$(R8ExtraArguments)"
-    />
+  />
 
   <Touch Files="$(IntermediateOutputPath)_dex_stamp" AlwaysCreate="true" />
-        
+
 </Target>
 
 <Target Name="_CompileDex"
