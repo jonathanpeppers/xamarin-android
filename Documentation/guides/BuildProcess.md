@@ -210,6 +210,12 @@ when packaing Release applications.
 
     This property is `False` by default.
 
+-   **AndroidEnableDesugar** &ndash; A boolean property that
+    determines if `desugar` is enabled. Android does not currently
+    support all Java 8 features, and the default toolchain implements
+    the new language features by performing bytecode transformations,
+    called `desugar`, on the output of the `javac` compiler.
+
 -   **AndroidEnableD8** &ndash; A boolean property that determines
     whether or not use Google's new dexer (dx.jar alternative).
 
@@ -423,7 +429,7 @@ when packaing Release applications.
     Release projects.
 
 -   **AndroidUseR8** &ndash; A boolean property that determines
-    whether or not use Google's new Java code shlinker (proguard
+    whether or not use Google's new Java code shrinker (proguard
     alternative).
 
 -   **AotAssemblies** &ndash; A boolean property that determines

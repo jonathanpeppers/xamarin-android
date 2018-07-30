@@ -5,7 +5,6 @@ using System.Linq;
 using System.IO;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
-using System.Text;
 using System.Collections.Generic;
 using Xamarin.Android.Tools;
 
@@ -57,33 +56,6 @@ namespace Xamarin.Android.Tasks
 
 		public string R8ExtraArguments { get; set; }
 
-		public override bool Execute ()
-		{
-			Log.LogDebugMessage ("R8 Task");
-			Log.LogDebugTaskItems ("  R8JarPath: ", R8JarPath);
-			Log.LogDebugTaskItems ("  OutputDirectory: ", OutputDirectory);
-			Log.LogDebugTaskItems ("  AndroidManifestFile: ", AndroidManifestFile);
-			Log.LogDebugMessage ("  Configuration: {0}", Configuration);
-			Log.LogDebugTaskItems ("  JavaPlatformJarPath: ", JavaPlatformJarPath);
-			Log.LogDebugTaskItems ("  ClassesZip: ", ClassesZip);
-			Log.LogDebugTaskItems ("  JavaLibrariesToEmbed: ", JavaLibrariesToEmbed);
-			Log.LogDebugTaskItems ("  JavaLibrariesToReference: ", JavaLibrariesToReference);
-			Log.LogDebugMessage ("  EnableDesugar: {0}", EnableDesugar);
-			Log.LogDebugMessage ("  EnableTreeShaking: {0}", EnableTreeShaking);
-			Log.LogDebugTaskItems ("  AndroidSdkDirectory:", AndroidSdkDirectory);
-			Log.LogDebugTaskItems ("  AcwMapFile: ", AcwMapFile);
-			Log.LogDebugTaskItems ("  ProguardGeneratedReferenceConfiguration:", ProguardGeneratedReferenceConfiguration);
-			Log.LogDebugTaskItems ("  ProguardGeneratedApplicationConfiguration:", ProguardGeneratedApplicationConfiguration);
-			Log.LogDebugTaskItems ("  ProguardCommonXamarinConfiguration:", ProguardCommonXamarinConfiguration);
-			Log.LogDebugTaskItems ("  ProguardConfigurationFiles:", ProguardConfigurationFiles);
-			Log.LogDebugTaskItems ("  ProguardMappingOutput:", ProguardMappingOutput);
-			Log.LogDebugMessage ("  EnableMultiDex: {0}", EnableMultiDex);
-			Log.LogDebugTaskItems ("  MultiDexMainDexListFile: ", MultiDexMainDexListFile);
-			Log.LogDebugTaskItems ("  R8ExtraArguments: ", R8ExtraArguments);
-
-			return base.Execute ();
-		}
-
 		protected override string GenerateCommandLineCommands ()
 		{
 			var cmd = new CommandLineBuilder ();
@@ -119,7 +91,6 @@ namespace Xamarin.Android.Tasks
 					.Split (';')
 					.Select (s => s.Trim ())
 					.Where (s => !string.IsNullOrWhiteSpace (s));
-				var enclosingChar = "\"";
 				foreach (var file in configs) {
 					if (File.Exists (file))
 						cmd.AppendSwitchIfNotNull ("--pg-conf ", file);
