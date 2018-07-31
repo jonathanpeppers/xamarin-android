@@ -536,33 +536,33 @@ namespace Xamarin.ProjectTools
 				}
 			}
 		};
-		public static Package Android_Arch_Core_Common_26_1_0 = new Package {
+		public static Package Android_Arch_Core_Common_1_0_0_1 = new Package {
 			Id = "Xamarin.Android.Arch.Core.Common",
-			Version = "26.1.0",
+			Version = "1.0.0.1",
 			TargetFramework = "MonoAndroid80",
 			References = {
 				new BuildItem.Reference("Xamarin.Android.Arch.Core.Common") {
-					MetadataValues = "HintPath=..\\packages\\Xamarin.Android.Arch.Core.Common.26.1.0\\lib\\MonoAndroid80\\Xamarin.Android.Arch.Core.Common.dll"
+					MetadataValues = "HintPath=..\\packages\\Xamarin.Android.Arch.Core.Common.1.0.0.1\\lib\\MonoAndroid80\\Xamarin.Android.Arch.Core.Common.dll"
 				}
 			}
 		};
-		public static Package Android_Arch_Lifecycle_Common_26_1_0 = new Package {
+		public static Package Android_Arch_Lifecycle_Common_1_0_3_1 = new Package {
 			Id = "Xamarin.Android.Arch.Lifecycle.Common",
-			Version = "26.1.0",
+			Version = "1.0.3.1",
 			TargetFramework = "MonoAndroid80",
 			References = {
 				new BuildItem.Reference("Xamarin.Android.Arch.Lifecycle.Common") {
-					MetadataValues = "HintPath=..\\packages\\Xamarin.Android.Arch.Lifecycle.Common.26.1.0\\lib\\MonoAndroid80\\Xamarin.Android.Arch.Lifecycle.Common.dll"
+					MetadataValues = "HintPath=..\\packages\\Xamarin.Android.Arch.Lifecycle.Common.1.0.3.1\\lib\\MonoAndroid80\\Xamarin.Android.Arch.Lifecycle.Common.dll"
 				}
 			}
 		};
-		public static Package Android_Arch_Lifecycle_Runtime_26_1_0 = new Package {
+		public static Package Android_Arch_Lifecycle_Runtime_1_0_3_1 = new Package {
 			Id = "Xamarin.Android.Arch.Lifecycle.Runtime",
-			Version = "26.1.0",
+			Version = "1.0.3.1",
 			TargetFramework = "MonoAndroid80",
 			References = {
 				new BuildItem.Reference("Xamarin.Android.Arch.Lifecycle.Runtime") {
-					MetadataValues = "HintPath=..\\packages\\Xamarin.Android.Arch.Lifecycle.Runtime.26.1.0\\lib\\MonoAndroid80\\Xamarin.Android.Arch.Lifecycle.Runtime.dll"
+					MetadataValues = "HintPath=..\\packages\\Xamarin.Android.Arch.Lifecycle.Runtime.1.0.3.1\\lib\\MonoAndroid80\\Xamarin.Android.Arch.Lifecycle.Runtime.dll"
 				}
 			}
 		};

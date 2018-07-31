@@ -2153,6 +2153,35 @@ AAMMAAABzYW1wbGUvSGVsbG8uY2xhc3NQSwUGAAAAAAMAAwC9AAAA1gEAAAAA") });
 			}
 		}
 
+		[Test]
+		public void BuildDebugThenRelease ()
+		{
+			var proj = new XamarinAndroidApplicationProject ();
+			proj.MainActivity = proj.DefaultMainActivity.Replace ("public class MainActivity : Activity", "public class MainActivity : Android.Support.V7.App.AppCompatActivity");
+
+			var packages = proj.Packages;
+			packages.Add (KnownPackages.Android_Arch_Core_Common_1_0_0_1);
+			packages.Add (KnownPackages.Android_Arch_Lifecycle_Common_1_0_3_1);
+			packages.Add (KnownPackages.Android_Arch_Lifecycle_Runtime_1_0_3_1);
+			packages.Add (KnownPackages.AndroidSupportV4_27_0_2_1);
+			packages.Add (KnownPackages.SupportCompat_27_0_2_1);
+			packages.Add (KnownPackages.SupportCoreUI_27_0_2_1);
+			packages.Add (KnownPackages.SupportCoreUtils_27_0_2_1);
+			packages.Add (KnownPackages.SupportDesign_27_0_2_1);
+			packages.Add (KnownPackages.SupportFragment_27_0_2_1);
+			packages.Add (KnownPackages.SupportMediaCompat_27_0_2_1);
+			packages.Add (KnownPackages.SupportV7AppCompat_27_0_2_1);
+			packages.Add (KnownPackages.SupportV7CardView_27_0_2_1);
+			packages.Add (KnownPackages.SupportV7MediaRouter_27_0_2_1);
+			packages.Add (KnownPackages.SupportV7RecyclerView_27_0_2_1);
+
+			using (var b = CreateApkBuilder (Path.Combine ("temp", TestName))) {
+				Assert.IsTrue (b.Build (proj), "Debug build should have succeeded.");
+				proj.IsRelease = true;
+				Assert.IsTrue (b.Build (proj), "Release build should have succeeded.");
+			}
+		}
+
 		//This test validates the _CleanIntermediateIfNuGetsChange target
 		[Test]
 		public void BuildAfterUpgradingNuget ([Values (false, true)] bool usePackageReference)
@@ -2201,9 +2230,9 @@ AAMMAAABzYW1wbGUvSGVsbG8uY2xhc3NQSwUGAAAAAAMAAwC9AAAA1gEAAAAA") });
 				}
 				packages.Clear ();
 				packages.Add (KnownPackages.XamarinForms_3_0_0_561731);
-				packages.Add (KnownPackages.Android_Arch_Core_Common_26_1_0);
-				packages.Add (KnownPackages.Android_Arch_Lifecycle_Common_26_1_0);
-				packages.Add (KnownPackages.Android_Arch_Lifecycle_Runtime_26_1_0);
+				packages.Add (KnownPackages.Android_Arch_Core_Common_1_0_0_1);
+				packages.Add (KnownPackages.Android_Arch_Lifecycle_Common_1_0_3_1);
+				packages.Add (KnownPackages.Android_Arch_Lifecycle_Runtime_1_0_3_1);
 				packages.Add (KnownPackages.AndroidSupportV4_27_0_2_1);
 				packages.Add (KnownPackages.SupportCompat_27_0_2_1);
 				packages.Add (KnownPackages.SupportCoreUI_27_0_2_1);
