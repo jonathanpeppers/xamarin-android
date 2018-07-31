@@ -2176,8 +2176,14 @@ AAMMAAABzYW1wbGUvSGVsbG8uY2xhc3NQSwUGAAAAAAMAAwC9AAAA1gEAAAAA") });
 			packages.Add (KnownPackages.SupportV7RecyclerView_27_0_2_1);
 
 			using (var b = CreateApkBuilder (Path.Combine ("temp", TestName))) {
+				b.Target = "Compile";
+				Assert.IsTrue (b.Build (proj, parameters: new [] { "DesignTimeBuild=True" }), "Debug design-time build should have succeeded.");
+				b.Target = "Build";
 				Assert.IsTrue (b.Build (proj), "Debug build should have succeeded.");
 				proj.IsRelease = true;
+				b.Target = "Compile";
+				Assert.IsTrue (b.Build (proj, parameters: new [] { "DesignTimeBuild=True" }), "Release design-time build should have succeeded.");
+				b.Target = "Build";
 				Assert.IsTrue (b.Build (proj), "Release build should have succeeded.");
 			}
 		}
