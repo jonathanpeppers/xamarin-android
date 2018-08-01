@@ -47,9 +47,16 @@ namespace Xamarin.Android.Tasks
 			Log.LogDebugMessage ("  ProguardJarPath: {0}", ProguardJarPath);
 			Log.LogDebugMessage ("  ProguardInputJarFilter: {0}", ProguardInputJarFilter);
 
-			if (CustomMainDexListFiles != null && CustomMainDexListFiles.Any ()) {
-				var content = string.Concat (CustomMainDexListFiles.Select (i => File.ReadAllText (i.ItemSpec)));
-				File.WriteAllText (MultiDexMainDexListFile, content);
+			if (CustomMainDexListFiles?.Length > 0) {
+				var content = new List<string> ();
+				foreach (var file in CustomMainDexListFiles) {
+					if (File.Exists (file.ItemSpec)) {
+						content.Add (File.ReadAllText (file.ItemSpec));
+					} else {
+						Log.LogCodedError ("XA4305", file.ItemSpec, 0, $"'MultiDexMainDexList' file '{file.ItemSpec}' does not exist.");
+					}
+				}
+				File.WriteAllText (MultiDexMainDexListFile, string.Concat (content));
 				return true;
 			}
 
