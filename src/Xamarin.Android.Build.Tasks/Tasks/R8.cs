@@ -95,16 +95,19 @@ namespace Xamarin.Android.Tasks
 					if (File.Exists (file))
 						cmd.AppendSwitchIfNotNull ("--pg-conf ", file);
 					else
-						Log.LogWarning ("Proguard configuration file '{0}' was not found.", file);
+						Log.LogCodedWarning ("XA4304", file, 0, "Proguard configuration file '{0}' was not found.", file);
 				}
 				cmd.AppendSwitchIfNotNull ("--pg-map-output ", ProguardMappingOutput);
+			}
 
-				// multidexing
-				if (EnableMultiDex) {
-					if (!string.IsNullOrWhiteSpace (MultiDexMainDexListFile) && File.Exists (MultiDexMainDexListFile))
-						cmd.AppendSwitchIfNotNull ("--main-dex-list ", MultiDexMainDexListFile);
-					else
-						Log.LogWarning ($"MultiDex is enabled, but main dex list file '{MultiDexMainDexListFile}' does not exist.");
+			// multidexing
+			if (EnableMultiDex) {
+				if (string.IsNullOrEmpty (MultiDexMainDexListFile)) {
+					Log.LogCodedWarning ("XA4305", $"MultiDex is enabled, but '{nameof (MultiDexMainDexListFile)}' was not specified.");
+				} else if (!File.Exists (MultiDexMainDexListFile)) {
+					Log.LogCodedWarning ("XA4305", MultiDexMainDexListFile, 0, $"MultiDex is enabled, but main dex list file '{MultiDexMainDexListFile}' does not exist.");
+				} else {
+					cmd.AppendSwitchIfNotNull ("--main-dex-list ", MultiDexMainDexListFile);
 				}
 			}
 
