@@ -11,7 +11,7 @@ using System.Xml.XPath;
 namespace Monodroid {
 	static class AndroidResource {
 		
-		public static bool UpdateXmlResource (string res, string filename, Dictionary<string, string> acwMap, IEnumerable<string> additionalDirectories = null, Action<TraceLevel, string> logMessage = null)
+		public static bool UpdateXmlResource (string res, string filename, Dictionary<string, string> acwMap, string [] additionalDirectories = null, Action<TraceLevel, string> logMessage = null)
 		{
 			// use a temporary file so we only update the real file if things actually changed
 			string tmpfile = filename + ".bk";
@@ -61,7 +61,7 @@ namespace Monodroid {
 				yield return e;
 		}
 		
-		static void UpdateXmlResource (string resourcesBasePath, XElement e, Dictionary<string, string> acwMap, IEnumerable<string> additionalDirectories = null, Action<TraceLevel, string> logMessage = null)
+		static void UpdateXmlResource (string resourcesBasePath, XElement e, Dictionary<string, string> acwMap, string [] additionalDirectories = null, Action<TraceLevel, string> logMessage = null)
 		{
 			foreach (var elem in GetElements (e).Prepend (e)) {
 				TryFixCustomView (elem, acwMap, logMessage);
@@ -100,7 +100,7 @@ namespace Monodroid {
 			}
 		}
 
-		static bool ResourceNeedsToBeLowerCased (string value, string resourceBasePath, IEnumerable<string> additionalDirectories)
+		static bool ResourceNeedsToBeLowerCased (string value, string resourceBasePath, string [] additionalDirectories)
 		{
 			// Might be a bit of an overkill, but the data comes (indirectly) from the user since it's the
 			// path to the msbuild's intermediate output directory and that location can be changed by the
@@ -161,7 +161,7 @@ namespace Monodroid {
 			}
 		}
 
-		private static void TryFixResourceAlias (XElement elem, string resourceBasePath, IEnumerable<string> additionalDirectories)
+		private static void TryFixResourceAlias (XElement elem, string resourceBasePath, string [] additionalDirectories)
 		{
 			// Looks for any resources aliases:
 			//   <item type="layout" name="">@layout/Page1</item>
@@ -255,7 +255,7 @@ namespace Monodroid {
 			return true;
 		}
 
-		private static string TryLowercaseValue (string value, string resourceBasePath, IEnumerable<string> additionalDirectories)
+		private static string TryLowercaseValue (string value, string resourceBasePath, string [] additionalDirectories)
 		{
 			int s = value.LastIndexOf ('/');
 			if (s >= 0) {

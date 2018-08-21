@@ -65,6 +65,9 @@ namespace Xamarin.Android.Tasks
 				lastUpdate = File.GetLastWriteTimeUtc (AndroidConversionFlagFile);
 			}
 			Log.LogDebugMessage ("  AndroidConversionFlagFile modified: {0}", lastUpdate);
+
+			// Do this LINQ up front
+			var resourceDirectories = ResourceDirectories.Where (s => s != item).Select (s => s.ItemSpec).ToArray ();
 			// Fix up each file
 			foreach (string file in xmls) {
 				var srcmodifiedDate = File.GetLastWriteTimeUtc (file);
@@ -78,7 +81,7 @@ namespace Xamarin.Android.Tasks
 				MonoAndroidHelper.SetWriteable (tmpdest);
 				try {
 					bool success = AndroidResource.UpdateXmlResource (resdir, tmpdest, acwMap,
-						ResourceDirectories.Where (s => s != item).Select(s => s.ItemSpec), (t, m) => {
+						resourceDirectories, (t, m) => {
 							string targetfile = file;
 							if (targetfile.StartsWith (resdir, StringComparison.InvariantCultureIgnoreCase)) {
 								targetfile = file.Substring (resdir.Length).TrimStart (Path.DirectorySeparatorChar);

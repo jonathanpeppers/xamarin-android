@@ -8,6 +8,7 @@ using Microsoft.Build.Framework;
 using System.Text;
 using Xamarin.Android.Tasks;
 using Microsoft.Build.Utilities;
+using System.Text.RegularExpressions;
 
 namespace Xamarin.Android.Build.Tests {
 
@@ -82,6 +83,66 @@ namespace Xamarin.Android.Build.Tests {
 			Assert.AreEqual (1, errors.Count, "One Error should have been raised.");
 			Assert.AreEqual ("XA1002", errors [0].Code, "XA1002 should have been raised.");
 			Directory.Delete (path, recursive: true);
+		}
+
+		[Test, Repeat (2)]
+		public void PerformanceTiming ()
+		{
+			var proj = new XamarinAndroidApplicationProject ();
+			proj.MainActivity = proj.DefaultMainActivity.Replace ("public class MainActivity : Activity", "public class MainActivity : Xamarin.Forms.Platform.Android.FormsAppCompatActivity");
+
+			var packages = proj.Packages;
+			packages.Add (KnownPackages.XamarinForms_3_0_0_561731);
+			packages.Add (KnownPackages.Android_Arch_Core_Common_26_1_0);
+			packages.Add (KnownPackages.Android_Arch_Lifecycle_Common_26_1_0);
+			packages.Add (KnownPackages.Android_Arch_Lifecycle_Runtime_26_1_0);
+			packages.Add (KnownPackages.AndroidSupportV4_27_0_2_1);
+			packages.Add (KnownPackages.SupportCompat_27_0_2_1);
+			packages.Add (KnownPackages.SupportCoreUI_27_0_2_1);
+			packages.Add (KnownPackages.SupportCoreUtils_27_0_2_1);
+			packages.Add (KnownPackages.SupportDesign_27_0_2_1);
+			packages.Add (KnownPackages.SupportFragment_27_0_2_1);
+			packages.Add (KnownPackages.SupportMediaCompat_27_0_2_1);
+			packages.Add (KnownPackages.SupportV7AppCompat_27_0_2_1);
+			packages.Add (KnownPackages.SupportV7CardView_27_0_2_1);
+			packages.Add (KnownPackages.SupportV7MediaRouter_27_0_2_1);
+			packages.Add (KnownPackages.SupportV7RecyclerView_27_0_2_1);
+
+			using (var b = CreateApkBuilder (Path.Combine ("temp", TestName))) {
+				Assert.IsTrue(b.Build (proj), "first build should have succeeded.");
+
+				//Build log of the form
+
+				//Task Performance Summary:
+				//     4559 ms  ConvertResourcesCases                      2 calls
+
+				int? totalMilliseconds = null;
+				bool perfSummary = false;
+				var regex = new Regex (@"\s*(\d+)\s?ms", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+				foreach (var line in b.LastBuildOutput) {
+					if (perfSummary) {
+						if (line.Contains (nameof (ConvertResourcesCases))) {
+							var match = regex.Match (line);
+							if (match.Success && int.TryParse (match.Groups[1].Value, out int ms)) {
+								totalMilliseconds = ms;
+								break;
+							}
+						}
+					} else {
+						perfSummary = line.IndexOf ("Task Performance Summary:", StringComparison.InvariantCultureIgnoreCase) >= 0;
+					}
+				}
+
+				if (totalMilliseconds == null) {
+					Assert.Fail ($"Did not find `{nameof (ConvertResourcesCases)}` in performance summary!");
+				}
+
+				const int limit = 10000;
+				if (totalMilliseconds > limit) {
+					Assert.LessOrEqual (totalMilliseconds.Value, limit, $"`{nameof (ConvertResourcesCases)}` should not be slower than {limit}ms!");
+				}
+				TestContext.WriteLine ($"{nameof (ConvertResourcesCases)} took {totalMilliseconds}ms");
+			}
 		}
 	}
 }
