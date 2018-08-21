@@ -85,7 +85,7 @@ namespace Xamarin.Android.Build.Tests {
 			Directory.Delete (path, recursive: true);
 		}
 
-		[Test, Repeat (2)]
+		[Test]
 		public void PerformanceTiming ()
 		{
 			var proj = new XamarinAndroidApplicationProject ();

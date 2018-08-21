@@ -53,12 +53,17 @@ namespace Xamarin.Android.Tasks
 		{
 			var resdir = item.ItemSpec;
 			// Find all the xml and axml files
-			var xmls = new[] { resdir }
-				.Concat (Directory.EnumerateDirectories (resdir, "*", SearchOption.AllDirectories)
-					.Except (Directory.EnumerateDirectories (resdir, "color*", SearchOption.TopDirectoryOnly))
-					.Except (Directory.EnumerateDirectories (resdir, "raw*", SearchOption.TopDirectoryOnly)))
-				.SelectMany (dir => Directory.EnumerateFiles (dir, "*.xml")
-					.Concat (Directory.EnumerateFiles (dir, "*.axml")));
+			var xmls = new List<string> ();
+			var colorDir = Path.Combine (resdir, "color");
+			var rawDir = Path.Combine (resdir, "raw");
+			foreach (var file in Directory.EnumerateFiles (resdir, "*.*xml", SearchOption.AllDirectories)) {
+				if (file.StartsWith (colorDir) || file.StartsWith (rawDir))
+					continue;
+				var ext = Path.GetExtension (file);
+				if (ext != ".axml" && ext != ".xml")
+					continue;
+				xmls.Add (file);
+			}
 
 			var lastUpdate = DateTime.MinValue;
 			if (!string.IsNullOrEmpty (AndroidConversionFlagFile) && File.Exists (AndroidConversionFlagFile)) {
