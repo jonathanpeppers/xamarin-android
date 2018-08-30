@@ -2,12 +2,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Microsoft.Build.Framework;
-using Microsoft.Build.Utilities;
-using MonoDroid.Utils;
 using Mono.Cecil;
 
 
@@ -17,12 +14,13 @@ using Java.Interop.Tools.JavaCallableWrappers;
 using Java.Interop.Tools.TypeNameMappings;
 
 using Xamarin.Android.Tools;
+using ThreadingTasks = System.Threading.Tasks;
 
 namespace Xamarin.Android.Tasks
 {
 	using PackageNamingPolicyEnum   = PackageNamingPolicy;
 
-	public class GenerateJavaStubs : Task
+	public class GenerateJavaStubs : AsyncTask
 	{
 		[Required]
 		public ITaskItem[] ResolvedAssemblies { get; set; }
@@ -68,37 +66,27 @@ namespace Xamarin.Android.Tasks
 
 		public override bool Execute ()
 		{
-			Log.LogDebugMessage ("GenerateJavaStubs Task");
-			Log.LogDebugMessage ("  ManifestTemplate: {0}", ManifestTemplate);
-			Log.LogDebugMessage ("  Debug: {0}", Debug);
-			Log.LogDebugMessage ("  ApplicationName: {0}", ApplicationName);
-			Log.LogDebugMessage ("  PackageName: {0}", PackageName);
-			Log.LogDebugMessage ("  AndroidSdkDir: {0}", AndroidSdkDir);
-			Log.LogDebugMessage ("  AndroidSdkPlatform: {0}", AndroidSdkPlatform);
-			Log.LogDebugMessage ($"  {nameof (ErrorOnCustomJavaObject)}: {ErrorOnCustomJavaObject}");
-			Log.LogDebugMessage ("  OutputDirectory: {0}", OutputDirectory);
-			Log.LogDebugMessage ("  MergedAndroidManifestOutput: {0}", MergedAndroidManifestOutput);
-			Log.LogDebugMessage ("  UseSharedRuntime: {0}", UseSharedRuntime);
-			Log.LogDebugTaskItems ("  ResolvedAssemblies:", ResolvedAssemblies);
-			Log.LogDebugTaskItems ("  ResolvedUserAssemblies:", ResolvedUserAssemblies);
-			Log.LogDebugTaskItems ("  FrameworkDirectories: ", FrameworkDirectories);
-			Log.LogDebugMessage ("  BundledWearApplicationName: {0}", BundledWearApplicationName);
-			Log.LogDebugTaskItems ("  MergedManifestDocuments:", MergedManifestDocuments);
-			Log.LogDebugMessage ("  PackageNamingPolicy: {0}", PackageNamingPolicy);
-			Log.LogDebugMessage ("  ApplicationJavaClass: {0}", ApplicationJavaClass);
-			Log.LogDebugTaskItems ("  ManifestPlaceholders: ", ManifestPlaceholders);
-
 			try {
-				// We're going to do 3 steps here instead of separate tasks so
-				// we can share the list of JLO TypeDefinitions between them
-				using (var res = new DirectoryAssemblyResolver (this.CreateTaskLogger (), loadDebugSymbols: true)) {
-					Run (res);
+				Yield ();
+				try {
+					var task = ThreadingTasks.Task.Run (() => {
+						// We're going to do 3 steps here instead of separate tasks so
+						// we can share the list of JLO TypeDefinitions between them
+						using (var res = new DirectoryAssemblyResolver (this.CreateTaskLogger (), loadDebugSymbols: true)) {
+							Run (res);
+						}
+					}, Token);
+
+					task.ContinueWith (Complete);
+
+					base.Execute ();
+				} finally {
+					Reacquire ();
 				}
-			}
-			catch (XamarinAndroidException e) {
-				Log.LogCodedError (string.Format ("XA{0:0000}", e.Code), e.MessageWithoutCode);
+			} catch (XamarinAndroidException e) {
+				LogCodedError (string.Format ("XA{0:0000}", e.Code), e.MessageWithoutCode);
 				if (MonoAndroidHelper.LogInternalExceptions)
-					Log.LogMessage (e.ToString ());
+					LogMessage (e.ToString ());
 			}
 
 			if (Log.HasLoggedErrors) {
@@ -136,19 +124,22 @@ namespace Xamarin.Android.Tasks
 
 			// However we only want to look for JLO types in user code
 			var assemblies = ResolvedUserAssemblies.Select (p => p.ItemSpec).ToList ();
-			var fxAdditions = MonoAndroidHelper.GetFrameworkAssembliesToTreatAsUserAssemblies (ResolvedAssemblies)
-				.Where (a => assemblies.All (x => Path.GetFileName (x) != Path.GetFileName (a)));
-			assemblies = assemblies.Concat (fxAdditions).ToList ();
+			foreach (var fxAddition in MonoAndroidHelper.GetFrameworkAssembliesToTreatAsUserAssemblies (ResolvedAssemblies)) {
+				var fxFilename = Path.GetFileName (fxAddition);
+				if (!assemblies.Any (a => Path.GetFileName (a) == fxFilename)) {
+					assemblies.Add (fxFilename);
+				}
+			}
 
 			// Step 1 - Find all the JLO types
 			var scanner = new JavaTypeScanner (this.CreateTaskLogger ()) {
 				ErrorOnCustomJavaObject     = ErrorOnCustomJavaObject,
 			};
-			var all_java_types = scanner.GetJavaTypes (assemblies, res);
+			var all_java_types = scanner.GetJavaTypesInParallel (assemblies, res);
 
 			WriteTypeMappings (all_java_types);
 
-			var java_types = all_java_types.Where (t => !JavaTypeScanner.ShouldSkipJavaCallableWrapperGeneration (t));
+			var java_types = all_java_types.Where (t => !JavaTypeScanner.ShouldSkipJavaCallableWrapperGeneration (t)).ToArray ();
 
 			// Step 2 - Generate Java stub code
 			var keep_going = Generator.CreateJavaSources (
@@ -175,18 +166,18 @@ namespace Xamarin.Android.Tasks
 
 				TypeDefinition conflict;
 				if (managed.TryGetValue (managedKey, out conflict)) {
-					Log.LogWarning (
+					LogWarning (
 							"Duplicate managed type found! Mappings between managed types and Java types must be unique. " +
 							"First Type: '{0}'; Second Type: '{1}'.",
 							conflict.GetAssemblyQualifiedName (),
 							type.GetAssemblyQualifiedName ());
-					Log.LogWarning (
+					LogWarning (
 							"References to the type '{0}' will refer to '{1}'.",
 							managedKey, conflict.GetAssemblyQualifiedName ());
 					continue;
 				}
 				if (java.TryGetValue (javaKey, out conflict)) {
-					Log.LogError (
+					LogError (
 							"Duplicate Java type found! Mappings between managed types and Java types must be unique. " +
 							"First Type: '{0}'; Second Type: '{1}'",
 							conflict.GetAssemblyQualifiedName (),
@@ -294,8 +285,8 @@ namespace Xamarin.Android.Tasks
 		void WriteTypeMappings (List<TypeDefinition> types)
 		{
 			using (var gen = UseSharedRuntime
-				? new TypeNameMapGenerator (types, Log.LogDebugMessage)
-			        : new TypeNameMapGenerator (ResolvedAssemblies.Select (p => p.ItemSpec), Log.LogDebugMessage)) {
+				? new TypeNameMapGenerator (types, LogDebugMessage)
+			        : new TypeNameMapGenerator (ResolvedAssemblies.Select (p => p.ItemSpec), LogDebugMessage)) {
 				UpdateWhenChanged (Path.Combine (OutputDirectory, "typemap.jm"), gen.WriteJavaToManaged);
 				UpdateWhenChanged (Path.Combine (OutputDirectory, "typemap.mj"), gen.WriteManagedToJava);
 			}
