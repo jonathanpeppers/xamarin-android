@@ -1,17 +1,17 @@
 ﻿using Microsoft.Build.Framework;
-using Microsoft.Build.Utilities;
 using System;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 using Xamarin.Android.Tools;
+using ThreadingTasks = System.Threading.Tasks;
 
 namespace Xamarin.Android.Tasks
 {
 	/// <summary>
 	/// ValidateJavaVersion's job is to shell out to java and javac to detect their version
 	/// </summary>
-	public class ValidateJavaVersion : Task
+	public class ValidateJavaVersion : AsyncTask
 	{
 		public string TargetFrameworkVersion { get; set; }
 
@@ -33,16 +33,29 @@ namespace Xamarin.Android.Tasks
 		[Output]
 		public string JdkVersion { get; set; }
 
+		bool isJavaValid;
+
 		public override bool Execute ()
 		{
-			if (!ValidateJava (TargetFrameworkVersion, AndroidSdkBuildToolsVersion))
-				return false;
+			Yield ();
+			try {
+				RunTask ().ContinueWith (Complete);
 
-			Log.LogDebugMessage ($"{nameof (ValidateJavaVersion)} Outputs:");
-			Log.LogDebugMessage ($"  {nameof (JdkVersion)}: {JdkVersion}");
-			Log.LogDebugMessage ($"  {nameof (MinimumRequiredJdkVersion)}: {MinimumRequiredJdkVersion}");
+				base.Execute ();
+			} finally {
+				Reacquire ();
+			}
 
-			return !Log.HasLoggedErrors;
+			LogDebugMessage ($"{nameof (ValidateJavaVersion)} Outputs:");
+			LogDebugMessage ($"  {nameof (JdkVersion)}: {JdkVersion}");
+			LogDebugMessage ($"  {nameof (MinimumRequiredJdkVersion)}: {MinimumRequiredJdkVersion}");
+
+			return isJavaValid && !Log.HasLoggedErrors;
+		}
+
+		async ThreadingTasks.Task RunTask ()
+		{
+			isJavaValid = await ValidateJava (TargetFrameworkVersion, AndroidSdkBuildToolsVersion);
 		}
 
 		// `java -version` will produce values such as:
@@ -55,13 +68,17 @@ namespace Xamarin.Android.Tasks
 		//  javac 1.8.0_77
 		static readonly Regex JavacVersionRegex = new Regex (@"(?<version>[\d\.]+)(_d+)?");
 
-		bool ValidateJava (string targetFrameworkVersion, string buildToolsVersion)
+		async ThreadingTasks.Task<bool> ValidateJava (string targetFrameworkVersion, string buildToolsVersion)
 		{
 			var java = JavaToolExe ?? (OS.IsWindows ? "java.exe" : "java");
 			var javac = JavacToolExe ?? (OS.IsWindows ? "javac.exe" : "javac");
 
-			return ValidateJava (java, JavaVersionRegex, targetFrameworkVersion, buildToolsVersion) &&
-				ValidateJava (javac, JavacVersionRegex, targetFrameworkVersion, buildToolsVersion);
+			var javaTask = ThreadingTasks.Task.Run (() => ValidateJava (java, JavaVersionRegex, targetFrameworkVersion, buildToolsVersion), Token);
+			var javacTask = ThreadingTasks.Task.Run (() => ValidateJava (javac, JavacVersionRegex, targetFrameworkVersion, buildToolsVersion), Token);
+
+			await ThreadingTasks.Task.WhenAll (javaTask, javacTask);
+
+			return javaTask.Result && javacTask.Result;
 		}
 
 		bool ValidateJava (string javaExe, Regex versionRegex, string targetFrameworkVersion, string buildToolsVersion)
@@ -76,20 +93,20 @@ namespace Xamarin.Android.Tasks
 			try {
 				var versionNumber = GetVersionFromTool (javaExe, versionRegex);
 				if (versionNumber != null) {
-					Log.LogMessage (MessageImportance.Normal, $"Found Java SDK version {versionNumber}.");
+					LogDebugMessage ($"Found Java SDK version {versionNumber}.");
 					if (versionNumber < requiredJavaForFrameworkVersion) {
-						Log.LogCodedError ("XA0031", $"Java SDK {requiredJavaForFrameworkVersion} or above is required when targeting FrameworkVersion {targetFrameworkVersion}.");
+						LogCodedError ("XA0031", $"Java SDK {requiredJavaForFrameworkVersion} or above is required when targeting FrameworkVersion {targetFrameworkVersion}.");
 					}
 					if (versionNumber < requiredJavaForBuildTools) {
-						Log.LogCodedError ("XA0032", $"Java SDK {requiredJavaForBuildTools} or above is required when using build-tools {buildToolsVersion}.");
+						LogCodedError ("XA0032", $"Java SDK {requiredJavaForBuildTools} or above is required when using build-tools {buildToolsVersion}.");
 					}
 					if (versionNumber > Version.Parse (LatestSupportedJavaVersion)) {
-						Log.LogCodedError ("XA0030", $"Building with JDK Version `{versionNumber}` is not supported. Please install JDK version `{LatestSupportedJavaVersion}`. See https://aka.ms/xamarin/jdk9-errors");
+						LogCodedError ("XA0030", $"Building with JDK Version `{versionNumber}` is not supported. Please install JDK version `{LatestSupportedJavaVersion}`. See https://aka.ms/xamarin/jdk9-errors");
 					}
 				}
 			} catch (Exception ex) {
-				Log.LogWarningFromException (ex);
-				Log.LogCodedWarning ("XA0034", $"Failed to get the Java SDK version. Please ensure you have Java {required} or above installed.");
+				//LogWarningFromException (ex);
+				LogCodedWarning ("XA0034", $"Failed to get the Java SDK version. Please ensure you have Java {required} or above installed.");
 				return false;
 			}
 
@@ -102,7 +119,7 @@ namespace Xamarin.Android.Tasks
 			var key = new Tuple<string, string> (nameof (ValidateJavaVersion), javaTool);
 			var cached = BuildEngine4.GetRegisteredTaskObject (key, RegisteredTaskObjectLifetime.AppDomain) as Version;
 			if (cached != null) {
-				Log.LogDebugMessage ($"Using cached value for `{javaTool} -version`: {cached}");
+				LogDebugMessage ($"Using cached value for `{javaTool} -version`: {cached}");
 				JdkVersion = cached.ToString ();
 				return cached;
 			}
