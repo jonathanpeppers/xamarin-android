@@ -1,0 +1,72 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+# https://docs.microsoft.com/en-us/azure/devops/pipelines/yaml-schema?view=vsts
+
+jobs:
+- job: Build
+  timeoutInMinutes: 240
+  pool:
+    vmImage: 'macOS 10.13'
+
+  steps:
+  - script: 'make prepare-deps V=1 MSBUILD_ARGS="/p:AutoProvision=True /p:AutoProvisionUsesSudo=True /p:IgnoreMaxMonoVersion=False"' 
+    displayName: 'make prepare-deps'
+    continueOnError: true
+
+  - script: 'make prepare all V=1 MSBUILD_ARGS="/p:AutoProvision=True /p:AutoProvisionUsesSudo=True /p:IgnoreMaxMonoVersion=False"' 
+    displayName: 'make prepare all'
+    continueOnError: true
+
+  - script: 'make all-tests V=1' 
+    displayName: 'make all-tests'
+    continueOnError: true
+
+  - script: 'make package-oss' 
+    displayName: 'make package-oss'
+    continueOnError: true
+
+  - script: 'make create-vsix CONFIGURATIONS=Debug' 
+    displayName: 'make create-vsix'
+    continueOnError: true
+    
+  - script: 'make run-all-tests' 
+    displayName: 'make run-all-tests'
+    continueOnError: true
+    
+  - script: 'make package-build-status' 
+    displayName: 'make package-build-status'
+    continueOnError: true
+    
+  - task: PublishTestResults@2
+    displayName: 'Publish Test Results'
+    inputs:
+      testRunner: NUnit
+      testResultsFiles: 'TestResult-*.xml'
+    continueOnError: true
+    condition: succeededOrFailed()
+
+  - task: CopyFiles@2
+    displayName: 'Copy Files to: $(Build.ArtifactStagingDirectory)'
+    inputs:
+      SourceFolder: '$(Build.SourcesDirectory)'
+      Contents: '*.zip'
+      TargetFolder: '$(Build.ArtifactStagingDirectory)'
+    continueOnError: true
+    condition: succeededOrFailed()
+
+  - task: CopyFiles@2
+    displayName: 'Copy Files to: $(Build.ArtifactStagingDirectory)'
+    inputs:
+      SourceFolder: bin/BuildRelease
+      Contents: '*.vsix'
+      TargetFolder: '$(Build.ArtifactStagingDirectory)'
+    continueOnError: true
+    condition: succeededOrFailed()
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Artifact: artifacts'
+    inputs:
+      ArtifactName: artifacts
+    condition: succeededOrFailed()
