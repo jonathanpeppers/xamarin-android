@@ -28,6 +28,9 @@ namespace Xamarin.Android.Tasks
 		[Required]
 		public string OutputImportDirectory { get; set; }
 
+		/// <summary>
+		/// NOTE: should only be assemblies where item metadata HasLibraryProjects=True
+		/// </summary>
 		[Required]
 		public ITaskItem[] Assemblies { get; set; }
 

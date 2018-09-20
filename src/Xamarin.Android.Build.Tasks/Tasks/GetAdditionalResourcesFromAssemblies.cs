@@ -44,6 +44,9 @@ namespace Xamarin.Android.Tasks {
 		[Required]
 		public string AndroidNdkDirectory { get; set; }
 
+		/// <summary>
+		/// NOTE: should only be assemblies where item metadata HasAdditionalResources=True
+		/// </summary>
 		[Required]
 		public ITaskItem[] Assemblies { get; set; }
 

@@ -98,6 +98,7 @@ namespace Xamarin.Android.Tasks
 
 					// Add each user assembly and all referenced assemblies (recursive)
 					var assemblyDef = resolver.Load (assembly.ItemSpec);
+					//FIXME: error code?
 					if (assemblyDef == null)
 						throw new InvalidOperationException ("Failed to load assembly " + assembly.ItemSpec);
 					if (MonoAndroidHelper.IsReferenceAssembly (assemblyDef)) {

@@ -114,6 +114,7 @@
     <Compile Include="Tasks\AndroidZipAlign.cs" />
     <Compile Include="Tasks\BuildApk.cs" />
     <Compile Include="Tasks\CilStrip.cs" />
+    <Compile Include="Tasks\ClassifyAssemblies.cs" />
     <Compile Include="Tasks\ConvertDebuggingFiles.cs" />
     <Compile Include="Tasks\CheckForInvalidResourceFileNames.cs" />
     <Compile Include="Tasks\CollectNonEmptyDirectories.cs" />

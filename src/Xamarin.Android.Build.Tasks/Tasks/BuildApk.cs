@@ -38,12 +38,15 @@ namespace Xamarin.Android.Tasks
 
 		public ITaskItem[] AdditionalNativeLibraryReferences { get; set; }
 
+		/// <summary>
+		/// NOTE: should only be assemblies where item metadata HasNativeLibraries=True
+		/// </summary>
 		public ITaskItem[] EmbeddedNativeLibraryAssemblies { get; set; }
 
 		[Required]
-		public ITaskItem[] NativeLibraries { get; set; }
+		public string[] NativeLibraries { get; set; }
 
-		public ITaskItem[] BundleNativeLibraries { get; set; }
+		public string[] BundleNativeLibraries { get; set; }
 
 		public ITaskItem[] Environments { get; set; }
 
@@ -563,19 +566,19 @@ namespace Xamarin.Android.Tasks
 
 		private void AddNativeLibraries (ArchiveFileList files, string supportedAbis)
 		{
-			var libs = NativeLibraries.Concat (BundleNativeLibraries ?? Enumerable.Empty<ITaskItem> ())
-				.Select (v => new LibInfo { Path = v.ItemSpec, Abi = GetNativeLibraryAbi (v) });
+			var libs = NativeLibraries.Concat (BundleNativeLibraries ?? Enumerable.Empty<string> ())
+				.Select (v => new LibInfo { Path = v, Abi = GetNativeLibraryAbi (v) });
 
 			AddNativeLibraries (files, supportedAbis, libs);
 		}
 
-		string GetNativeLibraryAbi (ITaskItem lib)
+		string GetNativeLibraryAbi (string lib)
 		{
 			// If Abi is explicitly specified, simply return it.
 			var lib_abi = MonoAndroidHelper.GetNativeLibraryAbi (lib);
 			
 			if (string.IsNullOrWhiteSpace (lib_abi)) {
-				Log.LogCodedError ("XA4301", lib.ItemSpec, 0, "Cannot determine abi of native library {0}.", lib.ItemSpec);
+				Log.LogCodedError ("XA4301", lib, 0, "Cannot determine abi of native library {0}.", lib);
 				return null;
 			}
 
