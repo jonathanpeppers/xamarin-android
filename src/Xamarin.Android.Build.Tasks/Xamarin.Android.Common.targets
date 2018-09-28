@@ -285,6 +285,7 @@ Copyright (C) 2011-2012 Xamarin. All rights reserved.
 	<AndroidDexGenerator   Condition=" '$(AndroidDexGenerator)' == '' ">dx</AndroidDexGenerator>
 	<!-- NOTE: $(AndroidLinkTool) would be blank if code shrinking is not used at all -->
 	<AndroidLinkTool       Condition=" '$(AndroidLinkTool)' == '' And '$(AndroidEnableProguard)' == 'True' ">proguard</AndroidLinkTool>
+	<AndroidEnableProguard Condition=" '$(AndroidLinkTool)' != '' ">True</AndroidEnableProguard>
 	<AndroidEnableDesugar  Condition=" '$(AndroidEnableDesugar)' == '' And ('$(AndroidDexGenerator)' == 'd8' Or '$(AndroidLinkTool)' == 'r8') ">True</AndroidEnableDesugar>
 	<AndroidEnableDesugar  Condition=" '$(AndroidEnableDesugar)' == '' ">False</AndroidEnableDesugar>
 
