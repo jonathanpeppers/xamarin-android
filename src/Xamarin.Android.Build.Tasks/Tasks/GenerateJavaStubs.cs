@@ -69,27 +69,6 @@ namespace Xamarin.Android.Tasks
 
 		public override bool Execute ()
 		{
-			Log.LogDebugMessage ("GenerateJavaStubs Task");
-			Log.LogDebugMessage ("  ManifestTemplate: {0}", ManifestTemplate);
-			Log.LogDebugMessage ("  Debug: {0}", Debug);
-			Log.LogDebugMessage ("  MultiDex: {0}", MultiDex);
-			Log.LogDebugMessage ("  ApplicationName: {0}", ApplicationName);
-			Log.LogDebugMessage ("  PackageName: {0}", PackageName);
-			Log.LogDebugMessage ("  AndroidSdkDir: {0}", AndroidSdkDir);
-			Log.LogDebugMessage ("  AndroidSdkPlatform: {0}", AndroidSdkPlatform);
-			Log.LogDebugMessage ($"  {nameof (ErrorOnCustomJavaObject)}: {ErrorOnCustomJavaObject}");
-			Log.LogDebugMessage ("  OutputDirectory: {0}", OutputDirectory);
-			Log.LogDebugMessage ("  MergedAndroidManifestOutput: {0}", MergedAndroidManifestOutput);
-			Log.LogDebugMessage ("  UseSharedRuntime: {0}", UseSharedRuntime);
-			Log.LogDebugTaskItems ("  ResolvedAssemblies:", ResolvedAssemblies);
-			Log.LogDebugTaskItems ("  ResolvedUserAssemblies:", ResolvedUserAssemblies);
-			Log.LogDebugTaskItems ("  FrameworkDirectories: ", FrameworkDirectories);
-			Log.LogDebugMessage ("  BundledWearApplicationName: {0}", BundledWearApplicationName);
-			Log.LogDebugTaskItems ("  MergedManifestDocuments:", MergedManifestDocuments);
-			Log.LogDebugMessage ("  PackageNamingPolicy: {0}", PackageNamingPolicy);
-			Log.LogDebugMessage ("  ApplicationJavaClass: {0}", ApplicationJavaClass);
-			Log.LogDebugTaskItems ("  ManifestPlaceholders: ", ManifestPlaceholders);
-
 			try {
 				// We're going to do 3 steps here instead of separate tasks so
 				// we can share the list of JLO TypeDefinitions between them
@@ -176,6 +155,7 @@ namespace Xamarin.Android.Tasks
 				acw_map.WriteLine ("{0};{1}", type.GetPartialAssemblyQualifiedName (), javaKey);
 
 				TypeDefinition conflict;
+				bool hasConflict = false;
 				if (managed.TryGetValue (managedKey, out conflict)) {
 					Log.LogWarning (
 							"Duplicate managed type found! Mappings between managed types and Java types must be unique. " +
@@ -185,7 +165,7 @@ namespace Xamarin.Android.Tasks
 					Log.LogWarning (
 							"References to the type '{0}' will refer to '{1}'.",
 							managedKey, conflict.GetAssemblyQualifiedName ());
-					continue;
+					hasConflict = true;
 				}
 				if (java.TryGetValue (javaKey, out conflict)) {
 					Log.LogError (
@@ -194,12 +174,14 @@ namespace Xamarin.Android.Tasks
 							conflict.GetAssemblyQualifiedName (),
 							type.GetAssemblyQualifiedName ());
 					keep_going = false;
-					continue;
+					hasConflict = true;
 				}
-				managed.Add (managedKey, type);
-				java.Add (javaKey, type);
-				acw_map.WriteLine ("{0};{1}", managedKey, javaKey);
-				acw_map.WriteLine ("{0};{1}", JavaNativeTypeManager.ToCompatJniName (type).Replace ('/', '.'), javaKey);
+				if (!hasConflict) {
+					managed.Add (managedKey, type);
+					java.Add (javaKey, type);
+					acw_map.WriteLine ("{0};{1}", managedKey, javaKey);
+					acw_map.WriteLine ("{0};{1}", JavaNativeTypeManager.ToCompatJniName (type).Replace ('/', '.'), javaKey);
+				}
 			}
 
 			acw_map.Close ();
