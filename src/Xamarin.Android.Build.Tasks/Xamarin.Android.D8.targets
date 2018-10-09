@@ -24,11 +24,11 @@ Copyright (C) 2018 Xamarin. All rights reserved.
 
     <Error
         Condition=" !Exists('$(D8JarPath)') "
-        Text="r8.jar does not exist (D8JarPath property has to point to a valid file (current value: '$(D8JarPath)')."
+        Text="d8.jar does not exist (D8JarPath property has to point to a valid file (current value: '$(D8JarPath)')."
     />
     <Error
         Condition=" !Exists('$(R8JarPath)') "
-        Text="d8.jar does not exist (R8JarPath property has to point to a valid file (current value: '$(R8JarPath)')."
+        Text="r8.jar does not exist (R8JarPath property has to point to a valid file (current value: '$(R8JarPath)')."
     />
 
     <!-- remove existing dex files that may be previous multidex outputs. -->
@@ -38,20 +38,20 @@ Copyright (C) 2018 Xamarin. All rights reserved.
     <Delete Files="@(_DexesToDelete)" />
 
     <!-- using R8 as the equivalent for CreateMultiDexMainDexClassList / proguard -->
-    <R8
+    <R8MultiDexMainDexClassList
         Condition=" '$(AndroidEnableMultiDex)' == 'True' And '$(AndroidCustomMainDexListFile)' == '' "
         ToolPath="$(JavaToolPath)"
         ToolExe="$(JavaToolExe)"
         JarPath="$(R8JarPath)"
+        Debug="$(AndroidIncludeDebugSymbols)"
         ClassesZip="$(IntermediateOutputPath)android\bin\classes.zip"
         JavaLibrariesToEmbed="@(_JavaLibrariesToCompile);@(_InstantRunJavaReference)"
         JavaLibrariesToReference="@(AndroidExternalJavaLibrary)"
         OutputMainDexListFile="$(_AndroidMainDexListFile)"
         CustomMainDexListFiles="@(MultiDexMainDexList)"
         JavaPlatformJarPath="$(JavaPlatformJarPath)"
-        AndroidSdkDirectory="$(_AndroidSdkDirectory)"
-        EnableMultiDex="True"
         MultiDexMainDexListFile="$(IntermediateOutputPath)multidex.keep.in"
+        AndroidSdkBuildToolsPath="$(AndroidSdkBuildToolsPath)"
     />
 
     <MakeDir
@@ -116,7 +116,7 @@ Copyright (C) 2018 Xamarin. All rights reserved.
         ExtraArguments="$(R8ExtraArguments)"
     />
     <D8
-        Condition=" '$(AndroidLinkTool)' != 'r8' "
+        Condition=" '$(AndroidLinkTool)' != 'r8' or '$(_ProguardProjectConfiguration)' == '' "
         ToolPath="$(JavaToolPath)"
         JavaMaximumHeapSize="$(JavaMaximumHeapSize)"
         JavaOptions="$(JavaOptions)"

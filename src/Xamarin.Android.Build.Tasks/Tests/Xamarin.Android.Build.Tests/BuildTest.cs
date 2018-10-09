@@ -693,21 +693,17 @@ namespace UnamedProject
 		}
 
 		[Test]
-		public void BuildProguardEnabledProject ([Values (true, false)] bool isRelease, [Values (true, false)] bool enableProguard, [Values (true, false)] bool useLatestSdk, [Values (true, false)] bool useD8)
+		public void BuildProguardEnabledProject ([Values (true, false)] bool isRelease, [Values ("dx", "d8")] string dexGenerator, [Values ("", "proguard", "r8")] string linkTool)
 		{
 			var proj = new XamarinAndroidApplicationProject {
 				IsRelease = isRelease,
-				EnableProguard = enableProguard,
-				UseLatestPlatformSdk = useLatestSdk,
-				TargetFrameworkVersion = useLatestSdk ? "v7.1" : "v5.0",
+				DexGenerator = dexGenerator,
+				LinkTool = linkTool,
 			};
-			if (useD8) {
-				proj.DexGenerator = "d8";
-			}
-			using (var b = CreateApkBuilder (Path.Combine ("temp", $"BuildProguard Enabled Project(1){isRelease}{enableProguard}{useLatestSdk}{useD8}"))) {
+			using (var b = CreateApkBuilder (Path.Combine ("temp", $"BuildProguard Enabled Project(1){isRelease}{dexGenerator}{linkTool}"))) {
 				Assert.IsTrue (b.Build (proj), "Build should have succeeded.");
 
-				if (isRelease && enableProguard) {
+				if (isRelease && !string.IsNullOrEmpty (linkTool)) {
 					var proguardProjectPrimary = Path.Combine (Root, b.ProjectDirectory, proj.IntermediateOutputPath, "proguard", "proguard_project_primary.cfg");
 					FileAssert.Exists (proguardProjectPrimary);
 					Assert.IsTrue (StringAssertEx.ContainsText (File.ReadAllLines (proguardProjectPrimary), "-keep class md52d9cf6333b8e95e8683a477bc589eda5.MainActivity"), "`md52d9cf6333b8e95e8683a477bc589eda5.MainActivity` should exist in `proguard_project_primary.cfg`!");
@@ -827,65 +823,60 @@ namespace UnamedProject
 
 				Assert.IsTrue (b.Build (proj), "Build should have succeeded.");
 				FileAssert.Exists (Path.Combine (androidBinDir, "classes.dex"));
-				FileAssert.DoesNotExist (Path.Combine (androidBinDir, "classes2.dex"));
+				//NOTE: d8 always creates classes2.dex, even if not needed
+				if (useD8) {
+					FileAssert.Exists (Path.Combine (androidBinDir, "classes2.dex"));
+				} else {
+					FileAssert.DoesNotExist (Path.Combine (androidBinDir, "classes2.dex"));
+				}
 				FileAssert.DoesNotExist (Path.Combine (androidBinDir, "classes3.dex"));
 
 				using (var zip = ZipHelper.OpenZip (apkPath)) {
 					var entries = zip.Select (e => e.FullName).ToList ();
 					Assert.IsTrue (entries.Contains ("classes.dex"), "APK must contain `classes.dex`.");
-					Assert.IsFalse (entries.Contains ("classes2.dex"), "APK must *not* contain `classes2.dex`.");
+					//NOTE: d8 always creates classes2.dex, even if not needed
+					if (useD8) {
+						Assert.IsTrue (entries.Contains ("classes2.dex"), "APK must contain `classes2.dex`.");
+					} else {
+						Assert.IsFalse (entries.Contains ("classes2.dex"), "APK must *not* contain `classes2.dex`.");
+					}
 					Assert.IsFalse (entries.Contains ("classes3.dex"), "APK must *not* contain `classes3.dex`.");
 				}
 			}
 		}
 
-#pragma warning disable 414
-		static object [] ExpectedMultiDex = new object [] {
-			new object [] {
-				// useD8
-				false,
-				// expected
-				@"android/support/multidex/ZipUtil$CentralDirectory.class
-android/support/multidex/MultiDexApplication.class
-android/support/multidex/MultiDex$V19.class
-android/support/multidex/MultiDex$V4.class
-android/support/multidex/ZipUtil.class
-android/support/multidex/MultiDexExtractor$1.class
-android/support/multidex/MultiDexExtractor.class
-android/support/multidex/MultiDex$V14.class
-android/support/multidex/MultiDex.class
-MyTest.class
-",
-			},
-			new object [] {
-				// useD8
-				true,
-				// expected
-				@"MyTest.class
-r8/GeneratedOutlineSupport.class
-",
-			},
-		};
-#pragma warning restore 414
-
 		[Test]
-		[TestCaseSource ("ExpectedMultiDex")]
-		public void MultiDexCustomMainDexFileList (bool useD8, string expected)
+		public void MultiDexCustomMainDexFileList ([Values (true, false)] bool useD8)
 		{
 			var proj = CreateMultiDexRequiredApplication ();
-			proj.DexGenerator = useD8 ? "d8" : "dx";
+			if (useD8) {
+				proj.DexGenerator = "d8";
+			}
 			proj.SetProperty ("AndroidEnableMultiDex", "True");
 			proj.OtherBuildItems.Add (new BuildItem ("MultiDexMainDexList", "mymultidex.keep") { TextContent = () => "MyTest.class", Encoding = Encoding.ASCII });
 			proj.OtherBuildItems.Add (new BuildItem ("AndroidJavaSource", "MyTest.java") { TextContent = () => "public class MyTest {}", Encoding = Encoding.ASCII });
-			var b = CreateApkBuilder (Path.Combine ("temp", $"{nameof(MultiDexCustomMainDexFileList)}{useD8}"));
-			b.ThrowOnBuildFailure = false;
-			Assert.IsTrue (b.Build (proj), "build should succeed. Run will fail.");
-			var data = File.ReadAllText (Path.Combine (Root, b.ProjectDirectory, proj.IntermediateOutputPath, "multidex.keep"));
-			data = Regex.Replace (data, @"\r\n|\n\r|\n|\r", "\r\n");
-			expected = Regex.Replace (expected, @"\r\n|\n\r|\n|\r", "\r\n");
-			Assert.AreEqual (expected, data, "unexpected multidex.keep content");
-			b.Clean (proj);
-			b.Dispose ();
+			using (var b = CreateApkBuilder (Path.Combine ("temp", $"{nameof (MultiDexCustomMainDexFileList)}{useD8}"))) {
+				Assert.IsTrue (b.Build (proj), "build should succeed. Run will fail.");
+
+				//NOTE: d8 has the list in a different order, so we should do an unordered comparison
+				var expected = new [] {
+					"android/support/multidex/ZipUtil$CentralDirectory.class",
+					"android/support/multidex/MultiDexApplication.class",
+					"android/support/multidex/MultiDex$V19.class",
+					"android/support/multidex/MultiDex$V4.class",
+					"android/support/multidex/ZipUtil.class",
+					"android/support/multidex/MultiDexExtractor$1.class",
+					"android/support/multidex/MultiDexExtractor.class",
+					"android/support/multidex/MultiDex$V14.class",
+					"android/support/multidex/MultiDex.class",
+					"MyTest.class",
+				};
+				var actual = File.ReadAllLines (Path.Combine (Root, b.ProjectDirectory, proj.IntermediateOutputPath, "multidex.keep"));
+				Assert.AreEqual (expected.Length, actual.Length);
+				foreach (var item in expected) {
+					Assert.IsTrue (actual.Contains (item), $"multidex.keep did not contain `{item}`");
+				}
+			}
 		}
 
 		[Test]
@@ -2228,13 +2219,13 @@ public class Test
 		}
 
 		[Test]
-		public void BuildApplicationWithSpacesInPath ([Values (true, false)] bool isRelease, [Values (true, false)] bool enableProguard, [Values (true, false)] bool enableMultiDex, [Values (true, false)] bool useD8)
+		public void BuildApplicationWithSpacesInPath ([Values (true, false)] bool isRelease, [Values (true, false)] bool enableMultiDex, [Values ("dx", "d8")] string dexGenerator, [Values ("", "proguard", "r8")] string linkTool)
 		{
 			var proj = new XamarinAndroidApplicationProject () {
 				IsRelease = isRelease,
 				AotAssemblies = isRelease,
-				EnableProguard = enableProguard,
-				DexGenerator = useD8 ? "d8" : "dx",
+				DexGenerator = dexGenerator,
+				LinkTool = linkTool,
 			};
 			proj.OtherBuildItems.Add (new BuildItem ("AndroidJavaLibrary", "Hello (World).jar") { BinaryContent = () => Convert.FromBase64String (@"
 UEsDBBQACAgIAMl8lUsAAAAAAAAAAAAAAAAJAAQATUVUQS1JTkYv/soAAAMAUEsHCAAAAAACAAAAA
@@ -2266,7 +2257,7 @@ AAMMAAABzYW1wbGUvSGVsbG8uY2xhc3NQSwUGAAAAAAMAAwC9AAAA1gEAAAAA") });
 ",
 				});
 			}
-			using (var b = CreateApkBuilder (Path.Combine ("temp", $"BuildReleaseAppWithA InIt({isRelease}{enableProguard}{enableMultiDex}{useD8})"))) {
+			using (var b = CreateApkBuilder (Path.Combine ("temp", $"BuildReleaseAppWithA InIt({isRelease}{enableMultiDex}{dexGenerator}{linkTool})"))) {
 				Assert.IsTrue (b.Build (proj), "Build should have succeeded.");
 				Assert.IsFalse (b.LastBuildOutput.ContainsText ("Duplicate zip entry"), "Should not get warning about [META-INF/MANIFEST.MF]");
 
@@ -3131,26 +3122,28 @@ namespace UnnamedProject {
 		}
 
 		[Test]
-		public void Desugar ([Values (true, false)] bool isRelease, [Values (true, false)] bool enableDesugar, [Values (true, false)] bool enableProguard, [Values (true, false)] bool useD8)
+		public void Desugar ([Values (true, false)] bool isRelease, [Values ("dx", "d8")] string dexGenerator, [Values ("", "proguard", "r8")] string linkTool)
 		{
 			var proj = new XamarinAndroidApplicationProject () {
 				IsRelease = isRelease,
-				EnableDesugar = enableDesugar,
-				EnableProguard = enableProguard,
+				EnableDesugar = true, //This build is always going to fail without desugar
+				DexGenerator = dexGenerator,
+				LinkTool = linkTool,
 			};
-			if (useD8) {
-				proj.DexGenerator = "d8";
-			}
 			//Okhttp and Okio
 			//https://github.com/square/okhttp
 			//https://github.com/square/okio
-			if (enableProguard) {
+			if (!string.IsNullOrEmpty (linkTool)) {
 				//NOTE: these are just enough rules to get it to build, not optimal
-				var rules = new [] {
+				var rules = new List<string> {
 					"-dontwarn com.google.devtools.build.android.desugar.**",
 					"-dontwarn javax.annotation.**",
 					"-dontwarn org.codehaus.mojo.animal_sniffer.*",
 				};
+				//NOTE: If using d8 + proguard, then proguard needs an additional rule because d8 is desugaring, which occurs *after* proguard
+				if (dexGenerator == "d8" && linkTool == "proguard") {
+					rules.Add ("-dontwarn java.lang.invoke.LambdaMetafactory");
+				}
 				//FIXME: We aren't de-BOM'ing proguard files?
 				var encoding = new UTF8Encoding (encoderShouldEmitUTF8Identifier: false);
 				var bytes = encoding.GetBytes (string.Join (Environment.NewLine, rules));
@@ -3213,17 +3206,14 @@ AAAAAAAAAAAAAABNRVRBLUlORi/+ygAAUEsBAhQAFAAICAgAQZFnS1EKKkxEAAAARQAAABQAAAAA
 AAAAAAAAAAAAPQAAAE1FVEEtSU5GL01BTklGRVNULk1GUEsBAhQAFAAICAgAJZFnS7uHtAn+AQAA
 0QMAAAwAAAAAAAAAAAAAAAAAwwAAAExhbWJkYS5jbGFzc1BLBQYAAAAAAwADALcAAAD7AgAAAAA=
 				") });
-			using (var builder = CreateApkBuilder (Path.Combine ("temp", TestContext.CurrentContext.Test.Name))) {
-				builder.ThrowOnBuildFailure = enableDesugar;
-				Assert.AreEqual (enableDesugar, builder.Build (proj), "Unexpected build result");
+			using (var builder = CreateApkBuilder (Path.Combine ("temp", TestName))) {
+				Assert.IsTrue (builder.Build (proj), "Build should have succeeded");
 				Assert.IsFalse (builder.LastBuildOutput.ContainsText ("Duplicate zip entry"), "Should not get warning about [META-INF/MANIFEST.MF]");
-				
-				if (enableDesugar) {
-					var className = "Lmono/MonoRuntimeProvider;";
-					var dexFile = builder.Output.GetIntermediaryPath (Path.Combine ("android", "bin", "classes.dex"));
-					FileAssert.Exists (dexFile);
-					Assert.IsTrue (DexUtils.ContainsClass (className, dexFile, builder.AndroidSdkDirectory), $"`{dexFile}` should include `{className}`!");
-				}
+
+				var className = "Lmono/MonoRuntimeProvider;";
+				var dexFile = builder.Output.GetIntermediaryPath (Path.Combine ("android", "bin", "classes.dex"));
+				FileAssert.Exists (dexFile);
+				Assert.IsTrue (DexUtils.ContainsClass (className, dexFile, builder.AndroidSdkDirectory), $"`{dexFile}` should include `{className}`!");
 			}
 		}
 
