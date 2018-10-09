@@ -14,9 +14,6 @@ namespace Xamarin.Android.Tasks
 	/// </summary>
 	public class R8 : D8
 	{
-		// general r8 feature options.
-		public bool EnableTreeShaking { get; set; }
-
 		// used for proguard configuration settings
 		[Required]
 		public string AndroidSdkDirectory { get; set; }
@@ -73,7 +70,7 @@ namespace Xamarin.Android.Tasks
 			cmd.AppendSwitchIfNotNull ("--main-dex-list-output ", OutputMainDexListFile);
 
 			// generating proguard application configuration
-			if (EnableTreeShaking) {
+			if (string.IsNullOrEmpty (OutputMainDexListFile)) {
 				if (!string.IsNullOrEmpty (AcwMapFile)) {
 					var acwLines = File.ReadAllLines (AcwMapFile);
 					using (var appcfg = File.CreateText (ProguardGeneratedApplicationConfiguration)) {
@@ -109,8 +106,6 @@ namespace Xamarin.Android.Tasks
 					}
 				}
 				cmd.AppendSwitchIfNotNull ("--pg-map-output ", ProguardMappingOutput);
-			} else {
-				cmd.AppendSwitch ("--no-tree-shaking");
 			}
 
 			return cmd;

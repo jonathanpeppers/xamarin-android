@@ -106,7 +106,6 @@ Copyright (C) 2018 Xamarin. All rights reserved.
         JavaLibrariesToEmbed="@(_JavaLibrariesToCompile);@(_InstantRunJavaReference)"
         JavaLibrariesToReference="@(AndroidExternalJavaLibrary)"
         EnableDesugar="$(AndroidEnableDesugar)"
-        EnableTreeShaking="True"
         AndroidSdkDirectory="$(_AndroidSdkDirectory)"
         AcwMapFile="$(_AcwMapFile)"
         ProguardCommonXamarinConfiguration="$(IntermediateOutputPath)proguard\proguard_xamarin.cfg"
