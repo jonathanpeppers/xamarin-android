@@ -22,12 +22,11 @@ namespace Xamarin.Android.Tasks
 		/// <summary>
 		/// It is loaded to calculate --min-api, which is used by desugaring part to determine which levels of desugaring it performs.
 		/// </summary>
-		[Required]
 		public string AndroidManifestFile { get; set; }
 
 		// general d8 feature options.
 		public bool Debug { get; set; }
-		public bool EnableDesugar { get; set; }
+		public bool EnableDesugar { get; set; } = true;
 
 		// Java libraries to embed or reference
 		[Required]
@@ -66,7 +65,6 @@ namespace Xamarin.Android.Tasks
 			else
 				cmd.AppendSwitch ("--release");
 
-			// multidexing
 			if (EnableMultiDex) {
 				if (string.IsNullOrEmpty (MultiDexMainDexListFile)) {
 					Log.LogCodedWarning ("XA4305", $"MultiDex is enabled, but '{nameof (MultiDexMainDexListFile)}' was not specified.");
@@ -77,10 +75,12 @@ namespace Xamarin.Android.Tasks
 				}
 			}
 
-			// desugaring
-			var doc = AndroidAppManifest.Load (AndroidManifestFile, MonoAndroidHelper.SupportedVersions);
-			int minApiVersion = doc.MinSdkVersion == null ? 4 : (int)doc.MinSdkVersion;
-			cmd.AppendSwitchIfNotNull ("--min-api ", minApiVersion.ToString ());
+			//NOTE: if this is blank, we can omit --min-api in this call
+			if (!string.IsNullOrEmpty (AndroidManifestFile)) {
+				var doc = AndroidAppManifest.Load (AndroidManifestFile, MonoAndroidHelper.SupportedVersions);
+				int minApiVersion = doc.MinSdkVersion == null ? 4 : (int)doc.MinSdkVersion;
+				cmd.AppendSwitchIfNotNull ("--min-api ", minApiVersion.ToString ());
+			}
 
 			if (!EnableDesugar)
 				cmd.AppendSwitch ("--no-desugaring");

@@ -67,10 +67,8 @@ namespace Xamarin.Android.Tasks
 		{
 			var cmd = base.GetCommandLineBuilder ();
 
-			cmd.AppendSwitchIfNotNull ("--main-dex-list-output ", OutputMainDexListFile);
-
-			// generating proguard application configuration
 			if (string.IsNullOrEmpty (OutputMainDexListFile)) {
+				// generating proguard application configuration
 				if (!string.IsNullOrEmpty (AcwMapFile)) {
 					var acwLines = File.ReadAllLines (AcwMapFile);
 					using (var appcfg = File.CreateText (ProguardGeneratedApplicationConfiguration)) {
@@ -106,6 +104,10 @@ namespace Xamarin.Android.Tasks
 					}
 				}
 				cmd.AppendSwitchIfNotNull ("--pg-map-output ", ProguardMappingOutput);
+			} else {
+				//If generating OutputMainDexListFile, we need --min-api=21
+				cmd.AppendSwitchIfNotNull ("--min-api ", "21");
+				cmd.AppendSwitchIfNotNull ("--main-dex-list-output ", OutputMainDexListFile);
 			}
 
 			return cmd;

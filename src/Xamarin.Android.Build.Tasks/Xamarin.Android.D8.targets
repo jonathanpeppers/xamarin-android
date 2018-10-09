@@ -50,7 +50,6 @@ Copyright (C) 2018 Xamarin. All rights reserved.
         CustomMainDexListFiles="@(MultiDexMainDexList)"
         JavaPlatformJarPath="$(JavaPlatformJarPath)"
         AndroidSdkDirectory="$(_AndroidSdkDirectory)"
-        AndroidManifestFile="$(IntermediateOutputPath)android\AndroidManifest.xml"
         EnableMultiDex="True"
         MultiDexMainDexListFile="$(IntermediateOutputPath)multidex.keep.in"
     />
