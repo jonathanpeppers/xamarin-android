@@ -693,16 +693,17 @@ namespace UnamedProject
 		}
 
 		[Test]
-		[TestCaseSource ("ProguardChecks")]
-		public void BuildProguardEnabledProject (bool isRelease, bool enableProguard, bool useLatestSdk, bool useD8)
+		public void BuildProguardEnabledProject ([Values (true, false)] bool isRelease, [Values (true, false)] bool enableProguard, [Values (true, false)] bool useLatestSdk, [Values (true, false)] bool useD8)
 		{
 			var proj = new XamarinAndroidApplicationProject {
 				IsRelease = isRelease,
 				EnableProguard = enableProguard,
 				UseLatestPlatformSdk = useLatestSdk,
 				TargetFrameworkVersion = useLatestSdk ? "v7.1" : "v5.0",
-				DexGenerator = useD8 ? "d8" : "dx",
 			};
+			if (useD8) {
+				proj.DexGenerator = "d8";
+			}
 			using (var b = CreateApkBuilder (Path.Combine ("temp", $"BuildProguard Enabled Project(1){isRelease}{enableProguard}{useLatestSdk}{useD8}"))) {
 				Assert.IsTrue (b.Build (proj), "Build should have succeeded.");
 
@@ -739,10 +740,13 @@ namespace UnamedProject
 
 		[Test]
 		[Category ("Minor")]
-		public void BuildApplicationOver65536Methods ()
+		public void BuildApplicationOver65536Methods ([Values (true, false)] bool useD8)
 		{
 			var proj = CreateMultiDexRequiredApplication ();
-			using (var b = CreateApkBuilder ("temp/BuildApplicationOver65536Methods")) {
+			if (useD8) {
+				proj.DexGenerator = "d8";
+			}
+			using (var b = CreateApkBuilder (Path.Combine ("temp", TestName))) {
 				b.ThrowOnBuildFailure = false;
 				Assert.IsFalse (b.Build (proj), "Without MultiDex option, build should fail");
 				b.Clean (proj);
@@ -750,12 +754,15 @@ namespace UnamedProject
 		}
 
 		[Test]
-		public void CreateMultiDexWithSpacesInConfig ()
+		public void CreateMultiDexWithSpacesInConfig ([Values (true, false)] bool useD8)
 		{
 			var proj = CreateMultiDexRequiredApplication (releaseConfigurationName: "Test Config");
+			if (useD8) {
+				proj.DexGenerator = "d8";
+			}
 			proj.IsRelease = true;
 			proj.SetProperty ("AndroidEnableMultiDex", "True");
-			using (var b = CreateApkBuilder ("temp/CreateMultiDexWithSpacesInConfig")) {
+			using (var b = CreateApkBuilder (Path.Combine ("temp", TestName))) {
 				Assert.IsTrue (b.Build (proj), "Build should have succeeded.");
 			}
 		}
@@ -789,10 +796,13 @@ namespace UnamedProject
 		}
 
 		[Test]
-		public void BuildAfterMultiDexIsNotRequired ()
+		public void BuildAfterMultiDexIsNotRequired ([Values (true, false)] bool useD8)
 		{
 			var proj = CreateMultiDexRequiredApplication ();
 			proj.SetProperty ("AndroidEnableMultiDex", "True");
+			if (useD8) {
+				proj.DexGenerator = "d8";
+			}
 
 			using (var b = CreateApkBuilder (Path.Combine ("temp", TestName))) {
 				string intermediateDir = Path.Combine (Root, b.ProjectDirectory, proj.IntermediateOutputPath);
@@ -3121,14 +3131,16 @@ namespace UnnamedProject {
 		}
 
 		[Test]
-		[TestCaseSource ("DesugarChecks")]
-		public void Desugar (bool isRelease, bool enableDesugar, bool enableProguard)
+		public void Desugar ([Values (true, false)] bool isRelease, [Values (true, false)] bool enableDesugar, [Values (true, false)] bool enableProguard, [Values (true, false)] bool useD8)
 		{
 			var proj = new XamarinAndroidApplicationProject () {
 				IsRelease = isRelease,
 				EnableDesugar = enableDesugar,
 				EnableProguard = enableProguard,
 			};
+			if (useD8) {
+				proj.DexGenerator = "d8";
+			}
 			//Okhttp and Okio
 			//https://github.com/square/okhttp
 			//https://github.com/square/okio
