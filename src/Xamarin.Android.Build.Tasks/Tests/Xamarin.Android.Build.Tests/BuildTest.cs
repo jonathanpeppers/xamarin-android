@@ -2219,11 +2219,11 @@ public class Test
 		}
 
 		[Test]
-		public void BuildApplicationWithSpacesInPath ([Values (true, false)] bool isRelease, [Values (true, false)] bool enableMultiDex, [Values ("dx", "d8")] string dexGenerator, [Values ("", "proguard", "r8")] string linkTool)
+		public void BuildApplicationWithSpacesInPath ([Values (true, false)] bool enableMultiDex, [Values ("dx", "d8")] string dexGenerator, [Values ("", "proguard", "r8")] string linkTool)
 		{
 			var proj = new XamarinAndroidApplicationProject () {
-				IsRelease = isRelease,
-				AotAssemblies = isRelease,
+				IsRelease = true,
+				AotAssemblies = true,
 				DexGenerator = dexGenerator,
 				LinkTool = linkTool,
 			};
@@ -2243,9 +2243,8 @@ AAMMAAABzYW1wbGUvSGVsbG8uY2xhc3NQSwUGAAAAAAMAAwC9AAAA1gEAAAAA") });
 			if (enableMultiDex)
 				proj.SetProperty ("AndroidEnableMultiDex", "True");
 
-			if (isRelease) {
-				proj.Imports.Add (new Import ("foo.targets") {
-					TextContent = () => @"<?xml version=""1.0"" encoding=""utf-16""?>
+			proj.Imports.Add (new Import ("foo.targets") {
+				TextContent = () => @"<?xml version=""1.0"" encoding=""utf-16""?>
 <Project ToolsVersion=""4.0"" xmlns=""http://schemas.microsoft.com/developer/msbuild/2003"">
 <Target Name=""_Foo"" AfterTargets=""_SetLatestTargetFrameworkVersion"">
 	<PropertyGroup>
@@ -2255,9 +2254,8 @@ AAMMAAABzYW1wbGUvSGVsbG8uY2xhc3NQSwUGAAAAAAMAAwC9AAAA1gEAAAAA") });
 </Target>
 </Project>
 ",
-				});
-			}
-			using (var b = CreateApkBuilder (Path.Combine ("temp", $"BuildReleaseAppWithA InIt({isRelease}{enableMultiDex}{dexGenerator}{linkTool})"))) {
+			});
+			using (var b = CreateApkBuilder (Path.Combine ("temp", $"BuildReleaseAppWithA InIt({enableMultiDex}{dexGenerator}{linkTool})"))) {
 				Assert.IsTrue (b.Build (proj), "Build should have succeeded.");
 				Assert.IsFalse (b.LastBuildOutput.ContainsText ("Duplicate zip entry"), "Should not get warning about [META-INF/MANIFEST.MF]");
 

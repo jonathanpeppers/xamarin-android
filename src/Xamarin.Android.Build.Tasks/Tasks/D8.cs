@@ -37,10 +37,6 @@ namespace Xamarin.Android.Tasks
 		public ITaskItem [] AlternativeJarLibrariesToEmbed { get; set; }
 		public ITaskItem [] JavaLibrariesToReference { get; set; }
 
-		// multidex
-		public bool EnableMultiDex { get; set; }
-		public string MultiDexMainDexListFile { get; set; }
-
 		public string ExtraArguments { get; set; }
 
 		protected override string GenerateCommandLineCommands ()
@@ -64,16 +60,6 @@ namespace Xamarin.Android.Tasks
 				cmd.AppendSwitch ("--debug");
 			else
 				cmd.AppendSwitch ("--release");
-
-			if (EnableMultiDex) {
-				if (string.IsNullOrEmpty (MultiDexMainDexListFile)) {
-					Log.LogCodedWarning ("XA4305", $"MultiDex is enabled, but '{nameof (MultiDexMainDexListFile)}' was not specified.");
-				} else if (!File.Exists (MultiDexMainDexListFile)) {
-					Log.LogCodedWarning ("XA4305", MultiDexMainDexListFile, 0, $"MultiDex is enabled, but main dex list file '{MultiDexMainDexListFile}' does not exist.");
-				} else {
-					cmd.AppendSwitchIfNotNull ("--main-dex-list ", MultiDexMainDexListFile);
-				}
-			}
 
 			//NOTE: if this is blank, we can omit --min-api in this call
 			if (!string.IsNullOrEmpty (AndroidManifestFile)) {

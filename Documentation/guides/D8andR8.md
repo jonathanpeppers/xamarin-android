@@ -114,21 +114,20 @@ In other words, what is currently happening *before* we introduce D8/R8 support?
    enabled, a `classes2.dex` (and potentially more) are also generated
    in this location.
 
-# What would this process look like with D8 / R8?
+# What will this process look like with D8 / R8?
 
 Two new MSBuild tasks named `R8` and `D8` will be created.
 
 1. The [Javac](https://github.com/xamarin/xamarin-android/blob/221a2190ebb3aaec9ecd9b1cf8f7f6174c43153a/src/Xamarin.Android.Build.Tasks/Tasks/Javac.cs)
    MSBuild task will remain unchanged.
-2. `R8` will be invoked to create a `multidex.keep` file if
-   `$(AndroidEnableMultiDex)` is `True`.
-3. `D8` will run if `$(AndroidEnableProguard)` is `False` and
-   "desugar" by default.
-4. Otherwise, `R8` will run if `$(AndroidEnableProguard)` is `True`
-   and will also "desugar" by default.
+2. `D8` will run if `$(AndroidEnableMultiDex)` is `False`,
+   `$(AndroidLinkTool)` is not `r8`, and "desugar" by default.
+3. Otherwise, `R8` will run if `$(AndroidEnableMultiDex)` is `True` or
+   `$(AndroidLinkTool)` is `r8` and will also "desugar" by default.
 
-So in addition to be being faster (if Google's claims are true), we
-will be calling less tooling to accomplish the same results.
+So in addition to be being faster in general (if Google's claims are
+true), we will be calling a *single* command line tool to produce dex
+files!
 
 # So how do developers use it? What are sensible MSBuild property defaults?
 
