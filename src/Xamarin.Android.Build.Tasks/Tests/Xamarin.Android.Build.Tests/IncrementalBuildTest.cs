@@ -325,6 +325,7 @@ namespace Lib2
 			var targets = new [] {
 				"_CopyIntermediateAssemblies",
 				"_GeneratePackageManagerJava",
+				"_ResolveLibraryProjectImports",
 			};
 			var proj = new XamarinFormsAndroidApplicationProject ();
 			using (var b = CreateApkBuilder (Path.Combine ("temp", TestName))) {
@@ -335,6 +336,7 @@ namespace Lib2
 
 				var intermediate = Path.Combine (Root, b.ProjectDirectory, proj.IntermediateOutputPath);
 				var filesToTouch = new [] {
+					Path.Combine (intermediate, "build.props"),
 					Path.Combine (intermediate, proj.ProjectName + ".dll"),
 					Path.Combine (intermediate, "android", "assets", proj.ProjectName + ".dll"),
 				};

@@ -1304,7 +1304,7 @@ because xbuild doesn't support framework reference assemblies.
 
 <Target Name="_ResolveLibraryProjectImports"
 		Inputs="$(ProjectAssetsFile);$(MSBuildProjectFullPath);@(ReferencePath);@(ReferenceDependencyPaths);$(_AndroidBuildPropertiesCache)"
-		Outputs="$(_AndroidLibraryProjectImportsCache)">
+		Outputs="$(IntermediateOutputPath)_resolvelibraryprojectimports.stamp">
 	<ResolveLibraryProjectImports
 		ContinueOnError="$(DesignTimeBuild)"
 		CacheFile="$(_AndroidLibraryProjectImportsCache)"
@@ -1317,6 +1317,10 @@ because xbuild doesn't support framework reference assemblies.
 		AssemblyIdentityMapFile="$(_AndroidLibrayProjectAssemblyMapFile)"
 		OutputImportDirectory="$(_AndroidLibrayProjectIntermediatePath)">
 	</ResolveLibraryProjectImports>
+	<Touch Files="$(IntermediateOutputPath)_resolvelibraryprojectimports.stamp" AlwaysCreate="True" />
+	<ItemGroup>
+		<FileWrites Include="$(IntermediateOutputPath)_resolvelibraryprojectimports.stamp" />
+	</ItemGroup>
 </Target>
 
 <Target Name="_CollectLibraryResourceDirectories"
@@ -3113,6 +3117,7 @@ because xbuild doesn't support framework reference assemblies.
 	<Delete Files="$(IntermediateOutputPath)_javastubs.stamp" />
 	<Delete Files="$(IntermediateOutputPath)_copyintermediate.stamp" />
 	<Delete Files="$(IntermediateOutputPath)_generatepackagemanager.stamp" />
+	<Delete Files="$(IntermediateOutputPath)_resolvelibraryprojectimports.stamp" />
 	<Delete Files="$(_AndroidResFlagFile)" />
 	<Delete Files="$(_AndroidLinkFlag)" />
 	<Delete Files="$(_AndroidComponentResgenFlagFile)" />
