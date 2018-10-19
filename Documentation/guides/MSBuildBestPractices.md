@@ -159,6 +159,46 @@ properly be written as:
 </Target>
 ```
 
+Also note that the `<ItemGroup>` will still be evaluated here, even
+though the `_GenerateJavaSources` target might be skipped due to
+`Inputs` and `Outputs`.
+
+However, for example, the following would be *wrong*!
+
+```xml
+<Target Name="_GenerateJavaSources"
+    Inputs="@(_AssemblyFiles)"
+    Outputs="$(_GenerateJavaStamp)">
+  <GenerateJava 
+      InputFiles="@(_AssemblyFiles)"
+      OutputDirectory="$(_JavaIntermediateDirectory)"
+  />
+  <Touch Files="$(_GenerateJavaStamp)" AlwaysCreate="True">
+    <!-- WRONG, nope! don't do this! -->
+    <Output TaskParameter="TouchedFiles" ItemName="FileWrites" />
+  </Touch>
+</Target>
+```
+
+Using `<Output/>` allows the `TouchedFiles` output parameter to get
+directly added to `FileWrites`.
+
+This seems like it would be simpler and *better*, but
+`$(_GenerateJavaStamp)` won't get added to `FileWrites` if this target
+is skipped! `IncrementalClean` could delete the file and cause this
+target to re-run on the next build!
+
+## When to *not* use Inputs and Outputs?
+
+In other words, when should a target *not* build incrementally?
+
+- If the target merely reads from files, or locates files.
+- If the target merely sets properties or adds to item groups.
+
+In general, if a target *writes* files, it should be incremental. If
+it needs to run every time in order to support other targets, do not
+use `Inputs` or `Outputs`.
+
 # Best Practices for Xamarin.Android MSBuild targets
 
 ## Stamp Files
@@ -185,6 +225,29 @@ We should also name the stamp file the same as the target, such as:
   </ItemGroup>
 </Target>
 ```
+
+## Design-Time Build Stamp Files
+
+During a "design-time" build, we put all intermediate files into
+`$(IntermediateOutputPath)designtime\`. We also do not delete this
+directory during a `Clean`, since it would otherwise break
+intellisense in Visual Studio after a clean!
+
+So instead, a stamp file would be used such as:
+
+```xml
+<Target Name="_ManagedUpdateAndroidResgen"
+    Inputs="..."
+    Outputs="$(_AndroidIntermediateDesignTimeBuildDirectory)_ManagedUpdateAndroidResgen.stamp">
+  <!-- ... -->
+  <Touch Files="$(_AndroidIntermediateDesignTimeBuildDirectory)_ManagedUpdateAndroidResgen.stamp" AlwaysCreate="True" />
+  <ItemGroup>
+    <FileWrites Include="$(_AndroidIntermediateDesignTimeBuildDirectory)_ManagedUpdateAndroidResgen.stamp" />
+  </ItemGroup>
+</Target>
+```
+
+Also, verify this target *only* runs during design-time builds!
 
 [msbuild]: https://github.com/Microsoft/msbuild/blob/master/documentation/wiki/Rebuilding-when-nothing-changed.md
 [github_issue]: https://github.com/xamarin/xamarin-android/issues/2247
