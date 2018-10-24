@@ -44,7 +44,7 @@ namespace Xamarin.Android.Tasks {
 						var document = XDocument.Load (file, options : LoadOptions.SetLineInfo);
 						var e = document.Root;
 						bool update = false;
-						foreach (var elem in AndroidResource.GetElements (e).Prepend (e)) {
+						foreach (var elem in e.DescendantsAndSelf ()) {
 							update |= TryFixCustomView (elem, acw_map, (level, message) => {
 								ITaskItem resdir = ResourceDirectories?.FirstOrDefault (x => file.StartsWith (x.ItemSpec)) ?? null;
 								switch (level) {
@@ -59,10 +59,11 @@ namespace Xamarin.Android.Tasks {
 									break;
 								}
 							});
-						}
-						foreach (XAttribute a in AndroidResource.GetAttributes (e)) {
-							update |= TryFixCustomClassAttribute (a, acw_map);
-							update |= TryFixFragment (a, acw_map);
+
+							foreach (var a in e.Attributes ()) {
+								update |= TryFixCustomClassAttribute (a, acw_map);
+								update |= TryFixFragment (a, acw_map);
+							}
 						}
 						if (update) {
 							var lastModified = File.GetLastWriteTimeUtc (file);

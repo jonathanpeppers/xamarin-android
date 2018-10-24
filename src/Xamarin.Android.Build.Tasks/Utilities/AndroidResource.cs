@@ -55,47 +55,41 @@ namespace Monodroid {
 			UpdateXmlResource (null, e, acwMap);
 		}
 
-		internal static IEnumerable<T> Prepend<T> (this IEnumerable<T> l, T another) where T : XNode
-		{
-			yield return another;
-			foreach (var e in l)
-				yield return e;
-		}
-		
 		static void UpdateXmlResource (string resourcesBasePath, XElement e, Dictionary<string, string> acwMap, IEnumerable<string> additionalDirectories = null, Action<TraceLevel, string> logMessage = null, Action<string> registerCustomView = null)
 		{
-			foreach (var elem in GetElements (e).Prepend (e)) {
+			foreach (var elem in e.DescendantsAndSelf ()) {
 				registerCustomView?.Invoke (elem.Name.ToString ());
-			}
 
-			foreach (var path in fixResourcesAliasPaths) {
-				foreach(XElement item in e.XPathSelectElements (path).Prepend (e)) {
-					TryFixResourceAlias (item, resourcesBasePath, additionalDirectories);
+				foreach (var a in elem.Attributes ()) {
+					if (a.IsNamespaceDeclaration)
+						continue;
+
+					TryFixFragment (a, acwMap, registerCustomView);
+
+					if (TryFixResAuto (a, acwMap))
+						continue;
+
+					TryFixCustomClassAttribute (a, acwMap, registerCustomView);
+
+					if (a.Name.Namespace != android &&
+							!(a.Name.LocalName == "layout" && a.Name.Namespace == XNamespace.None &&
+							  a.Parent.Name.LocalName == "include" && a.Parent.Name.Namespace == XNamespace.None))
+						continue;
+
+					Match m = r.Match (a.Value);
+					if (!m.Success)
+						continue;
+					if (m.Groups ["package"].Success)
+						continue;
+					a.Value = TryLowercaseValue (a.Value, resourcesBasePath, additionalDirectories);
 				}
 			}
 
-			foreach (XAttribute a in GetAttributes (e)) {
-				if (a.IsNamespaceDeclaration)
-					continue;
-
-				TryFixFragment (a, acwMap, registerCustomView);
-				
-				if (TryFixResAuto (a, acwMap))
-					continue;
-
-				TryFixCustomClassAttribute (a, acwMap, registerCustomView);
-
-				if (a.Name.Namespace != android &&
-						!(a.Name.LocalName == "layout" && a.Name.Namespace == XNamespace.None &&
-						  a.Parent.Name.LocalName == "include" && a.Parent.Name.Namespace == XNamespace.None))
-					continue;
-
-				Match m = r.Match (a.Value);
-				if (!m.Success)
-					continue;
-				if (m.Groups ["package"].Success)
-					continue;
-				a.Value = TryLowercaseValue (a.Value, resourcesBasePath, additionalDirectories);
+			foreach (var path in fixResourcesAliasPaths) {
+				TryFixResourceAlias (e, resourcesBasePath, additionalDirectories);
+				foreach (XElement item in e.XPathSelectElements (path)) {
+					TryFixResourceAlias (item, resourcesBasePath, additionalDirectories);
+				}
 			}
 		}
 
@@ -146,25 +140,6 @@ namespace Monodroid {
 
 			// No need to change the reference case.
 			return false;
-		}
-		
-		internal static IEnumerable<XAttribute> GetAttributes (XElement e)
-		{
-			foreach (XAttribute a in e.Attributes ())
-				yield return a;
-			foreach (XElement c in e.Elements ())
-				foreach (XAttribute a in GetAttributes (c))
-					yield return a;
-		}
-
-		internal static IEnumerable<XElement> GetElements (XElement e)
-		{
-			foreach (var a in e.Elements ()) {
-				yield return a;
-
-				foreach (var b in GetElements (a))
-					yield return b;
-			}
 		}
 
 		private static void TryFixResourceAlias (XElement elem, string resourceBasePath, IEnumerable<string> additionalDirectories)
