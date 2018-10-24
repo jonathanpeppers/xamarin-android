@@ -234,6 +234,51 @@ target takes care of it, so we can't as easily mess it up:
 </Target>
 ```
 
+## Legacy Code and XBuild
+
+From time to time, we might find oddities in our MSBuild targets, that
+might be around for one reason or another:
+
+- When the code was written, the author did not yet fully understand
+  all the nuances of MSBuild. (I'm not sure I do yet, either!)
+- We might be doing something weird in order to support xbuild. We
+  support xbuild no longer, yay!
+- The code just might have been around a while, and there wasn't a
+  reason to change it.
+
+Take, for instance, the following example:
+
+```xml
+<WriteLinesToFile
+    File="$(IntermediateOutputPath)$(CleanFile)"
+    Lines="@(_ConvertedDebuggingFiles)"
+    Overwrite="false"
+/>
+```
+
+The intent here is to replicate what happens with the `@(FileWrites)`
+item group, by directly writing to the known file used by MSBuild
+common targets. I believe the author is trying to prevent
+`IncrementalClean` from deleting the files.
+
+A couple problems with this approach:
+
+- This task won't run if the target is skipped!
+- How do we know MSBuild isn't going to overwrite this file anyway?
+- On a subsequent build, this could append to the file *again*
+
+Really, who knows what weirdness could be caused by this?
+
+A better approach would be:
+
+```xml
+<ItemGroup>
+  <FileWrites Include="@(_ConvertedDebuggingFiles)" />
+</ItemGroup>
+```
+
+Then we just let MSBuild and `IncrementalClean` do their thing.
+
 [msbuild]: https://github.com/Microsoft/msbuild/blob/master/documentation/wiki/Rebuilding-when-nothing-changed.md
 [github_issue]: https://github.com/xamarin/xamarin-android/issues/2247
 [clean]: https://github.com/Microsoft/msbuild/issues/2408#issuecomment-321082997

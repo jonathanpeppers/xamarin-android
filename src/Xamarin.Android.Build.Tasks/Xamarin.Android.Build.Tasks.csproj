@@ -118,7 +118,6 @@
     <Compile Include="Tasks\CheckForInvalidResourceFileNames.cs" />
     <Compile Include="Tasks\CollectNonEmptyDirectories.cs" />
     <Compile Include="Tasks\CollectPdbFiles.cs" />
-    <Compile Include="Tasks\CopyMdbFiles.cs" />
     <Compile Include="Tasks\Generator.cs" />
     <Compile Include="Tasks\JarToXml.cs" />
     <Compile Include="Tasks\GetJavaPlatformJar.cs" />
@@ -214,7 +213,6 @@
     <Compile Include="Mono.Android\SupportsGLTextureAttribute.Partial.cs" />
     <Compile Include="Tasks\CreateNativeLibraryArchive.cs" />
     <Compile Include="Tasks\GetImportedLibraries.cs" />
-    <Compile Include="Tasks\CopyConfigFiles.cs" />
     <Compile Include="Tasks\GetAdditionalResourcesFromAssemblies.cs" />
     <Compile Include="Tasks\CreateAndroidResourceStamp.cs" />
     <Compile Include="Tasks\CollectLibraryAssets.cs" />

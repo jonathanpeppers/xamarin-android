@@ -92,8 +92,6 @@ Copyright (C) 2011-2012 Xamarin. All rights reserved.
 <UsingTask TaskName="Xamarin.Android.Tasks.ScanAssemblies" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.CheckProjectItems" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.CheckDuplicateJavaLibraries" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
-<UsingTask TaskName="Xamarin.Android.Tasks.CopyConfigFiles" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
-<UsingTask TaskName="Xamarin.Android.Tasks.CopyMdbFiles" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.CreateAndroidResourceStamp" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.CollectLibraryAssets" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.ParseAndroidWearProjectAndManifest" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
@@ -1894,10 +1892,13 @@ because xbuild doesn't support framework reference assemblies.
 
 <Target Name="_CreatePackageWorkspace">
   <!-- Create our intermediate directory -->
-  <MakeDir Directories="$(MonoAndroidResDirIntermediate)" />
+  <MakeDir Directories="$(MonoAndroidResDirIntermediate)"      Condition=" !Exists ('$(MonoAndroidResDirIntermediate)') " />
 
   <!-- Create directory to package from -->
-  <MakeDir Directories="$(MonoAndroidIntermediateAssetsDir)" />
+  <MakeDir Directories="$(MonoAndroidIntermediateAssetsDir)"   Condition=" !Exists ('$(MonoAndroidIntermediateAssetsDir)') " />
+
+  <!-- Create our intermediate directory for assemblies -->
+  <MakeDir Directories="$(MonoAndroidIntermediateAssemblyDir)" Condition=" !Exists ('$(MonoAndroidIntermediateAssemblyDir)') " />
 </Target>
   
 <Target Name="_GetMonoPlatformJarPath">
@@ -1960,18 +1961,10 @@ because xbuild doesn't support framework reference assemblies.
   </ItemGroup>
 </Target>
 
-<Target Name="_CreateIntermediateAssembliesDir"
-    Inputs="@(ResolvedUserAssemblies->'%(Identity)')"
-    Outputs="@(ResolvedUserAssemblies->'$(MonoAndroidIntermediateAssemblyDir)%(Filename)%(Extension)')" >
-
-  <!-- Create our intermediate directory -->
-  <MakeDir Directories="$(MonoAndroidIntermediateAssemblyDir)" Condition="!Exists ('$(MonoAndroidIntermediateAssemblyDir)')" />
-</Target>
-
 <Target Name="_CopyIntermediateAssemblies"
 	Inputs="@(ResolvedUserAssemblies);@(_AndroidResolvedSatellitePaths)"
 	Outputs="$(_AndroidStampDirectory)_CopyIntermediateAssemblies.stamp"
-	DependsOnTargets="_ResolveAssemblies;_ResolveSatellitePaths;_CreatePackageWorkspace;_CreateIntermediateAssembliesDir;_CopyConfigFiles">
+	DependsOnTargets="_ResolveAssemblies;_ResolveSatellitePaths;_CreatePackageWorkspace;_CopyConfigFiles">
 	<!-- Make a copy of every assembly we need in assemblies -->
 	<CopyIfChanged
 		SourceFiles="@(ResolvedAssemblies)"
@@ -1994,12 +1987,13 @@ because xbuild doesn't support framework reference assemblies.
 
 <Target Name="_CopyConfigFiles"
 		Inputs="@(_ResolvedConfigFiles)"
-		Outputs="@(_ResolvedConfigFiles->'$(MonoAndroidIntermediateAssemblyDir)%(Filename)%(Extension)')"
-		DependsOnTargets="_CollectConfigFiles" >
-	<CopyConfigFiles
+		Outputs="$(_AndroidStampDirectory)_CopyConfigFiles.stamp"
+		DependsOnTargets="_CollectConfigFiles">
+	<CopyIfChanged
 			SourceFiles="@(_ResolvedConfigFiles)"
 			DestinationFiles="@(_ResolvedConfigFiles->'$(MonoAndroidIntermediateAssemblyDir)%(Filename)%(Extension)')"
 	/>
+	<Touch Files="$(_AndroidStampDirectory)_CopyConfigFiles.stamp" AlwaysCreate="True" />
 </Target>
 
 <Target Name="_CollectMdbFiles"
@@ -2024,59 +2018,48 @@ because xbuild doesn't support framework reference assemblies.
 		Inputs="@(_ResolvedPdbFiles)"
 		Outputs="@(_ResolvedPdbFiles->'%(RootDir)%(Directory)%(Filename).dll.mdb')"
 		DependsOnTargets="_CollectPdbFiles">
-	<ConvertDebuggingFiles Files="@(_ResolvedPdbFiles)">
-		<Output TaskParameter="ConvertedFiles" ItemName="_ConvertedDebuggingFiles" />
-	</ConvertDebuggingFiles>
-	<WriteLinesToFile
-		File="$(IntermediateOutputPath)$(CleanFile)"
-		Lines="@(_ConvertedDebuggingFiles)"
-		Overwrite="false" />
+	<ConvertDebuggingFiles Files="@(_ResolvedPdbFiles)" />
+	<ItemGroup>
+		<FileWrites Include="@(_ResolvedPdbFiles->'%(RootDir)%(Directory)%(Filename).dll.mdb')" />
+	</ItemGroup>
 </Target>
 
 <Target Name="_CopyPdbFiles"
 		Inputs="@(_ResolvedPortablePdbFiles)"
-		Outputs="@(_ResolvedPortablePdbFiles->'$(MonoAndroidLinkerInputDir)%(Filename)%(Extension)')"
+		Outputs="$(_AndroidStampDirectory)_CopyPdbFiles.stamp"
 		DependsOnTargets="_ConvertPdbFiles">
-	<CopyMdbFiles
+	<CopyIfChanged
 			SourceFiles="@(_ResolvedPortablePdbFiles)"
-			DestinationFiles="@(_ResolvedPortablePdbFiles->'$(OutputPath)%(Filename)%(Extension)')">
-		<Output TaskParameter="CopiedFiles" ItemName="_PdbFilesCopied" />
-		<Output TaskParameter="CopiedFiles" ItemName="FileWrites" />
-	</CopyMdbFiles>
-	<Copy
-			SourceFiles="@(_ResolvedPortablePdbFiles->'$(OutputPath)%(Filename)%(Extension)')"
+			DestinationFiles="@(_ResolvedPortablePdbFiles->'$(OutputPath)%(Filename)%(Extension)')"
+	/>
+	<CopyIfChanged
+			SourceFiles="@(_ResolvedPortablePdbFiles)"
 			DestinationFiles="@(_ResolvedPortablePdbFiles->'$(MonoAndroidLinkerInputDir)%(Filename)%(Extension)')"
-			SkipUnchangedFiles="true">
-		<Output TaskParameter="CopiedFiles" ItemName="_PdbDebugFilesCopiedToLinkerSrc" />
-		<Output TaskParameter="CopiedFiles" ItemName="FileWrites" />
-	</Copy>
-	<Touch Files="@(_PdbFilesCopied);@(_PdbDebugFilesCopiedToLinkerSrc)" />
-	<WriteLinesToFile
-		File="$(IntermediateOutputPath)$(CleanFile)"
-		Lines="@(_PdbFilesCopied->'%(FullPath)');@(_PdbDebugFilesCopiedToLinkerSrc->'%(FullPath)')"
-		Overwrite="false" />
+	/>
+	<Touch Files="$(_AndroidStampDirectory)_CopyPdbFiles.stamp" AlwaysCreate="True" />
+	<ItemGroup>
+		<FileWrites Include="@(_ResolvedPortablePdbFiles->'$(OutputPath)%(Filename)%(Extension)')" />
+		<FileWrites Include="@(_ResolvedPortablePdbFiles->'$(MonoAndroidLinkerInputDir)%(Filename)%(Extension)')" />
+	</ItemGroup>
 </Target>
 
 <Target Name="_CopyMdbFiles"
 		Inputs="@(_ResolvedMdbFiles)"
-		Outputs="@(_ResolvedMdbFiles->'$(MonoAndroidLinkerInputDir)%(Filename)%(Extension)')"
+		Outputs="$(_AndroidStampDirectory)_CopyMdbFiles.stamp"
 		DependsOnTargets="_CollectMdbFiles" >
-	<CopyMdbFiles
+	<CopyIfChanged
 			SourceFiles="@(_ResolvedMdbFiles)"
-			DestinationFiles="@(_ResolvedMdbFiles->'$(OutputPath)%(Filename)%(Extension)')">
-		<Output TaskParameter="CopiedFiles" ItemName="_MdbFilesCopied" />
-	</CopyMdbFiles>
-	<Copy
+			DestinationFiles="@(_ResolvedMdbFiles->'$(OutputPath)%(Filename)%(Extension)')"
+	/>
+	<CopyIfChanged
 			SourceFiles="@(_ResolvedMdbFiles->'$(OutputPath)%(Filename)%(Extension)')"
 			DestinationFiles="@(_ResolvedMdbFiles->'$(MonoAndroidLinkerInputDir)%(Filename)%(Extension)')"
-			SkipUnchangedFiles="true">
-		<Output TaskParameter="CopiedFiles" ItemName="_MdbDebugFilesCopiedToLinkerSrc" />
-	</Copy>
-	<Touch Files="@(_MdbFilesCopied);@(_MdbDebugFilesCopiedToLinkerSrc)" />
-	<WriteLinesToFile
-		File="$(IntermediateOutputPath)$(CleanFile)"
-		Lines="@(_MdbFilesCopied->'%(FullPath)');@(_MdbDebugFilesCopiedToLinkerSrc->'%(FullPath)')"
-		Overwrite="false" />
+	/>
+	<Touch Files="$(_AndroidStampDirectory)_CopyMdbFiles.stamp" AlwaysCreate="True" />
+	<ItemGroup>
+		<FileWrites Include="@(_ResolvedMdbFiles->'$(OutputPath)%(Filename)%(Extension)')" />
+		<FileWrites Include="@(_ResolvedMdbFiles->'$(MonoAndroidLinkerInputDir)%(Filename)%(Extension)')" />
+	</ItemGroup>
 </Target>
 	
 <Target Name="_LinkAssemblies"
@@ -2649,7 +2632,7 @@ because xbuild doesn't support framework reference assemblies.
     DestinationFiles="@(_ShrunkFrameworkAssemblies)"
     SkipUnchangedFiles="true" />
 
-  <CopyConfigFiles
+  <CopyIfChanged
     SourceFiles="@(_ResolvedFrameworkAssemblies->'%(Identity).config')"
     DestinationFiles="@(_ShrunkFrameworkAssemblies->'%(Identity).config')" />
   
@@ -3012,22 +2995,6 @@ because xbuild doesn't support framework reference assemblies.
 <PropertyGroup>
 	<_IntermediatePdbFile>$(IntermediateOutputPath)$(TargetName).pdb</_IntermediatePdbFile>
 </PropertyGroup>
-
-<Target Name="ConvertDebuggingFiles"
-	Condition=" '$(AndroidIncludeDebugSymbols)' == 'true' And Exists ('$(_IntermediatePdbFile)') And '$(OS)' == 'Windows_NT'"
-	DependsOnTargets="_ConvertDebuggingFiles">
-	<CreateItem Include="$(OutDir)$(TargetFileName).mdb" Condition="Exists('$(OutDir)$(TargetFileName).mdb')">
-		<Output TaskParameter="Include" ItemName="FileWrites" />
-	</CreateItem>
-</Target>
-
-<Target Name="_ConvertDebuggingFiles"
-	Inputs="$(OutDir)$(TargetFileName);$(_IntermediatePdbFile)"
-	Outputs="$(OutDir)$(TargetFileName).mdb" 
-	DependsOnTargets="_ValidateAndroidPackageProperties">
-	<ConvertDebuggingFiles Files="$(OutDir)$(TargetFileName)" />
-	<Touch Files="$(OutDir)$(TargetFileName).mdb" />
-</Target>
 
 
 <!-- Callable targets -->

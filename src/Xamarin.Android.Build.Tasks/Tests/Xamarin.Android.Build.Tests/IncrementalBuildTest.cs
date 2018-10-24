@@ -16,9 +16,6 @@ namespace Xamarin.Android.Build.Tests
 		[Test]
 		public void CheckNothingIsDeletedByIncrementalClean ([Values (true, false)] bool enableMultiDex, [Values (true, false)] bool useAapt2)
 		{
-			// do a release build
-			// change one of the properties (say AotAssemblies) 
-			// do another build. it should NOT hose the resource directory.
 			var path = Path.Combine ("temp", TestName);
 			var proj = new XamarinFormsAndroidApplicationProject () {
 				ProjectName = "App1",
@@ -30,11 +27,33 @@ namespace Xamarin.Android.Build.Tests
 				proj.SetProperty ("AndroidUseAapt2", "True");
 			using (var b = CreateApkBuilder (path)) {
 				Assert.IsTrue (b.Build (proj), "First should have succeeded" );
-				IEnumerable<string> files = Directory.EnumerateFiles (Path.Combine (Root, path, proj.IntermediateOutputPath), "*.*", SearchOption.AllDirectories);
-				Assert.IsTrue (b.Build (proj, doNotCleanupOnUpdate: true, parameters: null, saveProject: false), "Second should have succeeded");
+				var intermediate = Path.Combine (Root, path, proj.IntermediateOutputPath);
+				var fileWrites = Path.Combine (intermediate, $"{proj.ProjectName}.csproj.FileListAbsolute.txt");
+				FileAssert.Exists (fileWrites);
+				var expected = File.ReadAllText (fileWrites);
+				var files = Directory.EnumerateFiles (intermediate, "*.*", SearchOption.AllDirectories);
+
+				//Touch a few files
+				var filesToTouch = new [] {
+					Path.Combine (intermediate, "build.props"),
+					Path.Combine (intermediate, $"{proj.ProjectName}.pdb"),
+				};
+				foreach (var file in filesToTouch) {
+					FileAssert.Exists (file);
+					File.SetLastWriteTimeUtc (file, DateTime.UtcNow);
+					File.SetLastAccessTimeUtc (file, DateTime.UtcNow);
+				}
+				Assert.IsTrue (b.Build (proj, doNotCleanupOnUpdate: true, saveProject: false), "Second should have succeeded");
+
+				//No changes
+				Assert.IsTrue (b.Build (proj, doNotCleanupOnUpdate: true, saveProject: false), "Third should have succeeded");
+				Assert.IsFalse (b.Output.IsTargetSkipped ("IncrementalClean"), "`IncrementalClean` should have run!");
 				foreach (var file in files) {
 					FileAssert.Exists (file, $"{file} should not have been deleted!" );
 				}
+				FileAssert.Exists (fileWrites);
+				var actual = File.ReadAllText (fileWrites);
+				Assert.AreEqual (expected, actual, $"`{fileWrites}` has changes!");
 			}
 		}
 
@@ -329,20 +348,36 @@ namespace Lib2
 				"_ResolveLibraryProjectImports",
 				"_BuildAdditionalResourcesCache",
 				"_CleanIntermediateIfNuGetsChange",
+				"_CopyConfigFiles",
+				"_ConvertPdbFiles",
+				"_CopyPdbFiles",
+				"_CopyMdbFiles",
 			};
-			var proj = new XamarinFormsAndroidApplicationProject ();
+			var proj = new XamarinFormsAndroidApplicationProject {
+				OtherBuildItems = {
+					new BuildItem.NoActionResource ("UnnamedProject.dll.config") {
+						TextContent = () => "<?xml version='1.0' ?><configuration/>",
+						Metadata = {
+							{ "CopyToOutputDirectory", "PreserveNewest"},
+						}
+					}
+				}
+			};
 			using (var b = CreateApkBuilder (Path.Combine ("temp", TestName))) {
 				Assert.IsTrue (b.Build (proj), "first build should succeed");
 				foreach (var target in targets) {
 					Assert.IsFalse (b.Output.IsTargetSkipped (target), $"`{target}` should *not* be skipped!");
 				}
 
+				var output = Path.Combine (Root, b.ProjectDirectory, proj.OutputPath);
 				var intermediate = Path.Combine (Root, b.ProjectDirectory, proj.IntermediateOutputPath);
 				var filesToTouch = new [] {
 					Path.Combine (intermediate, "build.props"),
-					Path.Combine (intermediate, proj.ProjectName + ".dll"),
-					Path.Combine (intermediate, "android", "assets", proj.ProjectName + ".dll"),
+					Path.Combine (intermediate, $"{proj.ProjectName}.dll"),
+					Path.Combine (intermediate, $"{proj.ProjectName}.pdb"),
+					Path.Combine (intermediate, "android", "assets", $"{proj.ProjectName}.dll"),
 					Path.Combine (Root, b.ProjectDirectory, "packages.config"),
+					Path.Combine (output, $"{proj.ProjectName}.dll.config"),
 				};
 				foreach (var file in filesToTouch) {
 					FileAssert.Exists (file);
