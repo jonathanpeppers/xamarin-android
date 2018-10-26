@@ -8,6 +8,7 @@ using System.Linq;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Monodroid;
+using System.Text.RegularExpressions;
 
 namespace Xamarin.Android.Tasks
 {
@@ -47,11 +48,28 @@ namespace Xamarin.Android.Tasks
 			return true;
 		}
 
-
 		void FixupResources (Dictionary<string, string> acwMap)
 		{
-			foreach (var dir in ResourceDirectories)
+			foreach (var dir in ResourceDirectories) {
+				var aarFile = dir.GetMetadata ("AarFile");
+				if (!string.IsNullOrEmpty (aarFile)) {
+					//QUESTION: can we straight up skip aar files?
+					Log.LogDebugMessage ("Skipping `{0}`, as it is an aar file: `{1}`...", dir.ItemSpec, aarFile);
+					continue;
+				}
+
+				var assemblyPath = dir.GetMetadata ("Assembly");
+				if (!string.IsNullOrEmpty (assemblyPath)) {
+					//HACK: we wouldn't really do this, we would implement a proper mechanism to detect "skippable" libs
+					var assemblyName = Path.GetFileNameWithoutExtension (assemblyPath);
+					if (assemblyName.StartsWith ("Xamarin.Android.Support", StringComparison.Ordinal)) {
+						Log.LogDebugMessage ("Skipping `{0}`, as it is whitelisted: `{1}`...", dir.ItemSpec, assemblyPath);
+					}
+					continue;
+				}
+
 				FixupResources (dir, acwMap);
+			}
 		}
 
 		void FixupResources (ITaskItem item, Dictionary<string, string> acwMap)

@@ -79,7 +79,7 @@ namespace Xamarin.Android.Tasks
 			Log.LogDebugTaskItems ("  AarLibraries: ", AarLibraries);
 
 			var jars                          = new List<string> ();
-			var resolvedResourceDirectories   = new List<string> ();
+			var resolvedResourceDirectories   = new List<ITaskItem> ();
 			var resolvedAssetDirectories      = new List<string> ();
 			var resolvedEnvironmentFiles      = new List<string> ();
 
@@ -95,9 +95,7 @@ namespace Xamarin.Android.Tasks
 			}
 
 			Jars                        = jars.ToArray ();
-			ResolvedResourceDirectories = resolvedResourceDirectories
-				.Select (s => new TaskItem (Path.GetFullPath (s)))
-				.ToArray ();
+			ResolvedResourceDirectories = resolvedResourceDirectories.ToArray ();
 			ResolvedAssetDirectories    = resolvedAssetDirectories.ToArray ();
 			ResolvedEnvironmentFiles    = resolvedEnvironmentFiles.ToArray ();
 
@@ -120,7 +118,16 @@ namespace Xamarin.Android.Tasks
 						new XElement ("Jars",
 							Jars.Select(e => new XElement ("Jar", e))),
 						new XElement ("ResolvedResourceDirectories",
-							ResolvedResourceDirectories.Select(e => new XElement ("ResolvedResourceDirectory", e))),
+							ResolvedResourceDirectories.Select(dir => {
+								var e = new XElement ("ResolvedResourceDirectory", dir.ItemSpec);
+								var assembly = dir.GetMetadata ("Assembly");
+								if (!string.IsNullOrEmpty (assembly))
+									e.SetAttributeValue ("Assembly", assembly);
+								var aar = dir.GetMetadata ("AarFile");
+								if (!string.IsNullOrEmpty (aar))
+									e.SetAttributeValue ("AarFile", aar);
+								return e;
+							})),
 						new XElement ("ResolvedAssetDirectories", 
 							ResolvedAssetDirectories.Select(e => new XElement ("ResolvedAssetDirectory", e))),
 						new XElement ("ResolvedEnvironmentFiles", 
@@ -160,7 +167,7 @@ namespace Xamarin.Android.Tasks
 		void Extract (
 				DirectoryAssemblyResolver res,
 				ICollection<string> jars,
-				ICollection<string> resolvedResourceDirectories,
+				ICollection<ITaskItem> resolvedResourceDirectories,
 				ICollection<string> resolvedAssetDirectories,
 				ICollection<string> resolvedEnvironments)
 		{
@@ -211,7 +218,7 @@ namespace Xamarin.Android.Tasks
 						resolvedAssetDirectories.Add (binAssemblyDir);
 #endif
 					if (Directory.Exists (resDir))
-						resolvedResourceDirectories.Add (resDir);
+						resolvedResourceDirectories.Add (new TaskItem (resDir, new Dictionary<string, string> { { "Assembly", assemblyPath } }));
 					if (Directory.Exists (assemblyDir))
 						resolvedAssetDirectories.Add (assemblyDir);
 					foreach (var env in Directory.EnumerateFiles (outDirForDll, "__AndroidEnvironment__*", SearchOption.TopDirectoryOnly)) {
@@ -309,7 +316,7 @@ namespace Xamarin.Android.Tasks
 							resolvedAssetDirectories.Add (binAssemblyDir);
 #endif
 						if (Directory.Exists (resDir))
-							resolvedResourceDirectories.Add (resDir);
+							resolvedResourceDirectories.Add (new TaskItem (resDir, new Dictionary<string, string> { { "Assembly", assemblyPath } }));
 						if (Directory.Exists (assemblyDir))
 							resolvedAssetDirectories.Add (assemblyDir);
 
@@ -362,7 +369,7 @@ namespace Xamarin.Android.Tasks
 					}
 				}
 				if (Directory.Exists (resDir))
-					resolvedResourceDirectories.Add (resDir);
+					resolvedResourceDirectories.Add (new TaskItem (resDir, new Dictionary<string, string> { { "AarFile", aarFile.ItemSpec } }));
 				if (Directory.Exists (assetsDir))
 					resolvedAssetDirectories.Add (assetsDir);
 			}
