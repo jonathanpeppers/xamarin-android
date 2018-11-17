@@ -79,29 +79,6 @@ namespace Xamarin.Android.Tasks
 
 		bool Execute (DirectoryAssemblyResolver res)
 		{
-			// Put every assembly we'll need in the resolver
-			foreach (var assembly in ResolvedAssemblies) {
-				res.Load (Path.GetFullPath (assembly.ItemSpec));
-			}
-
-			var resolver = new AssemblyResolver (res.ToResolverCache ());
-
-			// Set up for linking
-			var options = new LinkerOptions ();
-			options.MainAssembly = res.GetAssembly (MainAssembly);
-			options.OutputDirectory = Path.GetFullPath (OutputDirectory);
-			options.LinkSdkOnly = string.Compare (LinkMode, "SdkOnly", true) == 0;
-			options.LinkNone = string.Compare (LinkMode, "None", true) == 0;
-			options.Resolver = resolver;
-			options.LinkDescriptions = LinkDescriptions.Select (item => Path.GetFullPath (item.ItemSpec)).ToArray ();
-			options.I18nAssemblies = Linker.ParseI18nAssemblies (I18nAssemblies);
-			if (!options.LinkSdkOnly)
-				options.RetainAssemblies = GetRetainAssemblies (res);
-			options.DumpDependencies = DumpDependencies;
-			options.HttpClientHandlerType = HttpClientHandlerType;
-			options.TlsProvider = TlsProvider;
-			options.PreserveJniMarshalMethods = PreserveJniMarshalMethods;
-			
 			var skiplist = new List<string> ();
 
 			if (string.Compare (UseSharedRuntime, "true", true) == 0)
@@ -119,6 +96,33 @@ namespace Xamarin.Android.Tasks
 				foreach (var assembly in LinkSkip.Split (',', ';'))
 					skiplist.Add (assembly);
 
+			// Put every assembly we'll need in the resolver
+			foreach (var assembly in ResolvedAssemblies) {
+				res.SearchDirectories.Add (Path.GetDirectoryName (assembly.ItemSpec));
+				if (!skiplist.Contains (Path.GetFileNameWithoutExtension (assembly.ItemSpec)))
+					res.Load (Path.GetFullPath (assembly.ItemSpec));
+			}
+
+			var resolver = new AssemblyResolver (res.ToResolverCache ());
+			foreach (var assembly in res.SearchDirectories) {
+				resolver.AddSearchDirectory (assembly);
+			}
+
+			// Set up for linking
+			var options = new LinkerOptions ();
+			options.MainAssembly = res.GetAssembly (MainAssembly);
+			options.OutputDirectory = Path.GetFullPath (OutputDirectory);
+			options.LinkSdkOnly = string.Compare (LinkMode, "SdkOnly", true) == 0;
+			options.LinkNone = string.Compare (LinkMode, "None", true) == 0;
+			options.Resolver = resolver;
+			options.LinkDescriptions = LinkDescriptions.Select (item => Path.GetFullPath (item.ItemSpec)).ToArray ();
+			options.I18nAssemblies = Linker.ParseI18nAssemblies (I18nAssemblies);
+			if (!options.LinkSdkOnly)
+				options.RetainAssemblies = GetRetainAssemblies (res);
+			options.DumpDependencies = DumpDependencies;
+			options.HttpClientHandlerType = HttpClientHandlerType;
+			options.TlsProvider = TlsProvider;
+			options.PreserveJniMarshalMethods = PreserveJniMarshalMethods;
 			options.SkippedAssemblies = skiplist;
 
 			if (EnableProguard)
