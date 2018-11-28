@@ -2505,7 +2505,6 @@ because xbuild doesn't support framework reference assemblies.
     <_CompileJavaDependsOnTargets>
 		_AdjustJavacVersionArguments;
 		_GeneratePackageManagerJava;
-		_FindJavaStubFiles;
 		_AddStaticResources;
 		$(_AfterAddStaticResources);
 		_GetMonoPlatformJarPath;
@@ -2516,7 +2515,8 @@ because xbuild doesn't support framework reference assemblies.
 		_GetAdditionalResourcesFromAssemblies;
 		_CreateAdditionalResourceCache;
 		_DetermineJavaLibrariesToCompile;
-		$(_CompileJavaDependsOnTargets)
+		$(_CompileJavaDependsOnTargets);
+		_FindJavaStubFiles;
 	</_CompileJavaDependsOnTargets>
 </PropertyGroup>
 
@@ -2704,6 +2704,7 @@ because xbuild doesn't support framework reference assemblies.
 </Target>
 
 <Target Name="_CompileDex"
+		BeforeTargets="IncrementalClean;_CleanGetCurrentAndPriorFileWrites"
 		DependsOnTargets="_CompileToDalvikWithDx;_CompileToDalvikWithD8">
 
 	<ItemGroup>
