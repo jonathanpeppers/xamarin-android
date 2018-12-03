@@ -30,14 +30,14 @@ using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using System;
 using System.IO;
-using System.Linq;
+using ThreadingTasks = System.Threading.Tasks;
 
 namespace Xamarin.Android.Tasks
 {
 	/// <summary>
 	/// ResolveSdks' job is to call RefreshAndroidSdk and setup static members of MonoAndroidHelper
 	/// </summary>
-	public class ResolveSdks : Task
+	public class ResolveSdks : AsyncTask
 	{
 		public string[] ReferenceAssemblyPaths { get; set; }
 
@@ -58,6 +58,34 @@ namespace Xamarin.Android.Tasks
 
 		public override bool Execute ()
 		{
+			Yield ();
+			try {
+				var task = ThreadingTasks.Task.Run (() => {
+					DoExecute ();
+				}, Token);
+
+				task.ContinueWith (Complete);
+
+				base.Execute ();
+			} finally {
+				Reacquire ();
+			}
+
+			Log.LogDebugMessage ($"{nameof (ResolveSdks)} Outputs:");
+			Log.LogDebugMessage ($"  {nameof (AndroidSdkPath)}: {AndroidSdkPath}");
+			Log.LogDebugMessage ($"  {nameof (AndroidNdkPath)}: {AndroidNdkPath}");
+			Log.LogDebugMessage ($"  {nameof (JavaSdkPath)}: {JavaSdkPath}");
+			Log.LogDebugMessage ($"  {nameof (MonoAndroidBinPath)}: {MonoAndroidBinPath}");
+			Log.LogDebugMessage ($"  {nameof (MonoAndroidToolsPath)}: {MonoAndroidToolsPath}");
+
+			//note: this task does not error out if it doesn't find all things. that's the job of the targets
+			return !Log.HasLoggedErrors;
+		}
+
+		void DoExecute ()
+		{
+			System.Threading.Thread.Sleep (10000);
+
 			// OS X:    $prefix/lib/xamarin.android/xbuild/Xamarin/Android
 			// Windows: %ProgramFiles(x86)%\MSBuild\Xamarin\Android
 			if (string.IsNullOrEmpty (MonoAndroidToolsPath)) {
@@ -72,12 +100,12 @@ namespace Xamarin.Android.Tasks
 			}
 			catch (InvalidOperationException e) {
 				if (e.Message.Contains (" Android ")) {
-					Log.LogCodedError ("XA5300", "The Android SDK Directory could not be found. Please set via /p:AndroidSdkDirectory.");
+					LogCodedError ("XA5300", "The Android SDK Directory could not be found. Please set via /p:AndroidSdkDirectory.");
 				}
 				if (e.Message.Contains (" Java ")) {
-					Log.LogCodedError ("XA5300", "The Java SDK Directory could not be found. Please set via /p:JavaSdkDirectory.");
+					LogCodedError ("XA5300", "The Java SDK Directory could not be found. Please set via /p:JavaSdkDirectory.");
 				}
-				return false;
+				return;
 			}
 
 			AndroidNdkPath = MonoAndroidHelper.AndroidSdk.AndroidNdkPath;
@@ -85,25 +113,15 @@ namespace Xamarin.Android.Tasks
 			JavaSdkPath    = MonoAndroidHelper.AndroidSdk.JavaSdkPath;
 
 			if (string.IsNullOrEmpty (AndroidSdkPath)) {
-				Log.LogCodedError ("XA5300", "The Android SDK Directory could not be found. Please set via /p:AndroidSdkDirectory.");
-				return false;
+				LogCodedError ("XA5300", "The Android SDK Directory could not be found. Please set via /p:AndroidSdkDirectory.");
+				return;
 			}
 			if (string.IsNullOrEmpty (JavaSdkPath)) {
-				Log.LogCodedError ("XA5300", "The Java SDK Directory could not be found. Please set via /p:JavaSdkDirectory.");
-				return false;
+				LogCodedError ("XA5300", "The Java SDK Directory could not be found. Please set via /p:JavaSdkDirectory.");
+				return;
 			}
 
 			MonoAndroidHelper.TargetFrameworkDirectories = ReferenceAssemblyPaths;
-
-			Log.LogDebugMessage ($"{nameof (ResolveSdks)} Outputs:");
-			Log.LogDebugMessage ($"  {nameof (AndroidSdkPath)}: {AndroidSdkPath}");
-			Log.LogDebugMessage ($"  {nameof (AndroidNdkPath)}: {AndroidNdkPath}");
-			Log.LogDebugMessage ($"  {nameof (JavaSdkPath)}: {JavaSdkPath}");
-			Log.LogDebugMessage ($"  {nameof (MonoAndroidBinPath)}: {MonoAndroidBinPath}");
-			Log.LogDebugMessage ($"  {nameof (MonoAndroidToolsPath)}: {MonoAndroidToolsPath}");
-
-			//note: this task does not error out if it doesn't find all things. that's the job of the targets
-			return !Log.HasLoggedErrors;
 		}
 	}
 }
