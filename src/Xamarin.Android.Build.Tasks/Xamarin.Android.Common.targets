@@ -700,7 +700,8 @@ Copyright (C) 2011-2012 Xamarin. All rights reserved.
 			AndroidSdkPath="$(AndroidSdkDirectory)"
 			AndroidNdkPath="$(AndroidNdkDirectory)"
 			JavaSdkPath="$(JavaSdkDirectory)"
-			ReferenceAssemblyPaths="$(_XATargetFrameworkDirectories)">
+			ReferenceAssemblyPaths="$(_XATargetFrameworkDirectories)"
+			YieldDuringToolExecution="$(YieldDuringToolExecution)">
 		<Output TaskParameter="AndroidNdkPath"            PropertyName="AndroidNdkDirectory" Condition=" '$(AndroidNdkDirectory)' == '' " />
 		<Output TaskParameter="AndroidSdkPath"            PropertyName="AndroidSdkDirectory" Condition=" '$(AndroidSdkDirectory)' == '' " />
 		<Output TaskParameter="JavaSdkPath"               PropertyName="JavaSdkDirectory"    Condition=" '$(JavaSdkDirectory)' == '' " />
