@@ -70,23 +70,16 @@ namespace Xamarin.Android.Tasks
 
 		public override bool Execute ()
 		{
-			var temp = Path.Combine (Path.GetTempPath (), Path.GetRandomFileName ());
 			try {
-				Directory.CreateDirectory (temp);
-
 				// We're going to do 3 steps here instead of separate tasks so
 				// we can share the list of JLO TypeDefinitions between them
 				using (var res = new DirectoryAssemblyResolver (this.CreateTaskLogger (), loadDebugSymbols: true)) {
-					Run (res, temp);
+					Run (res);
 				}
 			} catch (XamarinAndroidException e) {
 				Log.LogCodedError (string.Format ("XA{0:0000}", e.Code), e.MessageWithoutCode);
 				if (MonoAndroidHelper.LogInternalExceptions)
 					Log.LogMessage (e.ToString ());
-			} finally {
-				// Delete our temp directory
-				if (Directory.Exists (temp))
-					Directory.Delete (temp, true);
 			}
 
 			if (Log.HasLoggedErrors) {
@@ -101,7 +94,7 @@ namespace Xamarin.Android.Tasks
 			return !Log.HasLoggedErrors;
 		}
 
-		void Run (DirectoryAssemblyResolver res, string temp)
+		void Run (DirectoryAssemblyResolver res)
 		{
 			PackageNamingPolicy pnp;
 			JavaNativeTypeManager.PackageNamingPolicy = Enum.TryParse (PackageNamingPolicy, out pnp) ? pnp : PackageNamingPolicyEnum.LowercaseHash;
@@ -141,7 +134,7 @@ namespace Xamarin.Android.Tasks
 			var success = Generator.CreateJavaSources (
 				Log,
 				java_types,
-				temp,
+				Path.Combine (OutputDirectory, "src"),
 				ApplicationJavaClass,
 				UseSharedRuntime,
 				int.Parse (AndroidSdkPlatform) <= 10,
@@ -189,12 +182,6 @@ namespace Xamarin.Android.Tasks
 
 				acw_map.Flush ();
 				MonoAndroidHelper.CopyIfStreamChanged (stream, AcwMapFile);
-			}
-
-			// Only overwrite files if the contents actually changed
-			foreach (var file in Directory.GetFiles (temp, "*", SearchOption.AllDirectories)) {
-				var dest = Path.Combine (OutputDirectory, "src", file.Substring (temp.Length + 1));
-				MonoAndroidHelper.CopyIfChanged (file, dest);
 			}
 
 			// Step 3 - Merge [Activity] and friends into AndroidManifest.xml

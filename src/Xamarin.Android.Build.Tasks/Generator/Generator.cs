@@ -7,6 +7,7 @@ using Microsoft.Build.Utilities;
 
 using Java.Interop.Tools.Diagnostics;
 using Java.Interop.Tools.JavaCallableWrappers;
+using System.IO;
 
 namespace Xamarin.Android.Tasks
 {
@@ -46,7 +47,14 @@ namespace Xamarin.Android.Tasks
 					ApplicationJavaClass        = applicationJavaClass,
 				};
 
-				jti.Generate (outputPath);
+				using (var memoryStream = new MemoryStream ())
+				using (var writer = new StreamWriter (memoryStream)) {
+					jti.Generate (writer);
+
+					writer.Flush ();
+					var path = jti.GetDestinationPath (outputPath);
+					MonoAndroidHelper.CopyIfStreamChanged (memoryStream, path);
+				}
 				if (jti.HasExport && !hasExportReference)
 					Diagnostic.Error (4210, "You need to add a reference to Mono.Android.Export.dll when you use ExportAttribute or ExportFieldAttribute.");
 			} catch (Exception ex) {
