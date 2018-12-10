@@ -37,7 +37,13 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.Collections.Immutable, Version=1.2.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\System.Collections.Immutable.1.5.0\lib\netstandard2.0\System.Collections.Immutable.dll</HintPath>
+    </Reference>
     <Reference Include="System.Core" />
+    <Reference Include="System.Reflection.Metadata, Version=1.4.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\System.Reflection.Metadata.1.6.0\lib\netstandard2.0\System.Reflection.Metadata.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Xml" />
     <Reference Include="Irony">
@@ -99,6 +105,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="$(IntermediateOutputPath)Profile.g.cs" />
+    <Compile Include="Cecil\AssemblyDefinition.cs" />
+    <Compile Include="Cecil\AssemblyNameReference.cs" />
+    <Compile Include="Cecil\CustomAttribute.cs" />
+    <Compile Include="Cecil\CustomAttributeArgument.cs" />
+    <Compile Include="Cecil\CustomAttributeTypeProvider.cs" />
+    <Compile Include="Cecil\Resource.cs" />
+    <Compile Include="Cecil\TypeReference.cs" />
     <Compile Include="Linker\LinkModes.cs" />
     <Compile Include="Generator\Generator.cs" />
     <Compile Include="Linker\MonoDroid.Tuner\FixAbstractMethodsStep.cs" />
@@ -164,6 +177,7 @@
     <Compile Include="Utilities\ManifestDocument.cs" />
     <Compile Include="Mono.Android\MetaDataAttribute.Partial.cs" />
     <Compile Include="Utilities\MonoAndroidHelper.cs" />
+    <None Include="app.config" />
     <None Include="Linker\MonoDroid.Tuner\PreserveCode.cs" />
     <Compile Include="Linker\MonoDroid.Tuner\PreserveTypeConverters.cs" />
     <Compile Include="Linker\Mobile.Tuner\MobileProfile.cs" />

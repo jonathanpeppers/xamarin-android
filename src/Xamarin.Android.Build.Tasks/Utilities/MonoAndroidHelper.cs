@@ -2,13 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
+using System.Reflection.Metadata.Cecil;
 using System.IO;
 using System.Security.Cryptography;
 using Mono.Security.Cryptography;
 using Xamarin.Android.Tools;
 using Xamarin.Tools.Zip;
-using Mono.Cecil;
 
 #if MSBUILD
 using Microsoft.Build.Framework;
@@ -307,15 +306,12 @@ namespace Xamarin.Android.Tasks
 
 		public static bool IsReferenceAssembly (string assembly)
 		{
-			var rp = new ReaderParameters { ReadSymbols = false };
-			using (var a = AssemblyDefinition.ReadAssembly (assembly, rp))
+			using (var a = AssemblyDefinition.ReadAssembly (assembly))
 				return IsReferenceAssembly (a);
 		}
 
 		public static bool IsReferenceAssembly (AssemblyDefinition assembly)
 		{
-			if (!assembly.HasCustomAttributes)
-				return false;
 			return assembly.CustomAttributes.Any (t => t.AttributeType.FullName == "System.Runtime.CompilerServices.ReferenceAssemblyAttribute");
 		}
 
