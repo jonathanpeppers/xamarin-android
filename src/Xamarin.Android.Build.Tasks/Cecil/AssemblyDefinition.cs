@@ -5,10 +5,10 @@ using System.Reflection.PortableExecutable;
 namespace System.Reflection.Metadata.Cecil
 {
 	public class AssemblyDefinition : IDisposable
-    {
+	{
 		public static AssemblyDefinition ReadAssembly (string path)
 		{
-			return ReadAssembly (path);
+			return new AssemblyDefinition (path);
 		}
 
 		readonly PEReader peReader;
@@ -20,9 +20,9 @@ namespace System.Reflection.Metadata.Cecil
 			FileName = Path.GetFullPath (path);
 			peReader = new PEReader (File.OpenRead (FileName));
 			reader = peReader.GetMetadataReader ();
-			resources = new Lazy<Resource []> (LoadResources);
-			customAttributes = new Lazy<CustomAttribute []> (LoadCustomAttributes);
-			references = new Lazy<AssemblyNameReference []> (LoadReferences);
+			//Resources = LoadResources ();
+			CustomAttributes = LoadCustomAttributes ();
+			AssemblyReferences = LoadReferences ();
 			assembly = reader.GetAssemblyDefinition ();
 			name = new Lazy<AssemblyName> (() => assembly.GetAssemblyName ());
 			FullName = reader.GetString (assembly.Name);
@@ -52,9 +52,10 @@ namespace System.Reflection.Metadata.Cecil
 			return list.ToArray ();
 		}
 
-		readonly Lazy<Resource []> resources;
-
-		public Resource [] Resources => resources.Value;
+		public Resource [] Resources {
+			get;
+			private set;
+		}
 
 		CustomAttribute [] LoadCustomAttributes ()
 		{
@@ -68,9 +69,10 @@ namespace System.Reflection.Metadata.Cecil
 			return list.ToArray ();
 		}
 
-		readonly Lazy<CustomAttribute []> customAttributes;
-
-		public CustomAttribute [] CustomAttributes => customAttributes.Value;
+		public CustomAttribute [] CustomAttributes {
+			get;
+			private set;
+		}
 
 		AssemblyNameReference [] LoadReferences ()
 		{
@@ -82,9 +84,10 @@ namespace System.Reflection.Metadata.Cecil
 			return list.ToArray ();
 		}
 
-		readonly Lazy<AssemblyNameReference []> references;
-
-		public AssemblyNameReference [] AssemblyReferences => references.Value;
+		public AssemblyNameReference [] AssemblyReferences {
+			get;
+			private set;
+		}
 
 		public void Dispose () => peReader.Dispose ();
 	}
