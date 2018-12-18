@@ -2346,6 +2346,21 @@ AAMMAAABzYW1wbGUvSGVsbG8uY2xhc3NQSwUGAAAAAAMAAwC9AAAA1gEAAAAA") });
 		}
 
 		[Test]
+		public void BuildAppWithEntityFrameworkCore ()
+		{
+			var proj = new XamarinAndroidApplicationProject () {
+				PackageReferences = {
+					KnownPackages.Microsoft_EntityFrameworkCore,
+				},
+			};
+			using (var b = CreateApkBuilder (Path.Combine ("temp", TestName))) {
+				Assert.IsTrue (b.Build (proj), "Build should have succeeded.");
+				var assets = b.Output.GetIntermediaryAsText (Path.Combine ("..", "project.assets.json"));
+				StringAssert.Contains ("Microsoft.EntityFrameworkCore", assets, "Nuget Package Microsoft.EntityFrameworkCore should have been restored.");
+			}
+		}
+
+		[Test]
 		public void BuildWithResolveAssembliesFailure ([Values (true, false)] bool usePackageReference)
 		{
 			var path = Path.Combine ("temp", TestContext.CurrentContext.Test.Name);

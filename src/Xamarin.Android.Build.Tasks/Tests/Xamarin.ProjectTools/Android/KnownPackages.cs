@@ -681,6 +681,16 @@ namespace Xamarin.ProjectTools
 				}
 			},
 		};
+		public static Package Microsoft_EntityFrameworkCore = new Package {
+			Id = "Microsoft.EntityFrameworkCore",
+			Version = "2.2.0",
+			TargetFramework = "netstandard2.0",
+			References = {
+				new BuildItem.Reference ("Microsoft.EntityFrameworkCore") {
+					MetadataValues = "HintPath=..\\packages\\Microsoft.EntityFrameworkCore.2.2.0\\lib\\netstandard2.0\\Microsoft.EntityFrameworkCore.dll"
+				}
+			},
+		};
 	}
 }
 
