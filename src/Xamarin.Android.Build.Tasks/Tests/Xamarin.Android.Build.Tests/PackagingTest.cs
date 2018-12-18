@@ -442,15 +442,7 @@ namespace App1
 				if (!Directory.Exists (builder.MicrosoftNetSdkDirectory))
 					Assert.Ignore ("Microsoft.NET.Sdk not found.");
 				using (var ab = CreateApkBuilder (Path.Combine (path, app.ProjectName), cleanupOnDispose: false)) {
-					builder.RequiresMSBuild = true;
-					builder.Target = "Restore";
-					Assert.IsTrue (builder.Build (netStandardProject), "XamFormsSample Nuget packages should have been restored.");
-					builder.Target = "Build";
 					Assert.IsTrue (builder.Build (netStandardProject), "XamFormsSample should have built.");
-					ab.RequiresMSBuild = true;
-					ab.Target = "Restore";
-					Assert.IsTrue (ab.Build (app), "App should have built.");
-					ab.Target = "SignAndroidPackage";
 					Assert.IsTrue (ab.Build (app), "App should have built.");
 					var apk = Path.Combine (Root, ab.ProjectDirectory,
 						app.IntermediateOutputPath, "android", "bin", "UnnamedProject.UnnamedProject.apk");

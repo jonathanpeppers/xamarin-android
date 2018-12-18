@@ -2038,10 +2038,6 @@ Mono.Unix.UnixFileInfo fileInfo = null;");
 			proj.PackageReferences.Add (KnownPackages.Xamarin_Android_Fabric_1_4_3);
 			proj.PackageReferences.Add (KnownPackages.Xamarin_Build_Download_0_4_11);
 			using (var builder = CreateApkBuilder (Path.Combine ("temp", TestName))) {
-				builder.RequiresMSBuild = true;
-				builder.Target = "Restore";
-				Assert.IsTrue (builder.Build (proj), "Restore should have succeeded.");
-				builder.Target = "Build";
 				Assert.IsTrue (builder.Build (proj), "Build should have succeeded.");
 				var manifest = File.ReadAllText (Path.Combine (Root, builder.ProjectDirectory, "obj", "Debug", "android", "AndroidManifest.xml"));
 				Assert.IsTrue (manifest.Contains ("android:authorities=\"UnnamedProject.UnnamedProject.crashlyticsinitprovider\""), "placeholder not replaced");
@@ -2373,9 +2369,6 @@ AAMMAAABzYW1wbGUvSGVsbG8uY2xhc3NQSwUGAAAAAAMAAwC9AAAA1gEAAAAA") });
 
 			using (var libBuilder = CreateDllBuilder (Path.Combine (path, lib.ProjectName), false))
 			using (var appBuilder = CreateApkBuilder (Path.Combine (path, app.ProjectName))) {
-				libBuilder.Target = "Restore";
-				Assert.IsTrue (libBuilder.Build (lib), "Restore should have succeeded.");
-				libBuilder.Target = "Build";
 				Assert.IsTrue (libBuilder.Build (lib), "Build should have succeeded.");
 
 				appBuilder.ThrowOnBuildFailure = false;
@@ -2392,9 +2385,6 @@ AAMMAAABzYW1wbGUvSGVsbG8uY2xhc3NQSwUGAAAAAAMAAwC9AAAA1gEAAAAA") });
 				//Now add the PackageReference to the app to see a different error message
 				if (usePackageReference) {
 					app.PackageReferences.Add (KnownPackages.Microsoft_Azure_EventHubs);
-					appBuilder.Target = "Restore";
-					Assert.IsTrue (appBuilder.Build (app), "Restore should have succeeded.");
-					appBuilder.Target = "Build";
 				} else {
 					app.Packages.Add (KnownPackages.Microsoft_Azure_EventHubs);
 				}
@@ -2499,10 +2489,6 @@ AAMMAAABzYW1wbGUvSGVsbG8uY2xhc3NQSwUGAAAAAAMAAwC9AAAA1gEAAAAA") });
 			packages.Add (KnownPackages.SupportV7MediaRouter_25_4_0_1);
 
 			using (var b = CreateApkBuilder (Path.Combine ("temp", TestContext.CurrentContext.Test.Name))) {
-				if (usePackageReference) {
-					b.RequiresMSBuild = true;
-					b.Target = "Restore,Build";
-				}
 				//[TearDown] will still delete if test outcome successful, I need logs if assertions fail but build passes
 				b.CleanupAfterSuccessfulBuild =
 					b.CleanupOnDispose = false;
@@ -2741,10 +2727,6 @@ AAMMAAABzYW1wbGUvSGVsbG8uY2xhc3NQSwUGAAAAAAMAAwC9AAAA1gEAAAAA") });
 				},
 			};
 			using (var b = CreateApkBuilder (Path.Combine ("temp", TestContext.CurrentContext.Test.Name))) {
-				b.RequiresMSBuild = true;
-				b.Target = "Restore";
-				Assert.IsTrue (b.Build (proj), "Restore should have succeeded.");
-				b.Target = "Build";
 				b.ThrowOnBuildFailure = false;
 				if (b.Build (proj)) {
 					//NOTE: `:` in a file path should fail on Windows, but passes on macOS
@@ -2773,10 +2755,6 @@ AAMMAAABzYW1wbGUvSGVsbG8uY2xhc3NQSwUGAAAAAAMAAwC9AAAA1gEAAAAA") });
 				},
 			};
 			using (var b = CreateApkBuilder (Path.Combine ("temp", TestName))) {
-				b.RequiresMSBuild = true;
-				b.Target = "Restore";
-				Assert.IsTrue (b.Build (proj), "Restore should have succeeded.");
-				b.Target = "Build";
 				Assert.IsTrue (b.Build (proj), "Build should have succeeded.");
 			}
 		}

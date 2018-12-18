@@ -13,6 +13,7 @@ namespace Xamarin.ProjectTools
 {
 	public abstract class XamarinProject 
 	{
+		static readonly object nuget_lock = new object ();
 		string debugConfigurationName;
 		string releaseConfigurationName;
 
@@ -297,6 +298,8 @@ namespace Xamarin.ProjectTools
 				RedirectStandardError = true,
 				RedirectStandardOutput = true,
 			};
+			//NOTE: we only want one NuGet.exe running at a time
+			lock (nuget_lock)
 			using (var process = new Process {
 				StartInfo = psi,
 			}) {

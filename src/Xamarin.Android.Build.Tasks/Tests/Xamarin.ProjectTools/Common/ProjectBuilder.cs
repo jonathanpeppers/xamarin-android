@@ -11,6 +11,8 @@ namespace Xamarin.ProjectTools
 {
 	public class ProjectBuilder : Builder
 	{
+		static readonly object restore_lock = new object ();
+
 		public ProjectBuilder (string projectDirectory)
 		{
 			ProjectDirectory = projectDirectory;
@@ -59,11 +61,25 @@ namespace Xamarin.ProjectTools
 
 		public bool Build (XamarinProject project, bool doNotCleanupOnUpdate = false, string [] parameters = null, bool saveProject = true, Dictionary<string, string> environmentVariables = null)
 		{
+			//NOTE: the existence of <ProjectReference/> is the main reason we would set RequiresMSBuild
+			RequiresMSBuild |= project.PackageReferences.Count > 0;
+
 			Save (project, doNotCleanupOnUpdate, saveProject);
 
 			Output = project.CreateBuildOutput (this);
-			
-			project.NuGetRestore (Path.Combine (XABuildPaths.TestOutputDirectory, ProjectDirectory), PackagesDirectory);
+
+			if (project.Packages.Count > 0) {
+				project.NuGetRestore (Path.Combine (XABuildPaths.TestOutputDirectory, ProjectDirectory), PackagesDirectory);
+			} else if (project.PackageReferences.Count > 0) {
+				bool shouldThrow = ThrowOnBuildFailure;
+				try {
+					ThrowOnBuildFailure = true;
+					if (!Restore (project, doNotCleanupOnUpdate))
+						return false;
+				} finally {
+					ThrowOnBuildFailure = shouldThrow;
+				}
+			}
 
 			bool result = BuildInternal (Path.Combine (ProjectDirectory, project.ProjectFilePath), Target, parameters, environmentVariables);
 			built_before = true;
@@ -79,7 +95,9 @@ namespace Xamarin.ProjectTools
 			var oldTarget = Target;
 			Target = "Restore";
 			try {
-				return Build (project, doNotCleanupOnUpdate);
+				//NOTE: we only want one /t:Restore running at a time
+				lock (restore_lock)
+					return Build (project, doNotCleanupOnUpdate);
 			} finally {
 				Target = oldTarget;
 			}
