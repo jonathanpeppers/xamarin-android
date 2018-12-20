@@ -2687,9 +2687,20 @@ because xbuild doesn't support framework reference assemblies.
 
 </Target>
 
-<Target Name="_CompileDex"
-		DependsOnTargets="_CompileToDalvikWithDx;_CompileToDalvikWithD8">
+<PropertyGroup>
+	<_CompileDexDependsOn>
+		_CompileToDalvikWithDx;
+		_CompileToDalvikWithD8;
+	</_CompileDexDependsOn>
+	<_CompileDexBeforeTargets Condition=" '$(AndroidApplication)' == 'True' ">
+		IncrementalClean;
+		_CleanGetCurrentAndPriorFileWrites;
+	</_CompileDexBeforeTargets>
+</PropertyGroup>
 
+<Target Name="_CompileDex"
+		DependsOnTargets="$(_CompileDexDependsOn)"
+		BeforeTargets="$(_CompileDexBeforeTargets)">
 	<ItemGroup>
 		<_DexFile Include="$(IntermediateOutputPath)android\bin\dex\*.dex" />
 		<_DexFile Include="$(IntermediateOutputPath)android\bin\*.dex" />
