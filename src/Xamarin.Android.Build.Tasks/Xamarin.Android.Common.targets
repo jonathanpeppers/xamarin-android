@@ -1796,6 +1796,10 @@ because xbuild doesn't support framework reference assemblies.
 		ExtraPackages="$(AaptExtraPackages)">
 		<Output TaskParameter="PrimaryJavaResgenFile" PropertyName="_GeneratedPrimaryJavaResgenFile" />
 	</CopyGeneratedJavaResourceClasses>
+	<ItemGroup>
+		<FileWrites Include="$(_GeneratedPrimaryJavaResgenFile)"             Condition=" '$(_GeneratedPrimaryJavaResgenFile)' != '' " />
+		<FileWrites Include="$(IntermediateOutputPath)android\src\**\R.java" Condition=" '$(_GeneratedPrimaryJavaResgenFile)' == '' " />
+	</ItemGroup>
 
   <!-- We need to strip out just filename from request Designer file location -->
   <CreateItem Include="$(_AndroidResourceDesignerFile)">
