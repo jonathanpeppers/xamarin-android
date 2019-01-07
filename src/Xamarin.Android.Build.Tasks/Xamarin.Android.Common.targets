@@ -2387,7 +2387,8 @@ because xbuild doesn't support framework reference assemblies.
     TlsProvider="$(AndroidTlsProvider)"
     Debug="$(AndroidIncludeDebugSymbols)"
     AndroidSequencePointsMode="$(_SequencePointsMode)"
-    EnableSGenConcurrent="$(AndroidEnableSGenConcurrent)">
+    EnableSGenConcurrent="$(AndroidEnableSGenConcurrent)"
+    BuildId="$(CoreCompileDependencyHash)">
     <Output TaskParameter="BuildId" PropertyName="_XamarinBuildId" />
   </GeneratePackageManagerJava>
   <Touch Files="$(_AndroidStampDirectory)_GeneratePackageManagerJava.stamp" AlwaysCreate="True" />

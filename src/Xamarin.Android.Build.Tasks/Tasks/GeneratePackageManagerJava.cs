@@ -15,8 +15,6 @@ namespace Xamarin.Android.Tasks
 	{
 		const string EnvironmentFileName = "XamarinAndroidEnvironmentVariables.java";
 
-		Guid buildId = Guid.NewGuid ();
-
 		[Required]
 		public ITaskItem[] ResolvedAssemblies { get; set; }
 
@@ -61,7 +59,8 @@ namespace Xamarin.Android.Tasks
 
 		public override bool Execute ()
 		{
-			BuildId = buildId.ToString ();
+			if (string.IsNullOrEmpty (BuildId))
+				BuildId = Guid.NewGuid ().ToString ();
 			Log.LogDebugMessage ("  [Output] BuildId: {0}", BuildId);
 
 			var shared_runtime = string.Compare (UseSharedRuntime, "true", true) == 0;
@@ -188,7 +187,7 @@ namespace Xamarin.Android.Tasks
 			}
 
 			if (!havebuildId)
-				WriteEnvironment ("XAMARIN_BUILD_ID", buildId.ToString ());
+				WriteEnvironment ("XAMARIN_BUILD_ID", BuildId);
 
 			if (!haveHttpMessageHandler) {
 				if (HttpClientHandlerType == null)
