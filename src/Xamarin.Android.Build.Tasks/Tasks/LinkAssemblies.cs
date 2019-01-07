@@ -139,6 +139,8 @@ namespace Xamarin.Android.Tasks
 					var copysrc = assembly.ItemSpec;
 					var filename = Path.GetFileName (assembly.ItemSpec);
 					var assemblyDestination = Path.Combine (copydst, filename);
+					var mdb = copysrc + "mdb";
+					var pdb = Path.ChangeExtension (copysrc, "pdb");
 
 					if (options.LinkNone) {
 						if (skiplist.Any (s => Path.GetFileNameWithoutExtension (filename) == s)) {
@@ -150,20 +152,24 @@ namespace Xamarin.Android.Tasks
 								continue;
 						} else {
 							// Prefer fixup assemblies if exists, otherwise just copy the original.
-							copysrc = Path.Combine (OutputDirectory, filename);
-							copysrc = File.Exists (copysrc) ? copysrc : assembly.ItemSpec;
+							var linkerOutput = Path.Combine (OutputDirectory, filename);
+							if (File.Exists (linkerOutput)) {
+								copysrc = linkerOutput;
+							}
+							var linkerPdb = Path.Combine (OutputDirectory, Path.ChangeExtension (filename, "pdb"));
+							if (File.Exists (linkerPdb)) {
+								pdb = linkerPdb;
+							}
 						}
 					}
 					else if (!MonoAndroidHelper.IsForceRetainedAssembly (filename))
 						continue;
 
 					MonoAndroidHelper.CopyIfChanged (copysrc, assemblyDestination);
-					var mdb = assembly.ItemSpec + ".mdb";
 					if (File.Exists (mdb)) {
 						var mdbDestination = assemblyDestination + ".mdb";
 						MonoAndroidHelper.CopyIfChanged (mdb, mdbDestination);
 					}
-					var pdb = Path.ChangeExtension (copysrc, "pdb");
 					if (File.Exists (pdb) && Files.IsPortablePdb (pdb)) {
 						var pdbDestination = Path.ChangeExtension (assemblyDestination, "pdb");
 						MonoAndroidHelper.CopyIfChanged (pdb, pdbDestination);
