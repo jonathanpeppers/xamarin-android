@@ -114,6 +114,7 @@ namespace Xamarin.Android.Tasks
 					var taskItem = new TaskItem (assembly) {
 						ItemSpec = Path.GetFullPath (assemblyDef.MainModule.FileName),
 					};
+					taskItem.SetMetadata ("Mvid", assemblyDef.MainModule.Mvid.ToString ());
 					if (string.IsNullOrEmpty (taskItem.GetMetadata ("ReferenceAssembly"))) {
 						taskItem.SetMetadata ("ReferenceAssembly", taskItem.ItemSpec);
 					}
@@ -209,7 +210,6 @@ namespace Xamarin.Android.Tasks
 		void AddAssemblyReferences (DirectoryAssemblyResolver resolver, Dictionary<string, ITaskItem> assemblies, AssemblyDefinition assembly, List<string> resolutionPath)
 		{
 			var assemblyName = assembly.Name.Name;
-			var fullPath = Path.GetFullPath (assembly.MainModule.FileName);
 
 			// Don't repeat assemblies we've already done
 			bool topLevel = resolutionPath == null;
@@ -227,7 +227,7 @@ namespace Xamarin.Android.Tasks
 
 			// Add this assembly
 			if (!topLevel) {
-				assemblies [assemblyName] = CreateAssemblyTaskItem (fullPath);
+				assemblies [assemblyName] = CreateAssemblyTaskItem (assembly);
 			}
 
 			// Recurse into each referenced assembly
@@ -335,14 +335,15 @@ namespace Xamarin.Android.Tasks
 		void ResolveI18nAssembly (DirectoryAssemblyResolver resolver, string name, Dictionary<string, ITaskItem> assemblies)
 		{
 			var assembly = resolver.Resolve (AssemblyNameReference.Parse (name));
-			var assemblyFullPath = Path.GetFullPath (assembly.MainModule.FileName);
-			assemblies [name] = CreateAssemblyTaskItem (assemblyFullPath);
+			assemblies [name] = CreateAssemblyTaskItem (assembly);
 		}
 
-		static ITaskItem CreateAssemblyTaskItem (string assemblyFullPath)
+		static ITaskItem CreateAssemblyTaskItem (AssemblyDefinition assembly)
 		{
+			var assemblyFullPath = Path.GetFullPath (assembly.MainModule.FileName);
 			return new TaskItem (assemblyFullPath, new Dictionary<string, string> {
-				{ "ReferenceAssembly", assemblyFullPath }
+				{ "ReferenceAssembly", assemblyFullPath },
+				{ "Mvid", assembly.MainModule.Mvid.ToString () }
 			});
 		}
 	}

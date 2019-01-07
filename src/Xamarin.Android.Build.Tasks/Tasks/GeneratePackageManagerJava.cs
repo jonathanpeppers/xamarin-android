@@ -31,9 +31,6 @@ namespace Xamarin.Android.Tasks
 		public string UseSharedRuntime { get; set; }
 
 		[Required]
-		public string MainAssembly { get; set; }
-
-		[Required]
 		public string TargetFrameworkVersion { get; set; }
 
 		[Required]
@@ -59,20 +56,24 @@ namespace Xamarin.Android.Tasks
 
 		public override bool Execute ()
 		{
-			if (string.IsNullOrEmpty (BuildId))
-				BuildId = Guid.NewGuid ().ToString ();
-			Log.LogDebugMessage ("  [Output] BuildId: {0}", BuildId);
-
 			var shared_runtime = string.Compare (UseSharedRuntime, "true", true) == 0;
 			var doc = AndroidAppManifest.Load (Manifest, MonoAndroidHelper.SupportedVersions);
 			int minApiVersion = doc.MinSdkVersion == null ? 4 : (int) doc.MinSdkVersion;
+
 			// We need to include any special assemblies in the Assemblies list
-			var assemblies = ResolvedUserAssemblies.Select (p => p.ItemSpec)
-				.Concat (MonoAndroidHelper.GetFrameworkAssembliesToTreatAsUserAssemblies (ResolvedAssemblies))						
-				.ToList ();
-			var mainFileName = Path.GetFileName (MainAssembly);
-			Func<string,string,bool> fileNameEq = (a,b) => a.Equals (b, StringComparison.OrdinalIgnoreCase);
-			assemblies = assemblies.Where (a => fileNameEq (a, mainFileName)).Concat (assemblies.Where (a => !fileNameEq (a, mainFileName))).ToList ();
+			var assemblies = MonoAndroidHelper.GetFrameworkAssembliesToTreatAsUserAssemblies (ResolvedAssemblies).ToList ();
+			string mainFileName = null;
+			foreach (var assembly in ResolvedUserAssemblies) {
+				if (bool.TryParse (assembly.GetMetadata ("MainAssembly"), out bool isMain) && isMain) {
+					BuildId = assembly.GetMetadata ("Mvid");
+					mainFileName = Path.GetFileName (assembly.ItemSpec);
+					assemblies.Insert (0, assembly);
+				} else {
+					assemblies.Add (assembly);
+				}
+			}
+
+			Log.LogDebugMessage ("  [Output] BuildId: {0}", BuildId);
 
 			using (var stream = new MemoryStream ())
 			using (var pkgmgr = new StreamWriter (stream)) {
@@ -91,7 +92,7 @@ namespace Xamarin.Android.Tasks
 
 				pkgmgr.WriteLine ("\t\t/* We need to ensure that \"{0}\" comes first in this list. */", mainFileName);
 				foreach (var assembly in assemblies) {
-					pkgmgr.WriteLine ("\t\t\"" + Path.GetFileName (assembly) + "\",");
+					pkgmgr.WriteLine ("\t\t\"" + Path.GetFileName (assembly.ItemSpec) + "\",");
 				}
 
 				// Write the assembly dependencies

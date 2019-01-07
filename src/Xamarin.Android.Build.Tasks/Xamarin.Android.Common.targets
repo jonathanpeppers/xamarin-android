@@ -1918,7 +1918,9 @@ because xbuild doesn't support framework reference assemblies.
 	<!--- Remove the ImplicitlyExpandDesignTimeFacades assemblies. We have already build the app there are not required for packaging  -->
 	<ItemGroup>
 		<FilteredAssemblies Include="$(OutDir)$(TargetFileName)"
-				Condition="Exists ('$(OutDir)$(TargetFileName)')" />
+				Condition="Exists ('$(OutDir)$(TargetFileName)')">
+			<MainAssembly>True</MainAssembly>
+		</FilteredAssemblies>
 		<FilteredAssemblies Include="@(ReferenceCopyLocalPaths)"
 				Condition="'%(ReferenceCopyLocalPaths.ResolvedFrom)' != 'ImplicitlyExpandDesignTimeFacades' And '%(ReferenceCopyLocalPaths.Extension)' == '.dll' And '%(ReferenceCopyLocalPaths.RelativeDir)' == '' "/>
 		<FilteredAssemblies Include="@(ReferencePath)"
@@ -2374,7 +2376,6 @@ because xbuild doesn't support framework reference assemblies.
   <GeneratePackageManagerJava
     ResolvedAssemblies="@(_ResolvedAssemblies)"
     ResolvedUserAssemblies="@(_ResolvedUserAssemblies)"
-    MainAssembly="$(MonoAndroidLinkerInputDir)$(TargetFileName)"
     OutputDirectory="$(IntermediateOutputPath)android\src\mono"
     EnvironmentOutputDirectory="$(IntermediateOutputPath)android\src\mono\android\app"
     UseSharedRuntime="$(AndroidUseSharedRuntime)"
@@ -2387,8 +2388,7 @@ because xbuild doesn't support framework reference assemblies.
     TlsProvider="$(AndroidTlsProvider)"
     Debug="$(AndroidIncludeDebugSymbols)"
     AndroidSequencePointsMode="$(_SequencePointsMode)"
-    EnableSGenConcurrent="$(AndroidEnableSGenConcurrent)"
-    BuildId="$(CoreCompileDependencyHash)">
+    EnableSGenConcurrent="$(AndroidEnableSGenConcurrent)">
     <Output TaskParameter="BuildId" PropertyName="_XamarinBuildId" />
   </GeneratePackageManagerJava>
   <Touch Files="$(_AndroidStampDirectory)_GeneratePackageManagerJava.stamp" AlwaysCreate="True" />

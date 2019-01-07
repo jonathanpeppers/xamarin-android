@@ -122,6 +122,7 @@ namespace Xamarin.Android.Tasks
 			// However we only want to look for JLO types in user code
 			var assemblies = ResolvedUserAssemblies.Select (p => p.ItemSpec).ToList ();
 			var fxAdditions = MonoAndroidHelper.GetFrameworkAssembliesToTreatAsUserAssemblies (ResolvedAssemblies)
+				.Select(a => a.ItemSpec)
 				.Where (a => assemblies.All (x => Path.GetFileName (x) != Path.GetFileName (a)));
 			assemblies = assemblies.Concat (fxAdditions).ToList ();
 
