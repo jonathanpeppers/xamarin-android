@@ -75,7 +75,7 @@ namespace Xamarin.Android.Tasks
 			Func<string,string,bool> fileNameEq = (a,b) => a.Equals (b, StringComparison.OrdinalIgnoreCase);
 			assemblies = assemblies.Where (a => fileNameEq (a, mainFileName)).Concat (assemblies.Where (a => !fileNameEq (a, mainFileName))).ToList ();
 
-			using (var stream = new MemoryStream ())
+			using (var stream = new SHA1Stream ())
 			using (var pkgmgr = new StreamWriter (stream)) {
 				// Write the boilerplate from the MonoPackageManager.java resource
 				var packageManagerResource = minApiVersion < 9 ? "MonoPackageManager.api4.java" : "MonoPackageManager.java";
@@ -216,14 +216,13 @@ namespace Xamarin.Android.Tasks
 				environmentTemplate = sr.ReadToEnd ();
 			}
 
-			using (var ms = new MemoryStream ()) {
-				using (var sw = new StreamWriter (ms)) {
-					sw.Write (environmentTemplate.Replace ("//@ENVVARS@", environment.ToString ()));
-					sw.Flush ();
+			using (var stream = new SHA1Stream ())
+			using (var sw = new StreamWriter (stream)) {
+				sw.Write (environmentTemplate.Replace ("//@ENVVARS@", environment.ToString ()));
+				sw.Flush ();
 
-					string dest = Path.GetFullPath (Path.Combine (EnvironmentOutputDirectory, EnvironmentFileName));
-					MonoAndroidHelper.CopyIfStreamChanged (ms, dest);
-				}
+				string dest = Path.GetFullPath (Path.Combine (EnvironmentOutputDirectory, EnvironmentFileName));
+				MonoAndroidHelper.CopyIfStreamChanged (stream, dest);
 			}
 
 			void WriteEnvironment (string name, string value)

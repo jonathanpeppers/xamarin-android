@@ -16,11 +16,11 @@ namespace Xamarin.Android.Tasks
 		public static bool CreateJavaSources (TaskLoggingHelper log, IEnumerable<TypeDefinition> javaTypes, string outputPath, string applicationJavaClass, bool useSharedRuntime, bool generateOnCreateOverrides, bool hasExportReference)
 		{
 			bool ok = true;
-			using (var memoryStream = new MemoryStream ())
-			using (var writer = new StreamWriter (memoryStream)) {
+			using (var stream = new SHA1Stream ())
+			using (var writer = new StreamWriter (stream)) {
 				foreach (var t in javaTypes) {
 					//Reset for reuse
-					memoryStream.SetLength (0);
+					stream.Reuse ();
 
 					try {
 						var jti = new JavaCallableWrapperGenerator (t, log.LogWarning) {
@@ -33,7 +33,7 @@ namespace Xamarin.Android.Tasks
 						writer.Flush ();
 
 						var path = jti.GetDestinationPath (outputPath);
-						MonoAndroidHelper.CopyIfStreamChanged (memoryStream, path);
+						MonoAndroidHelper.CopyIfStreamChanged (stream, path);
 						if (jti.HasExport && !hasExportReference)
 							Diagnostic.Error (4210, "You need to add a reference to Mono.Android.Export.dll when you use ExportAttribute or ExportFieldAttribute.");
 					} catch (XamarinAndroidException xae) {

@@ -372,6 +372,11 @@ namespace Xamarin.Android.Tools {
 
 		public static string HashStream (Stream stream)
 		{
+			if (stream is SHA1Stream sha1) {
+				sha1.FlushFinalBlock ();
+				return BitConverter.ToString (sha1.Hash);
+			}
+
 			stream.Position = 0;
 
 			using (HashAlgorithm hashAlg = new SHA1Managed ()) {

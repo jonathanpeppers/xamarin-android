@@ -22,7 +22,4 @@
     <Compile Include="$(MSBuildThisFileDirectory)Utilities\MockBuildEngine.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Utilities\MonoAndroidHelperTests.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="$(MSBuildThisFileDirectory)Utilities\" />
-  </ItemGroup>
 </Project>

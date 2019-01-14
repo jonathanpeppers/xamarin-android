@@ -44,7 +44,7 @@ namespace Xamarin.Android.Tasks
 
 		public static bool SaveIfChanged (this XDocument document, string fileName)
 		{
-			using (var stream = new MemoryStream ())
+			using (var stream = new SHA1Stream ())
 			using (var xw = new Monodroid.LinePreservedXmlWriter (new StreamWriter (stream))) {
 				xw.WriteNode (document.CreateNavigator (), false);
 				xw.Flush ();

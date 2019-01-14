@@ -221,9 +221,8 @@ namespace Xamarin.Android.Tasks
 
 			var additionalProviders = manifest.Merge (all_java_types, selectedWhitelistAssemblies, ApplicationJavaClass, EmbedAssemblies, BundledWearApplicationName, MergedManifestDocuments);
 
-			using (var stream = new MemoryStream ()) {
+			using (var stream = new SHA1Stream ()) {
 				manifest.Save (stream);
-
 				// Only write the new manifest if it actually changed
 				MonoAndroidHelper.CopyIfStreamChanged (stream, MergedAndroidManifestOutput);
 			}
@@ -302,7 +301,7 @@ namespace Xamarin.Android.Tasks
 
 		void UpdateWhenChanged (string path, Action<Stream> generator)
 		{
-			using (var stream = new MemoryStream ()) {
+			using (var stream = new SHA1Stream ()) {
 				generator (stream);
 				MonoAndroidHelper.CopyIfStreamChanged (stream, path);
 			}
