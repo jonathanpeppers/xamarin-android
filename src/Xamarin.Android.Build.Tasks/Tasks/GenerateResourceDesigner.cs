@@ -5,11 +5,10 @@ using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
-using Monodroid;
-
-using Java.Interop.Tools.Cecil;
 
 namespace Xamarin.Android.Tasks
 {
@@ -116,32 +115,29 @@ namespace Xamarin.Android.Tasks
 				Namespace = string.Empty;
 
 			// Create static resource overwrite methods for each Resource class in libraries.
-			var assemblyNames = new List<string> ();
 			if (IsApplication && References != null && References.Any ()) {
 				// FIXME: should this be unified to some better code with ResolveLibraryProjectImports?
-				using (var resolver = new DirectoryAssemblyResolver (this.CreateTaskLogger (), loadDebugSymbols: false)) {
-					foreach (var assemblyName in References) {
-						var suffix = assemblyName.ItemSpec.EndsWith (".dll") ? String.Empty : ".dll";
-						string hintPath = assemblyName.GetMetadata ("HintPath").Replace (Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
-						string fileName = assemblyName.ItemSpec + suffix;
-						string fullPath = Path.GetFullPath (assemblyName.ItemSpec);
-						// Skip non existing files in DesignTimeBuild
-						if (!File.Exists (fullPath) && DesignTimeBuild) {
-							Log.LogDebugMessage ("Skipping non existant dependancy '{0}' due to design time build.", fullPath);
-							continue;
-						}
-						resolver.Load (fullPath);
-						if (!String.IsNullOrEmpty (hintPath) && !File.Exists (hintPath)) // ignore invalid HintPath
-							hintPath = null;
-						string assemblyPath = String.IsNullOrEmpty (hintPath) ? fileName : hintPath;
-						if (MonoAndroidHelper.IsFrameworkAssembly (fileName) && !MonoAndroidHelper.FrameworkEmbeddedJarLookupTargets.Contains (Path.GetFileName (fileName)))
-							continue;
-						Log.LogDebugMessage ("Scan assembly {0} for resource generator", fileName);
-						assemblyNames.Add (assemblyPath);
+				var generator = new ResourceDesignerImportGenerator (Namespace, resources, Log);
+				foreach (var assemblyName in References) {
+					var suffix = assemblyName.ItemSpec.EndsWith (".dll", StringComparison.OrdinalIgnoreCase) ? String.Empty : ".dll";
+					string hintPath = assemblyName.GetMetadata ("HintPath").Replace (Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+					string fileName = assemblyName.ItemSpec + suffix;
+					string fullPath = Path.GetFullPath (assemblyName.ItemSpec);
+					// Skip non existing files in DesignTimeBuild
+					if (DesignTimeBuild && !File.Exists (fullPath)) {
+						Log.LogDebugMessage ("Skipping non existant dependancy '{0}' due to design time build.", fullPath);
+						continue;
 					}
-					var assemblies = assemblyNames.Select (assembly => resolver.GetAssembly (assembly));
-					new ResourceDesignerImportGenerator (Namespace, resources, Log)
-						.CreateImportMethods (assemblies);
+					if (!String.IsNullOrEmpty (hintPath) && !File.Exists (hintPath)) // ignore invalid HintPath
+						hintPath = null;
+					string assemblyPath = String.IsNullOrEmpty (hintPath) ? fileName : hintPath;
+					if (MonoAndroidHelper.IsFrameworkAssembly (fileName) && !MonoAndroidHelper.FrameworkEmbeddedJarLookupTargets.Contains (Path.GetFileName (fileName)))
+						continue;
+					Log.LogDebugMessage ("Scan assembly {0} for resource generator", fileName);
+					using (var pe = new PEReader (File.OpenRead (fullPath))) {
+						var reader = pe.GetMetadataReader ();
+						generator.CreateImportMethod (reader);
+					}
 				}
 			}
 
