@@ -1,19 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using System.Xml;
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
 using System.Xml.Linq;
-using Mono.Cecil;
 using Microsoft.Build.Utilities;
 using Microsoft.Build.Framework;
-using System.Text.RegularExpressions;
 using Xamarin.Tools.Zip;
-
-using Java.Interop.Tools.Cecil;
-
 using Xamarin.Android.Tools;
 
 namespace Xamarin.Android.Tasks
@@ -91,13 +85,11 @@ namespace Xamarin.Android.Tasks
 			assemblyMap.Load (AssemblyIdentityMapFile);
 			assembliesToSkip = new HashSet<string> (AssembliesToSkipCases ?? new string [0], StringComparer.OrdinalIgnoreCase);
 
-			using (var resolver = new DirectoryAssemblyResolver (this.CreateTaskLogger (), loadDebugSymbols: false)) {
-				try {
-					Extract (resolver, jars, resolvedResourceDirectories, resolvedAssetDirectories, resolvedEnvironmentFiles);
-				} catch (ZipIOException ex) {
-					Log.LogCodedError ("XA1004", ex.Message);
-					Log.LogDebugMessage (ex.ToString ());
-				}
+			try {
+				Extract (jars, resolvedResourceDirectories, resolvedAssetDirectories, resolvedEnvironmentFiles);
+			} catch (ZipIOException ex) {
+				Log.LogCodedError ("XA1004", ex.Message);
+				Log.LogDebugMessage (ex.ToString ());
 			}
 
 			Jars                        = jars.ToArray ();
@@ -174,7 +166,6 @@ namespace Xamarin.Android.Tasks
 		// Extracts library project contents under e.g. obj/Debug/[__library_projects__/*.jar | res/*/*]
 		// Extracts library project contents under e.g. obj/Debug/[lp/*.jar | res/*/*]
 		void Extract (
-				DirectoryAssemblyResolver res,
 				ICollection<string> jars,
 				ICollection<ITaskItem> resolvedResourceDirectories,
 				ICollection<string> resolvedAssetDirectories,
@@ -188,9 +179,6 @@ namespace Xamarin.Android.Tasks
 			}
 			var outdir = Path.GetFullPath (OutputImportDirectory);
 			Directory.CreateDirectory (outdir);
-
-			foreach (var assembly in Assemblies)
-				res.Load (assembly.ItemSpec);
 
 			// FIXME: reorder references by import priority (not sure how to do that yet)
 			foreach (var assemblyPath in Assemblies
@@ -256,104 +244,104 @@ namespace Xamarin.Android.Tasks
 
 				Log.LogDebugMessage ($"Refreshing {assemblyFileName}.dll");
 
-				var assembly = res.GetAssembly (assemblyPath);
-				foreach (var mod in assembly.Modules) {
-					// android environment files
-					foreach (var envtxt in mod.Resources
-							.Where (r => r.Name.StartsWith ("__AndroidEnvironment__", StringComparison.OrdinalIgnoreCase))
-							.Where (r => r is EmbeddedResource)
-							.Cast<EmbeddedResource> ()) {
-						var outFile = Path.Combine (outDirForDll, envtxt.Name);
-						using (var stream = envtxt.GetResourceStream ()) {
-							updated |= MonoAndroidHelper.CopyIfStreamChanged (stream, outFile);
-						}
-						resolvedEnvironments.Add (Path.GetFullPath (outFile));
-					}
+				using (var s = File.OpenRead (assemblyPath))
+				using (var pe = new PEReader (s)) {
+					var assemblyLastWrite = new FileInfo (assemblyPath).LastWriteTimeUtc;
+					var reader = pe.GetMetadataReader ();
+					foreach (var handle in reader.ManifestResources) {
+						var resource = reader.GetManifestResource (handle);
+						string name = reader.GetString (resource.Name);
 
-					// embedded jars (EmbeddedJar, EmbeddedReferenceJar)
-					var resjars = mod.Resources
-						.Where (r => r.Name.EndsWith (".jar", StringComparison.InvariantCultureIgnoreCase))
-						.Select (r => (EmbeddedResource) r);
-					foreach (var resjar in resjars) {
-						using (var stream = resjar.GetResourceStream ()) {
-							AddJar (jars, importsDir, resjar.Name);
-							updated |= MonoAndroidHelper.CopyIfStreamChanged (stream, Path.Combine (importsDir, resjar.Name));
-						}
-					}
-
-					var libzip = mod.Resources.FirstOrDefault (r => r.Name == "__AndroidNativeLibraries__.zip") as EmbeddedResource;
-					if (libzip != null) {
-						List<string> files = new List<string> ();
-						using (var stream = libzip.GetResourceStream ())
-						using (var zip = Xamarin.Tools.Zip.ZipArchive.Open (stream)) {
-							try {
-								updated |= Files.ExtractAll (zip, nativeimportsDir, modifyCallback: (entryFullName) => {
-									files.Add (Path.GetFullPath (Path.Combine (nativeimportsDir, entryFullName)));
-									return entryFullName
-										.Replace ("native_library_imports\\", "")
-										.Replace ("native_library_imports/", "");
-								}, deleteCallback: (fileToDelete) => {
-									return !files.Contains (fileToDelete);
-								});
-							} catch (PathTooLongException ex) {
-								Log.LogCodedError ("XA4303", $"Error extracting resources from \"{assemblyPath}\": {ex}");
-								return;
-							} catch (NotSupportedException ex) {
-								Log.LogCodedError ("XA4303", $"Error extracting resources from \"{assemblyPath}\": {ex}");
-								return;
+						// android environment files
+						if (name.StartsWith ("__AndroidEnvironment__", StringComparison.OrdinalIgnoreCase)) {
+							var outFile = Path.Combine (outDirForDll, name);
+							using (var stream = pe.GetEmbeddedResourceStream (resource)) {
+								updated |= MonoAndroidHelper.CopyIfStreamChanged (stream, outFile);
 							}
+							resolvedEnvironments.Add (Path.GetFullPath (outFile));
 						}
-					}
 
-					// embedded AndroidResourceLibrary archive
-					var reszip = mod.Resources.FirstOrDefault (r => r.Name == "__AndroidLibraryProjects__.zip") as EmbeddedResource;
-					if (reszip != null) {
-						// temporarily extracted directory will look like:
-						//    __library_projects__/[dllname]/[library_project_imports | jlibs]/bin
-						using (var stream = reszip.GetResourceStream ())
-						using (var zip = Xamarin.Tools.Zip.ZipArchive.Open (stream)) {
-							try {
-								updated |= Files.ExtractAll (zip, importsDir, modifyCallback: (entryFullName) => {
-									var path = entryFullName
-										.Replace ("library_project_imports\\","")
-										.Replace ("library_project_imports/", "");
-									if (path.EndsWith (".jar", StringComparison.OrdinalIgnoreCase)) {
-										AddJar (jars, importsDir, path);
-									}
-									return path;
-								}, deleteCallback: (fileToDelete) => {
-									return !jars.Contains (fileToDelete);
-								});
-							} catch (PathTooLongException ex) {
-								Log.LogCodedError ("XA4303", $"Error extracting resources from \"{assemblyPath}\": {ex}");
-								return;
-							} catch (NotSupportedException ex) {
-								Log.LogCodedError ("XA4303", $"Error extracting resources from \"{assemblyPath}\": {ex}");
-								return;
+						// embedded jars (EmbeddedJar, EmbeddedReferenceJar)
+						else if (name.EndsWith (".jar", StringComparison.InvariantCultureIgnoreCase)) {
+							using (var stream = pe.GetEmbeddedResourceStream (resource)) {
+								AddJar (jars, importsDir, name);
+								updated |= MonoAndroidHelper.CopyIfStreamChanged (stream, Path.Combine (importsDir, name));
 							}
 						}
 
-						// We used to *copy* the resources to overwrite other resources,
-						// which resulted in missing resource issue.
-						// Here we replaced copy with use of '-S' option and made it to work.
+						// embedded native libraries
+						else if (name == "__AndroidNativeLibraries__.zip") {
+							List<string> files = new List<string> ();
+							using (var stream = pe.GetEmbeddedResourceStream (resource))
+							using (var zip = ZipArchive.Open (stream)) {
+								try {
+									updated |= Files.ExtractAll (zip, nativeimportsDir, modifyCallback: (entryFullName) => {
+										files.Add (Path.GetFullPath (Path.Combine (nativeimportsDir, entryFullName)));
+										return entryFullName
+											.Replace ("native_library_imports\\", "")
+											.Replace ("native_library_imports/", "");
+									}, deleteCallback: (fileToDelete) => {
+										return !files.Contains (fileToDelete);
+									});
+								} catch (PathTooLongException ex) {
+									Log.LogCodedError ("XA4303", $"Error extracting resources from \"{assemblyPath}\": {ex}");
+									return;
+								} catch (NotSupportedException ex) {
+									Log.LogCodedError ("XA4303", $"Error extracting resources from \"{assemblyPath}\": {ex}");
+									return;
+								}
+							}
+						}
+
+						// embedded AndroidResourceLibrary archive
+						else if (name == "__AndroidLibraryProjects__.zip") {
+							// temporarily extracted directory will look like:
+							//    __library_projects__/[dllname]/[library_project_imports | jlibs]/bin
+							using (var stream = pe.GetEmbeddedResourceStream (resource))
+							using (var zip = ZipArchive.Open (stream)) {
+								try {
+									updated |= Files.ExtractAll (zip, importsDir, modifyCallback: (entryFullName) => {
+										var path = entryFullName
+											.Replace ("library_project_imports\\","")
+											.Replace ("library_project_imports/", "");
+										if (path.EndsWith (".jar", StringComparison.OrdinalIgnoreCase)) {
+											AddJar (jars, importsDir, path);
+										}
+										return path;
+									}, deleteCallback: (fileToDelete) => {
+										return !jars.Contains (fileToDelete);
+									});
+								} catch (PathTooLongException ex) {
+									Log.LogCodedError ("XA4303", $"Error extracting resources from \"{assemblyPath}\": {ex}");
+									return;
+								} catch (NotSupportedException ex) {
+									Log.LogCodedError ("XA4303", $"Error extracting resources from \"{assemblyPath}\": {ex}");
+									return;
+								}
+
+								// We used to *copy* the resources to overwrite other resources,
+								// which resulted in missing resource issue.
+								// Here we replaced copy with use of '-S' option and made it to work.
 #if SEPARATE_CRUNCH
-						// FIXME: review these binResDir/binAssemblyDir thing and enable this. Eclipse does this.
-						// Enabling these blindly causes build failure on ActionBarSherlock.
-						if (Directory.Exists (binResDir))
-							resolvedResourceDirectories.Add (binResDir);
-						if (Directory.Exists (binAssemblyDir))
-							resolvedAssetDirectories.Add (binAssemblyDir);
+								// FIXME: review these binResDir/binAssemblyDir thing and enable this. Eclipse does this.
+								// Enabling these blindly causes build failure on ActionBarSherlock.
+								if (Directory.Exists (binResDir))
+									resolvedResourceDirectories.Add (binResDir);
+								if (Directory.Exists (binAssemblyDir))
+									resolvedAssetDirectories.Add (binAssemblyDir);
 #endif
-						if (Directory.Exists (resDir)) {
-							var taskItem = new TaskItem (Path.GetFullPath (resDir), new Dictionary<string, string> {
-								{ OriginalFile, assemblyPath }
-							});
-							if (assembliesToSkip.Contains (assemblyFileName))
-								taskItem.SetMetadata (SkipAndroidResourceProcessing, "True");
-							resolvedResourceDirectories.Add (taskItem);
+								if (Directory.Exists (resDir)) {
+									var taskItem = new TaskItem (Path.GetFullPath (resDir), new Dictionary<string, string> {
+										{ OriginalFile, assemblyPath }
+									});
+									if (assembliesToSkip.Contains (assemblyFileName))
+										taskItem.SetMetadata (SkipAndroidResourceProcessing, "True");
+									resolvedResourceDirectories.Add (taskItem);
+								}
+								if (Directory.Exists (assetsDir))
+									resolvedAssetDirectories.Add (Path.GetFullPath (assetsDir));
+							}
 						}
-						if (Directory.Exists (assetsDir))
-							resolvedAssetDirectories.Add (Path.GetFullPath (assetsDir));
 					}
 				}
 
