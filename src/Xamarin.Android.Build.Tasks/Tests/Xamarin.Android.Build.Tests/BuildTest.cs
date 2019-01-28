@@ -3484,6 +3484,41 @@ AAAAAAAAAAAAPQAAAE1FVEEtSU5GL01BTklGRVNULk1GUEsBAhQAFAAICAgAJZFnS7uHtAn+AQAA
 				Assert.IsTrue (appb.Build (proj), "build should have succeeded.");
 			}
 		}
+
+		[Test]
+		public void BuildWithPCLs ()
+		{
+			var path = Path.Combine ("temp", TestName);
+			var pcl = new XamarinPCLProject {
+				ProjectName = "Library1",
+				Sources = {
+					new BuildItem.Source ("Foo.cs") {
+						TextContent = () => "public class Foo { }",
+					}
+				},
+			};
+			const string onCreate = "base.OnCreate (bundle);";
+			const string init = "Microsoft.WindowsAzure.MobileServices.CurrentPlatform.Init ();";
+			var proj = new XamarinAndroidApplicationProject {
+				ProjectName = "App1",
+				References = { new BuildItem ("ProjectReference", "..\\Library1\\Library1.csproj") },
+				Packages = {
+					KnownPackages.Microsoft_Azure_Mobile_Client_2_0_1,
+				},
+				Sources = {
+					new BuildItem.Source ("Bar.cs") {
+						TextContent = () => "public class Bar : Foo { }",
+					}
+				},
+			};
+			proj.MainActivity = proj.DefaultMainActivity.Replace (onCreate, $"{onCreate}{Environment.NewLine}{init}");
+			using (var libb = CreateDllBuilder (Path.Combine (path, pcl.ProjectName)))
+			using (var appb = CreateApkBuilder (Path.Combine (path, proj.ProjectName))) {
+				Assert.IsTrue (libb.Build (pcl), "library build should have succeeded.");
+				appb.Target = "Build";
+				Assert.IsTrue (appb.Build (proj), "app build should have succeeded.");
+			}
+		}
 	}
 }
 

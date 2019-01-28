@@ -681,6 +681,19 @@ namespace Xamarin.ProjectTools
 				}
 			},
 		};
+		public static Package Microsoft_Azure_Mobile_Client_2_0_1 = new Package {
+			Id = "Microsoft.Azure.Mobile.Client",
+			Version = "2.0.1",
+			TargetFramework = "MonoAndroid23",
+			References = {
+				new BuildItem.Reference ("Microsoft.Azure.Mobile.Client") {
+					MetadataValues = "HintPath=..\\packages\\Microsoft.Azure.Mobile.Client.2.0.1\\lib\\monoandroid\\Microsoft.Azure.Mobile.Client.dll"
+				},
+				new BuildItem.Reference ("Microsoft.Azure.Mobile.Client.Ext") {
+					MetadataValues = "HintPath=..\\packages\\Microsoft.Azure.Mobile.Client.2.0.1\\lib\\monoandroid\\Microsoft.Azure.Mobile.Client.Ext.dll"
+				}
+			},
+		};
 	}
 }
 
