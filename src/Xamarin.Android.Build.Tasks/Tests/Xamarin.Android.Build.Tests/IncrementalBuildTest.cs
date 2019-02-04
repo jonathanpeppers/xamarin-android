@@ -519,5 +519,28 @@ namespace Lib2
 				}
 			}
 		}
+
+		[Test]
+		public void BuildAfterSetReadonlyFiles ()
+		{
+			var proj = new XamarinAndroidApplicationProject ();
+			using (var b = CreateApkBuilder (Path.Combine ("temp", TestName))) {
+				Assert.IsTrue (b.Build (proj), "first build should have succeeded.");
+
+				//Now mark some files readonly
+				var intermediate = Path.Combine (Root, b.ProjectDirectory, proj.IntermediateOutputPath);
+				var javaFile = Path.Combine (intermediate, "android", "src", "mono", "MonoPackageManager.java");
+				var classFile = Path.Combine (intermediate, "android", "bin", "classes", "mono", "MonoPackageManager.class");
+				foreach (var file in new [] { javaFile, classFile }) {
+					FileAssert.Exists (file);
+					File.SetAttributes (file, File.GetAttributes (file) | FileAttributes.ReadOnly | FileAttributes.Hidden | FileAttributes.Archive);
+				}
+
+				//Trigger changes via build.props
+				File.Delete (Path.Combine (intermediate, "build.props"));
+
+				Assert.IsTrue (b.Build (proj, saveProject: false, doNotCleanupOnUpdate: true), "second build should have succeeded.");
+			}
+		}
 	}
 }
