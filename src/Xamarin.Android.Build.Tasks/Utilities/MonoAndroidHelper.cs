@@ -513,13 +513,15 @@ namespace Xamarin.Android.Tasks
 			"Xamarin.Android.NUnitLite.dll",
 		};
 
+		static readonly char [] SemiColon = new [] { ';' };
+
 		public static Dictionary<string, string> LoadAcwMapFile (string acwPath)
 		{
-			var acw_map = new Dictionary<string, string> ();
+			var acw_map = new Dictionary<string, string> (StringComparer.Ordinal);
 			if (!File.Exists (acwPath))
 				return acw_map;
 			foreach (var s in File.ReadLines (acwPath)) {
-				var items = s.Split (new char[] { ';' }, count: 2);
+				var items = s.Split (SemiColon, count: 2);
 				if (!acw_map.ContainsKey (items [0]))
 					acw_map.Add (items [0], items [1]);
 			}
@@ -531,16 +533,16 @@ namespace Xamarin.Android.Tasks
 			var cachedMap = (Dictionary<string, HashSet<string>>)engine?.GetRegisteredTaskObject (mapFile, RegisteredTaskObjectLifetime.Build);
 			if (cachedMap != null)
 				return cachedMap;
-			var map = new Dictionary<string, HashSet<string>> ();
+			var map = new Dictionary<string, HashSet<string>> (StringComparer.Ordinal);
 			if (!File.Exists (mapFile))
 				return map;
 			foreach (var s in File.ReadLines (mapFile)) {
-				var items = s.Split (new char [] { ';' }, count: 2);
+				var items = s.Split (SemiColon, count: 2);
 				var key = items [0];
 				var value = items [1];
 				HashSet<string> set;
 				if (!map.TryGetValue (key, out set))
-					map.Add (key, set = new HashSet<string> ());
+					map.Add (key, set = new HashSet<string> (StringComparer.Ordinal));
 				set.Add (value);
 			}
 			return map;
@@ -552,8 +554,11 @@ namespace Xamarin.Android.Tasks
 			using (var stream = new MemoryStream ())
 			using (var writer = new StreamWriter (stream)) {
 				foreach (var i in map.OrderBy (x => x.Key)) {
-					foreach (var v in i.Value.OrderBy (x => x))
-						writer.WriteLine ($"{i.Key};{v}");
+					foreach (var v in i.Value.OrderBy (x => x)) {
+						writer.Write (i.Key);
+						writer.Write (';');
+						writer.WriteLine (v);
+					}
 				}
 				writer.Flush ();
 				return CopyIfStreamChanged (stream, mapFile);
@@ -611,10 +616,14 @@ namespace Xamarin.Android.Tasks
 
 		public static Dictionary<string, string> LoadResourceCaseMap (string resourceCaseMap)
 		{
-			var result = new Dictionary<string, string> ();
+			var result = new Dictionary<string, string> (StringComparer.OrdinalIgnoreCase);
 			if (resourceCaseMap != null) {
-				foreach (var arr in resourceCaseMap.Split (';').Select (l => l.Split ('|')).Where (a => a.Length == 2))
-					result [arr [1]] = arr [0]; // lowercase -> original
+				foreach (var semiColonSplit in resourceCaseMap.Split (';')) {
+					var pipeSplit = semiColonSplit.Split ('|');
+					if (pipeSplit.Length == 2) {
+						result [pipeSplit [1]] = pipeSplit [0]; // lowercase -> original
+					}
+				}
 			}
 			return result;
 		}
