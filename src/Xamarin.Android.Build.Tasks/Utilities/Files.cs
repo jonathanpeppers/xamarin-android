@@ -297,7 +297,7 @@ namespace Xamarin.Android.Tools {
 							entry.FullName.EndsWith ("/__MACOSX", StringComparison.OrdinalIgnoreCase) ||
 							entry.FullName.EndsWith ("/.DS_Store", StringComparison.OrdinalIgnoreCase))
 						continue;
-					var fullName = modifyCallback?.Invoke (entry.FullName) ?? entry.FullName;
+					var fullName = modifyCallback?.Invoke (entry.NativeFullName) ?? entry.NativeFullName;
 					var outfile = Path.GetFullPath (Path.Combine (destination, fullName));
 					files.Add (outfile);
 					memoryStream.SetLength (0); //Reuse the stream

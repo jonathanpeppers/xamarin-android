@@ -23,8 +23,7 @@ namespace Xamarin.Android.Build.Tests
 			};
 			if (enableMultiDex)
 				proj.SetProperty ("AndroidEnableMultiDex", "True");
-			if (useAapt2)
-				proj.SetProperty ("AndroidUseAapt2", "True");
+			proj.SetProperty ("AndroidUseAapt2", useAapt2.ToString ());
 			using (var b = CreateApkBuilder (path)) {
 				//To be sure we are at a clean state
 				var projectDir = Path.Combine (Root, b.ProjectDirectory);
@@ -572,6 +571,69 @@ namespace Lib2
 			};
 			Assert.IsTrue (task.Execute (), $"{nameof (ReadLibraryProjectImportsCache)} should have succeeded.");
 			return task;
+		}
+
+		[Test]
+		public void IncrementalCleanFileWrites ([Values (true, false)] bool useAapt2)
+		{
+			var proj = new XamarinFormsAndroidApplicationProject ();
+			proj.SetProperty ("AndroidUseAapt2", useAapt2.ToString ());
+
+			using (var b = CreateApkBuilder (Path.Combine ("temp", TestName))) {
+				// Make sure directory is clean (for debugging)
+				var projectDir = Path.Combine (Root, b.ProjectDirectory);
+				if (Directory.Exists (projectDir))
+					Directory.Delete (projectDir, recursive: true);
+
+				b.Target = "Build";
+				Assert.IsTrue (b.Build (proj), "Build should have succeeded.");
+				AssertFileWrites (b, proj);
+
+				b.Target = "SignAndroidPackage";
+				Assert.IsTrue (b.Build (proj), "SignAndroidPackage should have succeeded.");
+				AssertFileWrites (b, proj);
+
+				b.Target = "Build";
+				Assert.IsTrue (b.Build (proj), "Build (with no changes) should have succeeded.");
+				AssertFileWrites (b, proj);
+			}
+		}
+
+		void AssertFileWrites (ProjectBuilder b, XamarinAndroidProject proj)
+		{
+			var intermediate = Path.Combine (Root, b.ProjectDirectory, proj.IntermediateOutputPath);
+			var fileList = Path.Combine (intermediate, $"{proj.ProjectName}.csproj.FileListAbsolute.txt");
+			FileAssert.Exists (fileList);
+
+			// All files generated in obj should be added to FileWrites
+			var ignore = new [] {
+				// MSBuild
+				"TemporaryGeneratedFile_",
+				$"{proj.ProjectName}.csproj.FileListAbsolute.txt",
+				// FIXME: .class files not in FileWrites yet
+				Path.Combine ("android", "bin", "classes") + Path.DirectorySeparatorChar,
+			};
+			var fileWrites = File.ReadAllLines (fileList);
+			foreach (var file in Directory.EnumerateFiles (intermediate, "*", SearchOption.AllDirectories)) {
+				var fullPath = Path.GetFullPath (file);
+				var relativePath = fullPath.Substring (intermediate.Length + 1);
+				if (ignore.Any (i => relativePath.StartsWith (i, StringComparison.Ordinal)))
+					continue;
+				Assert.IsTrue (StringAssertEx.ContainsText (fileWrites, fullPath), $"{relativePath} should exist in @(FileWrites)!");
+			}
+
+			// IncrementalClean should not delete any files
+			var target = "IncrementalClean";
+			Assert.IsFalse (b.Output.IsTargetSkipped (target), $"{target} should not be skipped!");
+			var targetStart = $"Target \"{target}:";
+			var targetFound = false;
+			foreach (var line in b.LastBuildOutput) {
+				if (!targetFound) {
+					targetFound = line.StartsWith (targetStart, StringComparison.Ordinal);
+				} else {
+					StringAssert.DoesNotContain ("Deleting file", line);
+				}
+			}
 		}
 	}
 }
