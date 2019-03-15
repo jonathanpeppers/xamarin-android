@@ -71,6 +71,8 @@ namespace Xamarin.Android.Tasks {
 
 		public bool NonConstantId { get; set; }
 
+		public bool ProtobufFormat { get; set; }
+
 		AssemblyIdentityMap assemblyMap = new AssemblyIdentityMap ();
 		List<string> tempFiles = new List<string> ();
 
@@ -173,6 +175,9 @@ namespace Xamarin.Android.Tasks {
 
 			if (!string.IsNullOrEmpty (ResourceSymbolsTextFile))
 				cmd.AppendSwitchIfNotNull ("--output-text-symbols ", ResourceSymbolsTextFile);
+
+			if (ProtobufFormat)
+				cmd.AppendSwitch ("--proto-format");
 
 			var extraArgsExpanded = ExpandString (ExtraArgs);
 			if (extraArgsExpanded != ExtraArgs)

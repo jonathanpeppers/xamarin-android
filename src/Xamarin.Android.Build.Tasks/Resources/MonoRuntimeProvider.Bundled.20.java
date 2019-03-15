@@ -19,35 +19,7 @@ public class MonoRuntimeProvider
 	public void attachInfo (android.content.Context context, android.content.pm.ProviderInfo info)
 	{
 		// Mono Runtime Initialization {{{
-		android.content.pm.ApplicationInfo apiInfo = null;
-
-		String platformPackage	= mono.MonoPackageManager.getApiPackageName ();
-		if (platformPackage != null) {
-			Throwable t = null;
-			try {
-				apiInfo = context.getPackageManager ().getApplicationInfo (platformPackage, 0);
-			} catch (android.content.pm.PackageManager.NameNotFoundException e) {
-				// ignore
-			}
-			if (apiInfo == null) {
-				try {
-					apiInfo = context.getPackageManager ().getApplicationInfo ("Xamarin.Android.Platform", 0);
-				} catch (android.content.pm.PackageManager.NameNotFoundException e) {
-					t = e;
-				}
-			}
-			if (apiInfo == null)
-				throw new RuntimeException ("Unable to find application " + platformPackage + " or Xamarin.Android.Platform!", t);
-		}
-		try {
-			android.content.pm.ApplicationInfo runtimeInfo = context.getPackageManager ().getApplicationInfo ("Mono.Android.DebugRuntime", 0);
-			mono.MonoPackageManager.LoadApplication (context, runtimeInfo,
-					apiInfo != null
-					? new String[]{runtimeInfo.sourceDir, apiInfo.sourceDir, context.getApplicationInfo ().sourceDir}
-					: new String[]{runtimeInfo.sourceDir, context.getApplicationInfo ().sourceDir});
-		} catch (android.content.pm.PackageManager.NameNotFoundException e) {
-			throw new RuntimeException ("Unable to find application Mono.Android.DebugRuntime!", e);
-		}
+		mono.MonoPackageManager.LoadApplication (context, context.getApplicationInfo (), new String[]{context.getApplicationInfo ().sourceDir});
 		// }}}
 		super.attachInfo (context, info);
 	}
