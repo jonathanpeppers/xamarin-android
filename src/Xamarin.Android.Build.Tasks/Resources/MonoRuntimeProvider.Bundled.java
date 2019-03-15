@@ -1,6 +1,6 @@
 package mono;
 
-import android.util.Log;
+//NOTE: we can't use import, see Generator.GetMonoInitSource
 
 public class MonoRuntimeProvider
 	extends android.content.ContentProvider
@@ -19,7 +19,20 @@ public class MonoRuntimeProvider
 	public void attachInfo (android.content.Context context, android.content.pm.ProviderInfo info)
 	{
 		// Mono Runtime Initialization {{{
-		mono.MonoPackageManager.LoadApplication (context, context.getApplicationInfo (), new String[]{context.getApplicationInfo ().sourceDir});
+		android.content.pm.ApplicationInfo applicationInfo = context.getApplicationInfo ();
+		String[] apks = null;
+		if (android.os.Build.VERSION.SDK_INT >= 21) {
+			String[] splitApks = applicationInfo.splitPublicSourceDirs;
+			if (splitApks != null && splitApks.length > 0) {
+				apks = new String[splitApks.length + 1];
+				apks [0] = applicationInfo.sourceDir;
+				System.arraycopy (splitApks, 0, apks, 1, splitApks.length);
+			}
+		}
+		if (apks == null) {
+			apks = new String[] { applicationInfo.sourceDir };
+		}
+		mono.MonoPackageManager.LoadApplication (context, applicationInfo, apks);
 		// }}}
 		super.attachInfo (context, info);
 	}

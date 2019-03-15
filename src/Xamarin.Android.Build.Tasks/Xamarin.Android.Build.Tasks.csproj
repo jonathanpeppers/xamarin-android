@@ -117,7 +117,12 @@
     <Compile Include="Tasks\Aapt2Compile.cs" />
     <Compile Include="Tasks\Aapt2Link.cs" />
     <Compile Include="Tasks\AndroidZipAlign.cs" />
+    <Compile Include="Tasks\AppBundleBaseZip.cs" />
     <Compile Include="Tasks\BuildApk.cs" />
+    <Compile Include="Tasks\BundleTool.cs" />
+    <Compile Include="Tasks\BundleToolBuildApkSet.cs" />
+    <Compile Include="Tasks\BundleToolBuildBundle.cs" />
+    <Compile Include="Tasks\BundleToolInstallApkSet.cs" />
     <Compile Include="Tasks\CilStrip.cs" />
     <Compile Include="Tasks\ConvertDebuggingFiles.cs" />
     <Compile Include="Tasks\CheckForInvalidResourceFileNames.cs" />
@@ -655,6 +660,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\MonoRuntimeProvider.Bundled.java">
       <LogicalName>MonoRuntimeProvider.Bundled.java</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\MonoRuntimeProvider.Bundled.20.java">
+      <LogicalName>MonoRuntimeProvider.Bundled.20.java</LogicalName>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\MonoRuntimeProvider.Shared.java">
       <LogicalName>MonoRuntimeProvider.Shared.java</LogicalName>
