@@ -247,5 +247,47 @@ namespace UnnamedProject
 			}
 			return builder.ToString ().Trim ();
 		}
+
+		[Test]
+		public void CleanSetupDependenciesForDesigner ()
+		{
+			var path = Path.Combine ("temp", TestName);
+			var lib = new XamarinAndroidLibraryProject {
+				ProjectName = "Library1",
+				Sources = {
+					new BuildItem.Source ("Foo.cs") {
+						TextContent = () => "public class Foo { }",
+					}
+				},
+			};
+			var proj = new XamarinFormsAndroidApplicationProject {
+				ProjectName = "App1",
+				References = { new BuildItem ("ProjectReference", "..\\Library1\\Library1.csproj") },
+				Sources = {
+					new BuildItem.Source ("Bar.cs") {
+						TextContent = () => "public class Bar : Foo { }",
+					}
+				},
+			};
+
+			var dir = Path.Combine (Root, path);
+			if (Directory.Exists (dir))
+				Directory.Delete (dir, recursive: true);
+
+			using (var libb = CreateDllBuilder (Path.Combine (path, lib.ProjectName), false, false))
+			using (var appb = CreateApkBuilder (Path.Combine (path, proj.ProjectName), false, false)) {
+				Assert.IsTrue (libb.Build (lib), "first library build should have succeeded");
+				Assert.IsTrue (appb.Build (proj), "first app build should have succeeded");
+
+				libb.AutomaticNuGetRestore =
+					appb.AutomaticNuGetRestore = false;
+				Assert.IsTrue (appb.RunTarget (proj, "SetupDependenciesForDesigner", parameters: DesignerParameters), "first SetupDependenciesForDesigner should have succeeded");
+
+				Assert.IsTrue (libb.Clean (lib), "library clean should have succeeded");
+				Assert.IsTrue (appb.Clean (proj), "app clean should have succeeded");
+
+				Assert.IsTrue (appb.RunTarget (proj, "SetupDependenciesForDesigner", parameters: DesignerParameters), "second SetupDependenciesForDesigner should have succeeded");
+			}
+		}
 	}
 }
