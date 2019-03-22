@@ -18,7 +18,6 @@
     <AndroidDexTool Condition=" '$(AndroidDexTool)' == '' ">d8</AndroidDexTool>
     <DebugType>portable</DebugType>
     <AndroidPackageFormat>aab</AndroidPackageFormat>
-    <_PackageName>com.xamarin.android.helloappbundle</_PackageName>
     <_HelloWorldDir>..\..\samples\HelloWorld\</_HelloWorldDir>
   </PropertyGroup>
   <Import Project="..\..\Configuration.props" />
@@ -28,7 +27,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug</OutputPath>
+    <OutputPath>..\..\bin\TestDebug</OutputPath>
     <DefineConstants>DEBUG;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -37,7 +36,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release</OutputPath>
+    <OutputPath>..\..\bin\TestRelease</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
@@ -59,12 +58,6 @@
     <None Include="Properties\AndroidManifest.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
-  <ItemGroup>
-    <TestAab Include="$(OutputPath)$(_PackageName)-Signed.aab">
-      <Package>$(_PackageName)</Package>
-      <Activity>$(_PackageName)/example.MainActivity</Activity>
-    </TestAab>
-  </ItemGroup>
   <ItemGroup>
     <Compile Include="$(_HelloWorldDir)MainActivity.cs">
       <Link>MainActivity.cs</Link>
