@@ -30,12 +30,12 @@ namespace Xamarin.Android.Tasks
 		/// </summary>
 		protected override void FixupArchive (ZipArchiveEx zip)
 		{
-			var entry = zip.Archive.ReadEntry ("AndroidManifest.xml");
+			var entry = zip.ReadEntry ("AndroidManifest.xml");
 			using (var stream = new MemoryStream ()) {
 				entry.Extract (stream);
 				stream.Position = 0;
-				zip.Archive.AddEntry ("manifest/AndroidManifest.xml", stream);
-				zip.Archive.DeleteEntry (entry);
+				zip.AddEntry ("manifest/AndroidManifest.xml", stream);
+				zip.DeleteEntry (entry);
 				zip.Flush ();
 			}
 		}

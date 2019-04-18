@@ -2,6 +2,7 @@
 using System.IO;
 using System.Text;
 using Xamarin.Android.Tasks;
+using Xamarin.Tools.Zip;
 
 namespace Xamarin.Android.Build.Tests
 {
@@ -42,8 +43,8 @@ namespace Xamarin.Android.Build.Tests
 			FileAssert.Exists (zip, "Zip file should exist!");
 
 			var builder = new StringBuilder ();
-			using (var archive = new ZipArchiveEx (zip, FileMode.Open)) {
-				foreach (var entry in archive.Archive) {
+			using (var archive = ZipArchive.Open (zip, FileMode.Open)) {
+				foreach (var entry in archive) {
 					builder.AppendLine (entry.FullName);
 				}
 			}
