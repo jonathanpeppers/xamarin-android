@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Xamarin.Tools.Zip;
@@ -7,15 +9,11 @@ namespace Xamarin.Android.Tasks
 {
 	public class ZipArchiveEx : IDisposable
 	{
-
-		public static int ZipFlushLimit = 50;
+		const int ZipFlushLimit = 50;
 
 		ZipArchive zip;
 		string archive;
-
-		public ZipArchive Archive {
-			get { return zip; }
-		}
+		int count;
 
 		public ZipArchiveEx (string archive) : this (archive, FileMode.CreateNew)
 		{
@@ -27,6 +25,46 @@ namespace Xamarin.Android.Tasks
 			zip = ZipArchive.Open(archive, filemode);
 		}
 
+		public bool ContainsEntry (string entryName, bool caseSensitive = false) =>
+			zip.ContainsEntry (entryName, caseSensitive);
+
+		public ZipEntry ReadEntry (string entryName, bool caseSensitive = false) =>
+			zip.ReadEntry (entryName, caseSensitive);
+
+		public void DeleteEntry (ZipEntry entry) => zip.DeleteEntry (entry);
+
+		public void AddEntry (byte [] data, string archivePath, EntryPermissions permissions = EntryPermissions.Default, CompressionMethod compressionMethod = CompressionMethod.Default, bool overwriteExisting = true)
+		{
+			zip.AddEntry (data, archivePath, permissions, compressionMethod, overwriteExisting);
+			IncrementAndFlushIfNeeded ();
+		}
+
+		public void AddEntry (string entryName, Stream data, CompressionMethod compressionMethod = CompressionMethod.Default)
+		{
+			zip.AddEntry (entryName, data, compressionMethod);
+			IncrementAndFlushIfNeeded ();
+		}
+
+		public void AddFile (string sourcePath, string archivePath = null, EntryPermissions permissions = EntryPermissions.Default, CompressionMethod compressionMethod = CompressionMethod.Default, bool overwriteExisting = true)
+		{
+			zip.AddFile (sourcePath, archivePath, permissions, compressionMethod, overwriteExisting);
+			IncrementAndFlushIfNeeded ();
+		}
+
+		void IncrementAndFlushIfNeeded ()
+		{
+			count++;
+			if (count >= ZipFlushLimit) {
+				Flush ();
+			}
+		}
+
+		public void FlushIfModified ()
+		{
+			if (count > 0)
+				Flush ();
+		}
+
 		public void Flush ()
 		{
 			if (zip != null) {
@@ -34,6 +72,7 @@ namespace Xamarin.Android.Tasks
 				zip.Dispose ();
 				zip = null;
 			}
+			count = 0;
 			zip = ZipArchive.Open (archive, FileMode.Open);
 		}
 
@@ -54,7 +93,6 @@ namespace Xamarin.Android.Tasks
 
 		void AddFiles (string folder, string folderInArchive, CompressionMethod method)
 		{
-			int count = 0;
 			foreach (string fileName in Directory.GetFiles (folder, "*.*", SearchOption.TopDirectoryOnly)) {
 				var fi = new FileInfo (fileName);
 				if ((fi.Attributes & FileAttributes.Hidden) != 0)
@@ -64,14 +102,9 @@ namespace Xamarin.Android.Tasks
 				if (zip.ContainsEntry (archiveFileName, out index)) {
 					var e = zip.First (x => x.FullName == archiveFileName);
 					if (e.ModificationTime < fi.LastWriteTimeUtc)
-						zip.AddFile (fileName, archiveFileName, compressionMethod: method);
+						AddFile (fileName, archiveFileName, compressionMethod: method);
 				} else {
-					zip.AddFile (fileName, archiveFileName, compressionMethod: method);
-				}
-				count++;
-				if (count == ZipArchiveEx.ZipFlushLimit) {
-					Flush ();
-					count = 0;
+					AddFile (fileName, archiveFileName, compressionMethod: method);
 				}
 			}
 		}

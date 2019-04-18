@@ -52,14 +52,12 @@ namespace Xamarin.Android.Tasks
 				foreach (var jar in AdditionalJavaLibraryReferences.Distinct (TaskItemComparer.DefaultComparer))
 					jars.Add (jar);
 
-			var distinct  = MonoAndroidHelper.DistinctFilesByContent (jars);
-
 			var javaLibrariesToCompile = new List<ITaskItem> ();
 			var referenceJavaLibraries = new List<ITaskItem> ();
 			if (ExternalJavaLibraries != null)
 				referenceJavaLibraries.AddRange (ExternalJavaLibraries);
 
-			foreach (var item in distinct) {
+			foreach (var item in jars.Distinct (TaskItemComparer.DefaultComparer)) {
 				if (!HasClassFiles (item.ItemSpec))
 					continue;
 				if (IsExcluded (item.ItemSpec)) {
@@ -87,20 +85,6 @@ namespace Xamarin.Android.Tasks
 			if (DoNotPackageJavaLibraries == null)
 				return false;
 			return DoNotPackageJavaLibraries.Any (x => Path.GetFileName (jar).EndsWith (x.ItemSpec, StringComparison.OrdinalIgnoreCase));
-		}
-	}
-
-	class TaskItemComparer : IEqualityComparer<ITaskItem> {
-		public static readonly TaskItemComparer     DefaultComparer     = new TaskItemComparer ();
-
-		public bool Equals (ITaskItem a, ITaskItem b)
-		{
-			return string.Compare (a.ItemSpec, b.ItemSpec, StringComparison.OrdinalIgnoreCase) == 0;
-		}
-
-		public int GetHashCode (ITaskItem value)
-		{
-			return value.ItemSpec.GetHashCode ();
 		}
 	}
 }

@@ -119,52 +119,6 @@ namespace Xamarin.Android.Tasks
 		}
 #endif  // MSBUILD
 
-		class SizeAndContentFileComparer : IEqualityComparer<FileInfo>
-#if MSBUILD
-			, IEqualityComparer<ITaskItem>
-#endif  // MSBUILD
-		{
-			public  static  readonly  SizeAndContentFileComparer  DefaultComparer     = new SizeAndContentFileComparer ();
-
-			public bool Equals (FileInfo x, FileInfo y)
-			{
-				if (x.Exists != y.Exists || x.Length != y.Length)
-					return false;
-				using (var f1 = File.OpenRead (x.FullName)) {
-					using (var f2 = File.OpenRead (y.FullName)) {
-						var b1 = new byte [0x1000];
-						var b2 = new byte [0x1000];
-						int total = 0;
-						while (total < x.Length) {
-							int size = f1.Read (b1, 0, b1.Length);
-							total += size;
-							f2.Read (b2, 0, b2.Length);
-							if (!b1.Take (size).SequenceEqual (b2.Take (size)))
-								return false;
-						}
-					}
-				}
-				return true;
-			}
-
-			public int GetHashCode (FileInfo obj)
-			{
-				return (int) obj.Length;
-			}
-
-#if MSBUILD
-			public bool Equals (ITaskItem x, ITaskItem y)
-			{
-				return Equals (new FileInfo (x.ItemSpec), new FileInfo (y.ItemSpec));
-			}
-
-			public int GetHashCode (ITaskItem obj)
-			{
-				return GetHashCode (new FileInfo (obj.ItemSpec));
-			}
-#endif  // MSBUILD
-		}
-
 		internal static bool LogInternalExceptions {
 			get {
 				return string.Equals (
@@ -186,11 +140,6 @@ namespace Xamarin.Android.Tasks
 				.SelectMany (paths => paths);
 		}
 
-		public static IEnumerable<ITaskItem> DistinctFilesByContent (IEnumerable<ITaskItem> filePaths)
-		{
-			return filePaths.Distinct (MonoAndroidHelper.SizeAndContentFileComparer.DefaultComparer);
-		}
-
 		public static void InitializeAndroidLogger (TaskLoggingHelper logger)
 		{
 			androidSdkLogger    = logger;
@@ -201,11 +150,6 @@ namespace Xamarin.Android.Tasks
 			androidSdkLogger    = null;
 		}
 #endif
-
-		public static IEnumerable<string> DistinctFilesByContent (IEnumerable<string> filePaths)
-		{
-			return filePaths.Select (p => new FileInfo (p)).ToArray ().Distinct (new MonoAndroidHelper.SizeAndContentFileComparer ()).Select (f => f.FullName).ToArray ();
-		}
 		
 		public static IEnumerable<string> GetDuplicateFileNames (IEnumerable<string> fullPaths, string [] excluded)
 		{

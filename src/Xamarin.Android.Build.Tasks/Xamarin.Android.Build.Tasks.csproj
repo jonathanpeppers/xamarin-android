@@ -175,6 +175,7 @@
     <Compile Include="Mono.Android\IntentFilterAttribute.Partial.cs" />
     <Compile Include="Mono.Android\GrantUriPermissionAttribute.Partial.cs" />
     <Compile Include="Utilities\DummyCustomAttributeProvider.cs" />
+    <Compile Include="Utilities\FileContentsComparer.cs" />
     <Compile Include="Utilities\InvalidActivityNameException.cs" />
     <Compile Include="Utilities\JavaResourceParser.cs" />
     <Compile Include="Utilities\MetadataResolver.cs" />
@@ -198,6 +199,7 @@
     <Compile Include="Linker\MonoDroid.Tuner\RemoveAttributes.cs" />
     <Compile Include="Utilities\AsyncTaskExtensions.cs" />
     <Compile Include="Utilities\MSBuildExtensions.cs" />
+    <Compile Include="Utilities\TaskItemComparer.cs" />
     <Compile Include="Utilities\ZipArchiveEx.cs" />
     <Compile Include="Mono.Android\ServiceAttribute.Partial.cs" />
     <Compile Include="$(LinkerSourceFullPath)\tuner\Mono.Tuner\AdjustVisibility.cs">
