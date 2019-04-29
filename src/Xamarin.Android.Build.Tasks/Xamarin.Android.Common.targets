@@ -85,6 +85,7 @@ Copyright (C) 2011-2012 Xamarin. All rights reserved.
 <UsingTask TaskName="Xamarin.Android.Tasks.R8" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.KeyTool" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.LinkAssemblies" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
+<UsingTask TaskName="Xamarin.Android.Tasks.LinkAssembliesNoShrink" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.Lint" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.LogErrorsForFiles" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.LogWarningsForFiles" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
@@ -2067,17 +2068,10 @@ because xbuild doesn't support framework reference assemblies.
   Inputs="@(ResolvedUserAssemblies);$(_AndroidBuildPropertiesCache)"
   Outputs="$(_AndroidLinkFlag)">
 
-    <LinkAssemblies
-      UseSharedRuntime="$(AndroidUseSharedRuntime)"
-      MainAssembly="$(MonoAndroidIntermediateAssemblyDir)$(TargetFileName)"
-      OutputDirectory="$(MonoAndroidIntermediateAssemblyTempDir)"
-      OptionalDestinationDirectory="$(MonoAndroidIntermediateAssemblyDir)"
-      I18nAssemblies="$(MandroidI18n)"
-      LinkMode="$(AndroidLinkMode)"
-      LinkDescriptions="@(LinkDescription)"
-      DumpDependencies="$(LinkerDumpDependencies)"
-      LinkOnlyNewerThan="$(_AndroidLinkFlag)"
-      ResolvedAssemblies="@(ResolvedAssemblies)" />
+    <LinkAssembliesNoShrink
+        OutputDirectory="$(MonoAndroidIntermediateAssemblyDir)"
+        ResolvedAssemblies="@(ResolvedAssemblies)"
+    />
 
     <!-- We have to use a flag instead of normal outputs because linking can delete unused assemblies -->
     <Touch Files="$(_AndroidLinkFlag)" AlwaysCreate="true" />

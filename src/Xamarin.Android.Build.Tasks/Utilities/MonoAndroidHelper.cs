@@ -285,6 +285,16 @@ namespace Xamarin.Android.Tasks
 		}
 #endif
 
+		public static bool IsMonoAndroidAssembly (ITaskItem assembly)
+		{
+			var tfi = assembly.GetMetadata ("TargetFrameworkIdentifier");
+			if (string.Compare (tfi, "MonoAndroid", StringComparison.OrdinalIgnoreCase) == 0)
+				return true;
+
+			var hasReference = assembly.GetMetadata ("HasMonoAndroidReference");
+			return bool.TryParse (hasReference, out bool value) && value;
+		}
+
 		public static bool IsFrameworkAssembly (string assembly)
 		{
 			return IsFrameworkAssembly (assembly, false);
@@ -292,11 +302,9 @@ namespace Xamarin.Android.Tasks
 
 		public static bool IsFrameworkAssembly (string assembly, bool checkSdkPath)
 		{
-			var assemblyName = Path.GetFileName (assembly);
-
-			if (Profile.SharedRuntimeAssemblies.Contains (assemblyName, StringComparer.InvariantCultureIgnoreCase)) {
+			if (IsSharedRuntimeAssembly (assembly)) {
 #if MSBUILD
-				bool treatAsUser = Array.BinarySearch (FrameworkAssembliesToTreatAsUserAssemblies, assemblyName, StringComparer.OrdinalIgnoreCase) >= 0;
+				bool treatAsUser = Array.BinarySearch (FrameworkAssembliesToTreatAsUserAssemblies, Path.GetFileName (assembly), StringComparer.OrdinalIgnoreCase) >= 0;
 				// Framework assemblies don't come from outside the SDK Path;
 				// user assemblies do
 				if (checkSdkPath && treatAsUser && TargetFrameworkDirectories != null) {
@@ -306,6 +314,11 @@ namespace Xamarin.Android.Tasks
 				return true;
 			}
 			return TargetFrameworkDirectories == null || !checkSdkPath ? false : ExistsInFrameworkPath (assembly);
+		}
+
+		public static bool IsSharedRuntimeAssembly (string assembly)
+		{
+			return Array.BinarySearch (Profile.SharedRuntimeAssemblies, Path.GetFileName (assembly), StringComparer.OrdinalIgnoreCase) >= 0;
 		}
 
 		public static bool IsReferenceAssembly (string assembly)
@@ -383,6 +396,21 @@ namespace Xamarin.Android.Tasks
 
 			foreach (var file in Directory.EnumerateFiles (directory, "*", SearchOption.AllDirectories)) {
 				SetWriteable (Path.GetFullPath (file));
+			}
+		}
+
+		public static void CopyAssemblyAndSymbols (string source, string destination)
+		{
+			CopyIfChanged (source, destination);
+			var mdb = source + ".mdb";
+			if (File.Exists (mdb)) {
+				var mdbDestination = destination + ".mdb";
+				CopyIfChanged (mdb, mdbDestination);
+			}
+			var pdb = Path.ChangeExtension (source, "pdb");
+			if (File.Exists (pdb) && Files.IsPortablePdb (pdb)) {
+				var pdbDestination = Path.ChangeExtension (destination, "pdb");
+				CopyIfChanged (pdb, pdbDestination);
 			}
 		}
 

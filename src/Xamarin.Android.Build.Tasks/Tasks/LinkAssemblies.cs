@@ -12,7 +12,6 @@ using System.IO;
 using MonoDroid.Tuner;
 using Mono.Linker;
 using ML = Mono.Linker;
-using Xamarin.Android.Tools;
 
 using Java.Interop.Tools.Cecil;
 using Java.Interop.Tools.Diagnostics;
@@ -45,7 +44,6 @@ namespace Xamarin.Android.Tasks
 		public bool DumpDependencies { get; set; }
 
 		public string OptionalDestinationDirectory { get; set; }
-		public string LinkOnlyNewerThan { get; set; }
 
 		public string HttpClientHandlerType { get; set; }
 
@@ -106,13 +104,6 @@ namespace Xamarin.Android.Tasks
 
 			if (string.Compare (UseSharedRuntime, "true", true) == 0)
 				skiplist.AddRange (Profile.SharedRuntimeAssemblies.Where (a => a.EndsWith (".dll")).Select (a => Path.GetFileNameWithoutExtension (a)));
-			if (!string.IsNullOrWhiteSpace (LinkOnlyNewerThan) && File.Exists (LinkOnlyNewerThan)) {
-				var newerThan = File.GetLastWriteTime (LinkOnlyNewerThan);
-				var skipOldOnes = ResolvedAssemblies.Where (a => File.GetLastWriteTime (a.ItemSpec) < newerThan);
-				foreach (var old in skipOldOnes)
-					Log.LogMessage (MBF.MessageImportance.Low, "  Skip linking unchanged file: " + old.ItemSpec);
-				skiplist = skipOldOnes.Select (a => Path.GetFileNameWithoutExtension (a.ItemSpec)).Concat (skiplist).ToList ();
-			}
 
 			// Add LinkSkip options
 			if (!string.IsNullOrWhiteSpace (LinkSkip))
@@ -153,17 +144,7 @@ namespace Xamarin.Android.Tasks
 					else if (!MonoAndroidHelper.IsForceRetainedAssembly (filename))
 						continue;
 
-					MonoAndroidHelper.CopyIfChanged (copysrc, assemblyDestination);
-					var mdb = assembly.ItemSpec + ".mdb";
-					if (File.Exists (mdb)) {
-						var mdbDestination = assemblyDestination + ".mdb";
-						MonoAndroidHelper.CopyIfChanged (mdb, mdbDestination);
-					}
-					var pdb = Path.ChangeExtension (copysrc, "pdb");
-					if (File.Exists (pdb) && Files.IsPortablePdb (pdb)) {
-						var pdbDestination = Path.ChangeExtension (assemblyDestination, "pdb");
-						MonoAndroidHelper.CopyIfChanged (pdb, pdbDestination);
-					}
+					MonoAndroidHelper.CopyAssemblyAndSymbols (copysrc, assemblyDestination);
 				}
 			} catch (ResolutionException ex) {
 				Diagnostic.Error (2006, ex, "Could not resolve reference to '{0}' (defined in assembly '{1}') with scope '{2}'. When the scope is different from the defining assembly, it usually means that the type is forwarded.", ex.Member, ex.Member.Module.Assembly, ex.Scope);
