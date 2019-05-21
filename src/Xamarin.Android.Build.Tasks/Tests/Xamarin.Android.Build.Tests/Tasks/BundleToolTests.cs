@@ -22,6 +22,27 @@ namespace Xamarin.Android.Build.Tests
 			project = new XamarinFormsMapsApplicationProject {
 				IsRelease = true,
 			};
+			project.Sources.Add (new BuildItem.Source ("Stock.cs") {
+				TextContent = () => @"
+					using SQLite;
+					public class Stock
+					{
+						[PrimaryKey, AutoIncrement]
+						public int Id { get; set; }
+						public string Symbol { get; set; }
+					}",
+			});
+			project.PackageReferences.Add (KnownPackages.SQLiteNet);
+
+			// Add some SQLite code
+			const string onCreate = "base.OnCreate (savedInstanceState);";
+			const string sqlite = @"
+				var databasePath = System.IO.Path.Combine (System.Environment.GetFolderPath (System.Environment.SpecialFolder.MyDocuments), ""MyData.db"");
+				using (var db = new SQLite.SQLiteConnection (databasePath)) {
+					db.CreateTable<Stock> ();
+				}";
+			project.MainActivity = project.MainActivity.Replace (onCreate, onCreate + sqlite);
+
 			//NOTE: this is here to enable adb shell run-as
 			project.AndroidManifest = project.AndroidManifest.Replace ("<application ", "<application android:debuggable=\"true\" ");
 			project.SetProperty (project.ReleaseProperties, "AndroidPackageFormat", "aab");
@@ -70,16 +91,19 @@ namespace Xamarin.Android.Build.Tests
 			var contents = ListArchiveContents (baseZip);
 			var expectedFiles = new [] {
 				"dex/classes.dex",
+				"lib/arm64-v8a/libe_sqlite3.so",
 				"lib/arm64-v8a/libmono-btls-shared.so",
 				"lib/arm64-v8a/libmonodroid.so",
 				"lib/arm64-v8a/libmono-native.so",
 				"lib/arm64-v8a/libmonosgen-2.0.so",
 				"lib/arm64-v8a/libxamarin-app.so",
+				"lib/armeabi-v7a/libe_sqlite3.so",
 				"lib/armeabi-v7a/libmono-btls-shared.so",
 				"lib/armeabi-v7a/libmonodroid.so",
 				"lib/armeabi-v7a/libmono-native.so",
 				"lib/armeabi-v7a/libmonosgen-2.0.so",
 				"lib/armeabi-v7a/libxamarin-app.so",
+				"lib/x86/libe_sqlite3.so",
 				"lib/x86/libmono-btls-shared.so",
 				"lib/x86/libmonodroid.so",
 				"lib/x86/libmono-native.so",
@@ -120,16 +144,19 @@ namespace Xamarin.Android.Build.Tests
 			var contents = ListArchiveContents (aab);
 			var expectedFiles = new [] {
 				"base/dex/classes.dex",
+				"base/lib/arm64-v8a/libe_sqlite3.so",
 				"base/lib/arm64-v8a/libmono-btls-shared.so",
 				"base/lib/arm64-v8a/libmonodroid.so",
 				"base/lib/arm64-v8a/libmono-native.so",
 				"base/lib/arm64-v8a/libmonosgen-2.0.so",
 				"base/lib/arm64-v8a/libxamarin-app.so",
+				"base/lib/armeabi-v7a/libe_sqlite3.so",
 				"base/lib/armeabi-v7a/libmono-btls-shared.so",
 				"base/lib/armeabi-v7a/libmonodroid.so",
 				"base/lib/armeabi-v7a/libmono-native.so",
 				"base/lib/armeabi-v7a/libmonosgen-2.0.so",
 				"base/lib/armeabi-v7a/libxamarin-app.so",
+				"base/lib/x86/libe_sqlite3.so",
 				"base/lib/x86/libmono-btls-shared.so",
 				"base/lib/x86/libmonodroid.so",
 				"base/lib/x86/libmono-native.so",

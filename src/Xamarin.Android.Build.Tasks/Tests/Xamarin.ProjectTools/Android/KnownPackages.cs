@@ -746,6 +746,16 @@ namespace Xamarin.ProjectTools
 				}
 			},
 		};
+		public static Package SQLiteNet = new Package {
+			Id = "sqlite-net-pcl",
+			Version = "1.5.231",
+			TargetFramework = "netstandard1.1",
+			References = {
+				new BuildItem.Reference ("SQLite-net.dll") {
+					MetadataValues = "HintPath=..\\packages\\sqlite-net-pcl.1.5.231\\lib\\netstandard1.1\\SQLite-net.dll"
+				}
+			},
+		};
 	}
 }
 
