@@ -25,6 +25,7 @@ namespace Xamarin.Android.Build.Tests
 				zip.ExtractAll (projectDir);
 
 				var project = new ExistingProject {
+					IsRelease = isRelease,
 					ProjectFilePath = Path.Combine (projectDir, csproj),
 				};
 				
