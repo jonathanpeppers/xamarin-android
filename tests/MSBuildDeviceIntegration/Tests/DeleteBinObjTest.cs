@@ -28,11 +28,13 @@ namespace Xamarin.Android.Build.Tests
 					IsRelease = isRelease,
 					ProjectFilePath = Path.Combine (projectDir, csproj),
 				};
-				
+				var parameters = new [] { "Configuration=" + configuration };
 				if (HasDevices) {
-					Assert.IsTrue (builder.Install (project, doNotCleanupOnUpdate: true, saveProject: false), "Install should have succeeded.");
+					Assert.IsTrue (builder.Install (project, doNotCleanupOnUpdate: true, parameters: parameters, saveProject: false),
+						"Install should have succeeded.");
 				} else {
-					Assert.IsTrue (builder.Build (project, doNotCleanupOnUpdate: true, saveProject: false), "Build should have succeeded.");
+					Assert.IsTrue (builder.Build (project, doNotCleanupOnUpdate: true, parameters: parameters, saveProject: false),
+						"Build should have succeeded.");
 				}
 			}
 		}
