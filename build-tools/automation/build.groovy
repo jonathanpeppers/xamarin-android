@@ -46,6 +46,8 @@ timestamps {
     node("${env.BotLabel}") {
         def scmVars = null
 
+        setBuildStatus("Build started", "PENDING");
+
         stage ("checkout") {
             def ctAttempts = 3
             def retryAttempt = 0
@@ -459,5 +461,7 @@ timestamps {
                 error "One or more tests failed"                // Force an error condition if there was a test failure to indicate that this stage was the source of the build failure
             }
         }
+
+        setBuildStatus("Build complete", currentBuild.result);
     }
 }
