@@ -16,7 +16,7 @@ namespace Xamarin.Android.Build.Tests
 		void RunTest (string name, string csproj, string version, bool isRelease)
 		{
 			var configuration = isRelease ? "Release" : "Debug";
-			var zipPath = Cache.GetAsFile ($"{BaseUrl}{name}-{version}-{configuration}-{HostOS}.zip");
+			var zipPath = Cache.GetAsFile ($"{BaseUrl}{name}-{version}-{HostOS}.zip");
 			using (var builder = CreateApkBuilder (Path.Combine ("temp", TestName)))
 			using (var zip = ZipArchive.Open (zipPath, FileMode.Open)) {
 				var projectDir = Path.Combine (Root, builder.ProjectDirectory);
