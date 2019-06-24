@@ -116,6 +116,7 @@
     <Compile Include="Linker\MonoDroid.Tuner\LinkerOptions.cs" />
     <Compile Include="Linker\MonoDroid.Tuner\MonoDroidMarkStep.cs" />
     <Compile Include="Linker\MonoDroid.Tuner\PreserveHttpAndroidClientHandler.cs" />
+    <Compile Include="Linker\MonoDroid.Tuner\RemoveRegisterAttribute.cs" />
     <Compile Include="Linker\MonoDroid.Tuner\StripEmbeddedLibraries.cs" />
     <Compile Include="Tasks\Aapt.cs" />
     <Compile Include="Tasks\Aapt2.cs" />
@@ -140,7 +141,6 @@
     <Compile Include="Tasks\GetJavaPlatformJar.cs" />
     <Compile Include="Tasks\GetFilesThatExist.cs" />
     <Compile Include="Tasks\ReadAndroidManifest.cs" />
-    <Compile Include="Tasks\RemoveRegisterAttribute.cs" />
     <Compile Include="Tasks\GetMonoPlatformJar.cs" />
     <Compile Include="Tasks\GeneratePackageManagerJava.cs" />
     <Compile Include="Tasks\GenerateJavaStubs.cs" />

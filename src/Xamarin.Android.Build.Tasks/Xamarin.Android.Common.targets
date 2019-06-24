@@ -92,7 +92,6 @@ Copyright (C) 2011-2012 Xamarin. All rights reserved.
 <UsingTask TaskName="Xamarin.Android.Tasks.MergeResources" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.ReadAdditionalResourcesFromAssemblyCache" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.RemoveDirFixed" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
-<UsingTask TaskName="Xamarin.Android.Tasks.RemoveRegisterAttribute" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.ResolveAssemblies" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.ReadImportedLibrariesCache" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.ReadAndroidManifest" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
@@ -1241,7 +1240,6 @@ because xbuild doesn't support framework reference assemblies.
 	<_AndroidLinkFlag>$(IntermediateOutputPath)link.flag</_AndroidLinkFlag>
 	<_AndroidApkPerAbiFlagFile>$(IntermediateOutputPath)android\bin\apk_per_abi.flag</_AndroidApkPerAbiFlagFile>
 	<_AndroidDebugKeyStoreFlag>$(IntermediateOutputPath)android_debug_keystore.flag</_AndroidDebugKeyStoreFlag>
-	<_RemoveRegisterFlag>$(MonoAndroidIntermediateAssetsDir)shrunk\shrunk.flag</_RemoveRegisterFlag>
 	<_AcwMapFile>$(IntermediateOutputPath)acw-map.txt</_AcwMapFile>
 	<_CustomViewMapFile>$(IntermediateOutputPath)customview-map.txt</_CustomViewMapFile>
 	<_AndroidTypeMappingJavaToManaged>$(IntermediateOutputPath)android\typemap.jm</_AndroidTypeMappingJavaToManaged>
@@ -2225,18 +2223,6 @@ because xbuild doesn't support framework reference assemblies.
   </CreateItem>
 
   <CreateItem
-    Include="@(_ResolvedFrameworkAssemblies)"
-    Condition="'$(AndroidLinkMode)' == 'None' OR '$(AndroidUseSharedRuntime)' == 'true'">
-    <Output TaskParameter="Include" ItemName="_ShrunkFrameworkAssemblies" />
-  </CreateItem>
-
-  <CreateItem
-    Include="@(_ResolvedFrameworkAssemblies->'$(MonoAndroidIntermediateAssetsDir)shrunk\%(Filename)%(Extension)')"
-    Condition="'$(AndroidLinkMode)' != 'None' AND '$(AndroidUseSharedRuntime)' != 'true'">
-    <Output TaskParameter="Include" ItemName="_ShrunkFrameworkAssemblies" />
-  </CreateItem>
-
-  <CreateItem
     Include="@(_ResolvedUserAssemblies)"
     Condition="'%(_ResolvedUserAssemblies.TargetFrameworkIdentifier)' == 'MonoAndroid' Or '%(_ResolvedUserAssemblies.HasMonoAndroidReference)' == 'True'">
     <Output TaskParameter="Include" ItemName="_ResolvedUserMonoAndroidAssemblies" />
@@ -2821,31 +2807,6 @@ because xbuild doesn't support framework reference assemblies.
 	</ItemGroup>
 </Target>
 
-<Target Name="_RemoveRegisterAttribute"
-  DependsOnTargets="_PrepareAssemblies"
-  Inputs="@(_ResolvedFrameworkAssemblies);$(_AndroidBuildPropertiesCache)"
-  Outputs="$(_RemoveRegisterFlag)"
-  Condition="'$(AndroidLinkMode)' != 'None' AND '$(AndroidUseSharedRuntime)' != 'true'">
-
-  <!-- Make a copy of every assembly into assets\shrunk -->
-  <Copy
-    SourceFiles="@(_ResolvedFrameworkAssemblies)"
-    DestinationFiles="@(_ShrunkFrameworkAssemblies)"
-    SkipUnchangedFiles="true" />
-
-  <CopyIfChanged
-    SourceFiles="@(_ResolvedFrameworkAssemblies->'%(Identity).config')"
-    DestinationFiles="@(_ShrunkFrameworkAssemblies->'%(Identity).config')" />
-  
-  <!-- Shrink Mono.Android.dll by removing attribute only needed for GenerateJavaStubs -->
-  <RemoveRegisterAttribute
-    Condition="'$(AndroidLinkMode)' != 'None' AND '$(AndroidUseSharedRuntime)' != 'true'"
-    ShrunkFrameworkAssemblies="@(_ShrunkFrameworkAssemblies)" />
-
-  <MakeDir Directories="$(MonoAndroidIntermediateAssetsDir)shrunk" />
-  <Touch Files="$(_RemoveRegisterFlag)" AlwaysCreate="true" />
-</Target>
-
 <Target Name="_ResolveSatellitePaths"
     DependsOnTargets="_ResolveAssemblies"
 >
@@ -2936,7 +2897,6 @@ because xbuild doesn't support framework reference assemblies.
 	<_PrepareBuildApkDependsOnTargets>
 		_SetLatestTargetFrameworkVersion;
 		_GetLibraryImports;
-		_RemoveRegisterAttribute;
 		_CopyIntermediateAssemblies;
 		_CopyPdbFiles;
 		_CopyMdbFiles;
@@ -2975,8 +2935,7 @@ because xbuild doesn't support framework reference assemblies.
 	<_BuildApkEmbedInputs>
 		$(MSBuildAllProjects)
 		;$(_PackagedResources)
-		;@(_ResolvedUserAssemblies)
-		;@(_ShrunkFrameworkAssemblies)
+		;@(_ResolvedAssemblies)
 		;@(AndroidNativeLibrary)
 		;@(_DexFile)
 		;$(_AndroidBuildPropertiesCache)
@@ -3009,7 +2968,7 @@ because xbuild doesn't support framework reference assemblies.
 	SupportedAbis="@(_BuildTargetAbis)"
 	AndroidSequencePointsMode="$(_SequencePointsMode)"
 	AotAdditionalArguments="$(AndroidAotAdditionalArguments)"
-	ResolvedAssemblies="@(_ResolvedUserAssemblies);@(_ShrunkFrameworkAssemblies)"
+	ResolvedAssemblies="@(_ResolvedAssemblies)"
 	AotOutputDirectory="$(_AndroidAotBinDirectory)"
 	IntermediateAssemblyDir="$(MonoAndroidIntermediateAssemblyDir)"
 	LinkMode="$(AndroidLinkMode)"
@@ -3033,7 +2992,7 @@ because xbuild doesn't support framework reference assemblies.
 		Condition="'$(BundleAssemblies)' == 'True'"
 		KeepTemp="$(AndroidMakeBundleKeepTemporaryFiles)"
 		AndroidNdkDirectory="$(_AndroidNdkDirectory)"
-		Assemblies="@(_ResolvedUserAssemblies);@(_AndroidResolvedSatellitePaths);@(_ShrunkFrameworkAssemblies)"
+		Assemblies="@(_ResolvedAssemblies);@(_AndroidResolvedSatellitePaths)"
 		IncludePath="$(MonoAndroidIncludeDirectory)"
 		SupportedAbis="@(_BuildTargetAbis)"
 		TempOutputPath="$(IntermediateOutputPath)"
@@ -3051,7 +3010,7 @@ because xbuild doesn't support framework reference assemblies.
     BundleNativeLibraries="$(_BundleResultNativeLibraries)"
     EmbedAssemblies="$(EmbedAssembliesIntoApk)"
     ResolvedUserAssemblies="@(_ResolvedUserAssemblies);@(_AndroidResolvedSatellitePaths)"
-    ResolvedFrameworkAssemblies="@(_ShrunkFrameworkAssemblies)"
+    ResolvedFrameworkAssemblies="@(_ResolvedFrameworkAssemblies)"
     NativeLibraries="@(AndroidNativeLibrary)"
     ApplicationSharedLibraries="@(_ApplicationSharedLibrary)"
     AdditionalNativeLibraryReferences="@(_AdditionalNativeLibraryReferences)"
@@ -3080,7 +3039,7 @@ because xbuild doesn't support framework reference assemblies.
       BundleNativeLibraries="$(_BundleResultNativeLibraries)"
       EmbedAssemblies="$(EmbedAssembliesIntoApk)"
       ResolvedUserAssemblies="@(_ResolvedUserAssemblies);@(_AndroidResolvedSatellitePaths)"
-      ResolvedFrameworkAssemblies="@(_ShrunkFrameworkAssemblies)"
+      ResolvedFrameworkAssemblies="@(_ResolvedFrameworkAssemblies)"
       NativeLibraries="@(AndroidNativeLibrary)"
       ApplicationSharedLibraries="@(_ApplicationSharedLibrary)"
       AdditionalNativeLibraryReferences="@(_AdditionalNativeLibraryReferences)"

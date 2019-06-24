@@ -113,6 +113,7 @@ namespace MonoDroid.Tuner
 			// monodroid tuner steps
 			if (!string.IsNullOrWhiteSpace (options.ProguardConfiguration))
 				pipeline.AppendStep (new GenerateProguardConfiguration (options.ProguardConfiguration));
+			pipeline.AppendStep (new RemoveRegisterAttribute ());
 			pipeline.AppendStep (new StripEmbeddedLibraries ());
 			// end monodroid specific
 			pipeline.AppendStep (new RegenerateGuidStep ());
