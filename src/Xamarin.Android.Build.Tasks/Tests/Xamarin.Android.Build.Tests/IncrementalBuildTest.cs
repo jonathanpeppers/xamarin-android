@@ -1,4 +1,4 @@
-﻿using Microsoft.Build.Framework;
+using Microsoft.Build.Framework;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -680,6 +680,41 @@ namespace Lib2
 			};
 			Assert.IsTrue (task.Execute (), $"{nameof (ReadLibraryProjectImportsCache)} should have succeeded.");
 			return task;
+		}
+
+		[Test]
+		public void UpdateProguardRule ([Values ("proguard", "r8")] string linkTool)
+		{
+			var target = linkTool == "proguard" ? "_CompileToDalvikWithDx" : "_CompileToDalvikWithD8";
+			var encoding = new UTF8Encoding (encoderShouldEmitUTF8Identifier: false); // Java doesn't like BOMs
+			var proj = new XamarinAndroidApplicationProject {
+				IsRelease = true,
+				LinkTool = linkTool,
+			};
+			proj.OtherBuildItems.Add (new BuildItem (AndroidBuildActions.AndroidJavaSource, "Foo.java") {
+				TextContent = () => "public class Foo { }",
+				Encoding = encoding
+			});
+			string proguardRules = "";
+			proj.OtherBuildItems.Add (new BuildItem ("ProguardConfiguration", "proguard.cfg") {
+				TextContent = () => proguardRules,
+				Encoding = encoding
+			});
+			using (var b = CreateApkBuilder (Path.Combine ("temp", TestName))) {
+				Assert.IsTrue (b.Build (proj), "first build should have succeeded.");
+				Assert.IsFalse (b.Output.IsTargetSkipped (target), $"`{target}` should not be skipped!");
+
+				proguardRules = "-keep class Foo";
+				proj.Touch ("proguard.cfg");
+
+				Assert.IsTrue (b.Build (proj), "second build should have succeeded.");
+				Assert.IsFalse (b.Output.IsTargetSkipped (target), $"`{target}` should not be skipped!");
+
+				var className = "LFoo;";
+				var dexFile = b.Output.GetIntermediaryPath (Path.Combine ("android", "bin", "classes.dex"));
+				FileAssert.Exists (dexFile);
+				Assert.IsTrue (DexUtils.ContainsClass (className, dexFile, b.AndroidSdkDirectory), $"`{dexFile}` should include `{className}`!");
+			}
 		}
 	}
 }
