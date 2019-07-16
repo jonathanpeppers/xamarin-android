@@ -1227,7 +1227,6 @@ because xbuild doesn't support framework reference assemblies.
 <PropertyGroup>
 	<MonoAndroidResDirIntermediate>$(IntermediateOutputPath)res\</MonoAndroidResDirIntermediate>
 	<MonoAndroidIntermediateAssetsDir>$(IntermediateOutputPath)android\assets\</MonoAndroidIntermediateAssetsDir>
-	<MonoAndroidLinkerInputDir>$(IntermediateOutputPath)linksrc\</MonoAndroidLinkerInputDir>
 	<MonoAndroidIntermediateAssemblyDir>$(IntermediateOutputPath)android\assets\</MonoAndroidIntermediateAssemblyDir>
 	<MonoAndroidIntermediateAssemblyTempDir>$(IntermediateOutputPath)linkdst\</MonoAndroidIntermediateAssemblyTempDir>
 	<MonoAndroidResourcePrefix Condition="'$(MonoAndroidResourcePrefix)' == ''">Resources</MonoAndroidResourcePrefix>
@@ -1981,25 +1980,6 @@ because xbuild doesn't support framework reference assemblies.
   </ItemGroup>
 </Target>
 
-<Target Name="_CopyIntermediateAssemblies"
-	Inputs="@(ResolvedAssemblies);@(_AndroidResolvedSatellitePaths)"
-	Outputs="$(_AndroidStampDirectory)_CopyIntermediateAssemblies.stamp"
-	DependsOnTargets="_ResolveAssemblies;_ResolveSatellitePaths;_CreatePackageWorkspace;_CopyConfigFiles">
-	<ItemGroup>
-		<_CIAResolvedAssembliesDestinationFiles     Include="@(ResolvedAssemblies->'$(MonoAndroidLinkerInputDir)%(Filename)%(Extension)')" />
-		<_CIAResolvedSatellitePathsDestinationFiles Include="@(_AndroidResolvedSatellitePaths->'$(MonoAndroidLinkerInputDir)%(DestinationSubDirectory)%(Filename)%(Extension)')" />
-	</ItemGroup>
-	<!-- Make a copy of every assembly we need in assemblies -->
-	<CopyIfChanged SourceFiles="@(ResolvedAssemblies)"             DestinationFiles="@(_CIAResolvedAssembliesDestinationFiles)" />
-	<CopyIfChanged SourceFiles="@(_AndroidResolvedSatellitePaths)" DestinationFiles="@(_CIAResolvedSatellitePathsDestinationFiles)" />
-	<!-- Delete mdb files leftover from a previous build -->
-	<Delete Files="@(ResolvedAssemblies->'$(MonoAndroidLinkerInputDir)%(Filename)%(Extension).mdb')" />
-	<Touch Files="$(_AndroidStampDirectory)_CopyIntermediateAssemblies.stamp" AlwaysCreate="True" />
-	<ItemGroup>
-		<FileWrites Include="@(_CIAResolvedAssembliesDestinationFiles);@(_CIAResolvedSatellitePathsDestinationFiles)" />
-	</ItemGroup>
-</Target>
-
 <Target Name="_CollectConfigFiles">
 	<GetFilesThatExist
 			Files="@(ResolvedAssemblies->'%(identity).config')">
@@ -2050,41 +2030,13 @@ because xbuild doesn't support framework reference assemblies.
 	</ItemGroup>
 </Target>
 
-<Target Name="_CopyPdbFiles"
-		Inputs="@(_ResolvedPortablePdbFiles)"
-		Outputs="$(_AndroidStampDirectory)_CopyPdbFiles.stamp"
-		DependsOnTargets="_ConvertPdbFiles">
-	<ItemGroup>
-		<_CopyPdbFilesLinkerFiles Include="@(_ResolvedPortablePdbFiles->'$(MonoAndroidLinkerInputDir)%(Filename)%(Extension)')" />
-	</ItemGroup>
-	<CopyIfChanged SourceFiles="@(_ResolvedPortablePdbFiles)" DestinationFiles="@(_CopyPdbFilesLinkerFiles)" />
-	<Touch Files="$(_AndroidStampDirectory)_CopyPdbFiles.stamp" AlwaysCreate="True" />
-	<ItemGroup>
-		<FileWrites Include="@(_CopyPdbFilesLinkerFiles)" />
-	</ItemGroup>
-</Target>
-
-<Target Name="_CopyMdbFiles"
-		Inputs="@(_ResolvedMdbFiles)"
-		Outputs="$(_AndroidStampDirectory)_CopyMdbFiles.stamp"
-		DependsOnTargets="_CollectMdbFiles">
-	<ItemGroup>
-		<_CopyMdbFilesLinkerFiles Include="@(_ResolvedMdbFiles->'$(MonoAndroidLinkerInputDir)%(Filename)%(Extension)')" />
-	</ItemGroup>
-	<CopyIfChanged SourceFiles="@(_ResolvedMdbFiles)" DestinationFiles="@(_CopyMdbFilesLinkerFiles)" />
-	<Touch Files="$(_AndroidStampDirectory)_CopyMdbFiles.stamp" AlwaysCreate="True" />
-	<ItemGroup>
-		<FileWrites Include="@(_CopyMdbFilesLinkerFiles)" />
-	</ItemGroup>
-</Target>
-	
 <Target Name="_LinkAssemblies"
   DependsOnTargets="_ResolveAssemblies;_CreatePackageWorkspace;$(_BeforeLinkAssemblies);_GenerateJniMarshalMethods;_LinkAssembliesNoShrink;_LinkAssembliesShrink" />
 
 <Target Name="_GenerateJniMarshalMethods"
     Condition="'$(AndroidGenerateJniMarshalMethods)' == 'True' And '$(AndroidLinkMode)' != 'None' And '$(OS)' != 'Windows_NT'"
     DependsOnTargets="_GetReferenceAssemblyPaths;_SetLatestTargetFrameworkVersion"
-    Inputs="@(ResolvedUserAssemblies->'$(MonoAndroidLinkerInputDir)%(Filename)%(Extension)')"
+    Inputs="@(ResolvedUserAssemblies)"
     Outputs="$(_AndroidJniMarshalMethodsFlag)">
   <ItemGroup>
     <_JniFrameworkAssembly Include="Mono.Android.dll" />
@@ -2097,7 +2049,7 @@ because xbuild doesn't support framework reference assemblies.
     <_AssembliesToProcess Include="@(ResolvedAssemblies)" Condition=" '%(Filename)' != '' And '@(_JniFrameworkAssembly)' != '' " />
   </ItemGroup>
   <Exec
-       Command="DYLD_LIBRARY_PATH=&quot;$(MonoAndroidLibDirectory)&quot; MONO_CONFIG=&quot;$(MonoAndroidBinDirectory)mono.config&quot; MONO_PATH=&quot;$(MonoAndroidBinDirectory)\bcl&quot;:&quot;$(MonoAndroidBinDirectory)\bcl\Facades&quot;:&quot;$(_XATargetFrameworkDirectories):$(MonoAndroidLinkerInputDir)&quot; &quot;$(MonoAndroidBinDirectory)mono&quot; --debug &quot;$(MonoAndroidToolsDirectory)\jnimarshalmethod-gen.exe&quot; --jvm=&quot;$(JdkJvmPath)&quot; $(AndroidGenerateJniMarshalMethodsAdditionalArguments) @(_AssembliesToProcess->'&quot;$(MonoAndroidLinkerInputDir)%(Filename)%(Extension)&quot;', ' ')"
+       Command="DYLD_LIBRARY_PATH=&quot;$(MonoAndroidLibDirectory)&quot; MONO_CONFIG=&quot;$(MonoAndroidBinDirectory)mono.config&quot; MONO_PATH=&quot;$(MonoAndroidBinDirectory)\bcl&quot;:&quot;$(MonoAndroidBinDirectory)\bcl\Facades&quot;:&quot;$(_XATargetFrameworkDirectories)&quot; &quot;$(MonoAndroidBinDirectory)mono&quot; --debug &quot;$(MonoAndroidToolsDirectory)\jnimarshalmethod-gen.exe&quot; --jvm=&quot;$(JdkJvmPath)&quot; $(AndroidGenerateJniMarshalMethodsAdditionalArguments) @(_AssembliesToProcess->'&quot;%(FullPath)&quot;', ' ')"
   />
   <Touch Files="$(_AndroidJniMarshalMethodsFlag)" AlwaysCreate="True" />
 </Target>
@@ -2129,7 +2081,7 @@ because xbuild doesn't support framework reference assemblies.
 	
 <Target Name="_LinkAssembliesShrink"
   Condition="'$(AndroidLinkMode)' != 'None'"
-  Inputs="@(ResolvedUserAssemblies->'$(MonoAndroidLinkerInputDir)%(Filename)%(Extension)');$(_AndroidBuildPropertiesCache)"
+  Inputs="@(ResolvedUserAssemblies);$(_AndroidBuildPropertiesCache)"
   Outputs="$(_AndroidLinkFlag)">
 
     <CreateProperty
@@ -2142,7 +2094,7 @@ because xbuild doesn't support framework reference assemblies.
 
     <LinkAssemblies
       UseSharedRuntime="$(AndroidUseSharedRuntime)"
-      MainAssembly="$(MonoAndroidLinkerInputDir)$(TargetFileName)"
+      MainAssembly="$(TargetPath)"
       OutputDirectory="$(MonoAndroidIntermediateAssetsDir)"
       I18nAssemblies="$(MandroidI18n)"
       LinkMode="$(AndroidLinkMode)"
@@ -2152,7 +2104,7 @@ because xbuild doesn't support framework reference assemblies.
       PreserveJniMarshalMethods="$(AndroidGenerateJniMarshalMethods)"
       EnableProguard="$(AndroidEnableProguard)"
       DumpDependencies="$(LinkerDumpDependencies)"
-      ResolvedAssemblies="@(ResolvedAssemblies->'$(MonoAndroidLinkerInputDir)%(Filename)%(Extension)')"
+      ResolvedAssemblies="@(ResolvedAssemblies)"
       HttpClientHandlerType="$(AndroidHttpClientHandlerType)"
       TlsProvider="$(AndroidTlsProvider)" />
 
@@ -2170,9 +2122,6 @@ because xbuild doesn't support framework reference assemblies.
 		;_CheckForObsoleteAssemblies
 		;_ResolveSatellitePaths
 		;_CreatePackageWorkspace
-		;_CopyIntermediateAssemblies
-		;_CopyPdbFiles
-		;_CopyMdbFiles
 		;_LinkAssemblies
 	</_PrepareAssembliesDependsOnTargets>
 </PropertyGroup>
@@ -2423,7 +2372,7 @@ because xbuild doesn't support framework reference assemblies.
   <GeneratePackageManagerJava
     ResolvedAssemblies="@(_ResolvedAssemblies)"
     ResolvedUserAssemblies="@(_ResolvedUserAssemblies)"
-    MainAssembly="$(MonoAndroidLinkerInputDir)$(TargetFileName)"
+    MainAssembly="$(TargetPath)"
     OutputDirectory="$(IntermediateOutputPath)android\src\mono"
     EnvironmentOutputDirectory="$(IntermediateOutputPath)android"
     UseSharedRuntime="$(AndroidUseSharedRuntime)"
@@ -2942,9 +2891,6 @@ because xbuild doesn't support framework reference assemblies.
 		_SetLatestTargetFrameworkVersion;
 		_GetLibraryImports;
 		_RemoveRegisterAttribute;
-		_CopyIntermediateAssemblies;
-		_CopyPdbFiles;
-		_CopyMdbFiles;
 		_LinkAssemblies;
 		_GenerateJavaStubs;
 		_ConvertCustomView;
@@ -3436,7 +3382,6 @@ because xbuild doesn't support framework reference assemblies.
 	<RemoveDirFixed Directories="$(MonoAndroidIntermediate)android" Condition="Exists ('$(MonoAndroidIntermediate)android')" />
 	<!-- FIXME: remove this extraneous rmdir after a few release cycles since we release the one we killed it. -->
 	<RemoveDirFixed Directories="$(MonoAndroidIntermediate)assemblies" Condition="Exists ('$(MonoAndroidIntermediate)assemblies')" />
-	<RemoveDirFixed Directories="$(MonoAndroidIntermediate)linksrc" Condition="Exists ('$(MonoAndroidIntermediate)linksrc')" />
 	<RemoveDirFixed Directories="$(MonoAndroidIntermediate)linkdst" Condition="Exists ('$(MonoAndroidIntermediate)linkdst')" />
 	<RemoveDirFixed Directories="$(MonoAndroidIntermediate)res" Condition="Exists ('$(MonoAndroidIntermediate)res')" />
 	<RemoveDirFixed Directories="$(MonoAndroidIntermediate)aidl" Condition="Exists ('$(MonoAndroidIntermediate)aidl')" />
