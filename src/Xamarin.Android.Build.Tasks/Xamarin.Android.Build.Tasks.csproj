@@ -171,6 +171,7 @@
     <Compile Include="Tasks\CompileToDalvik.cs" />
     <Compile Include="Tasks\AndroidToolTask.cs" />
     <Compile Include="Tasks\PrepareAbiItems.cs" />
+    <Compile Include="Tasks\JniMarshalMethodGen.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Mono.Android\ApplicationAttribute.Partial.cs" />
     <Compile Include="Mono.Android\BroadcastReceiverAttribute.Partial.cs" />

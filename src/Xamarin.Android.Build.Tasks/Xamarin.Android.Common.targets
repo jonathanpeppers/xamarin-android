@@ -79,6 +79,7 @@ Copyright (C) 2011-2012 Xamarin. All rights reserved.
 <UsingTask TaskName="Xamarin.Android.Tasks.GetImportedLibraries" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.GetMonoPlatformJar" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.Javac" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
+<UsingTask TaskName="Xamarin.Android.Tasks.JniMarshalMethodGen" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.Desugar" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.Dx" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.D8" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
@@ -2048,8 +2049,14 @@ because xbuild doesn't support framework reference assemblies.
     <_AssembliesToProcess Include="@(ResolvedUserAssemblies)" />
     <_AssembliesToProcess Include="@(ResolvedAssemblies)" Condition=" '%(Filename)' != '' And '@(_JniFrameworkAssembly)' != '' " />
   </ItemGroup>
-  <Exec
-       Command="DYLD_LIBRARY_PATH=&quot;$(MonoAndroidLibDirectory)&quot; MONO_CONFIG=&quot;$(MonoAndroidBinDirectory)mono.config&quot; MONO_PATH=&quot;$(MonoAndroidBinDirectory)\bcl&quot;:&quot;$(MonoAndroidBinDirectory)\bcl\Facades&quot;:&quot;$(_XATargetFrameworkDirectories)&quot; &quot;$(MonoAndroidBinDirectory)mono&quot; --debug &quot;$(MonoAndroidToolsDirectory)\jnimarshalmethod-gen.exe&quot; --jvm=&quot;$(JdkJvmPath)&quot; $(AndroidGenerateJniMarshalMethodsAdditionalArguments) @(_AssembliesToProcess->'&quot;%(FullPath)&quot;', ' ')"
+  <JniMarshalMethodGen
+      MonoAndroidBinDirectory="$(MonoAndroidBinDirectory)"
+      MonoAndroidToolsDirectory="$(MonoAndroidToolsDirectory)"
+      MonoAndroidLibDirectory="$(MonoAndroidLibDirectory)"
+      TargetFrameworkDirectories="$(_XATargetFrameworkDirectories)"
+      Assemblies="@(_AssembliesToProcess)"
+      JdkJvmPath="$(JdkJvmPath)"
+      ExtraArguments="$(AndroidGenerateJniMarshalMethodsAdditionalArguments)"
   />
   <Touch Files="$(_AndroidJniMarshalMethodsFlag)" AlwaysCreate="True" />
 </Target>
