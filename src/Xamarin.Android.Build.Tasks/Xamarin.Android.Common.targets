@@ -2122,6 +2122,8 @@ because xbuild doesn't support framework reference assemblies.
 		;_CheckForObsoleteAssemblies
 		;_ResolveSatellitePaths
 		;_CreatePackageWorkspace
+		;_CopyConfigFiles
+		;_ConvertPdbFiles
 		;_LinkAssemblies
 	</_PrepareAssembliesDependsOnTargets>
 </PropertyGroup>
@@ -2891,6 +2893,11 @@ because xbuild doesn't support framework reference assemblies.
 		_SetLatestTargetFrameworkVersion;
 		_GetLibraryImports;
 		_RemoveRegisterAttribute;
+		_ResolveAssemblies;
+		_ResolveSatellitePaths;
+		_CreatePackageWorkspace;
+		_CopyConfigFiles;
+		_ConvertPdbFiles;
 		_LinkAssemblies;
 		_GenerateJavaStubs;
 		_ConvertCustomView;
