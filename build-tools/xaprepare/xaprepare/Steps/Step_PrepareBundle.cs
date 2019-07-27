@@ -95,6 +95,9 @@ namespace Xamarin.Android.Prepare
 			if (!await Utilities.BuildRemapRef (context, haveManagedRuntime, managedRuntime))
 				return false;
 
+			if (!await Utilities.ConjureXamarinAndroidCecil (context, haveManagedRuntime, managedRuntime))
+				return false;
+
 			Utilities.PropagateXamarinAndroidCecil (context);
 
 			if (String.IsNullOrEmpty (context.XABundleCopyDir))

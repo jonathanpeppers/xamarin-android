@@ -106,6 +106,58 @@ namespace Xamarin.Android.Prepare
 			return true;
 		}
 
+		public static async Task<bool> ConjureXamarinAndroidCecil (Context context, bool haveManagedRuntime, string managedRuntime)
+		{
+			var msbuild = new MSBuildRunner (context);
+			//StatusStep (context, "Building conjure-xamarin-android-cecil");
+			string projectPath = Path.Combine (Configurables.Paths.BuildToolsDir, "conjure-xamarin-android-cecil", "conjure-xamarin-android-cecil.csproj");
+			bool result = await msbuild.Run (
+				projectPath: projectPath,
+				logTag: "conjure-xamarin-android-cecil",
+				binlogName: "build-conjure-xamarin-android-cecil"
+			);
+
+			if (!result) {
+				Log.ErrorLine ("Failed to build conjure-xamarin-android-cecil");
+				return false;
+			}
+
+			//StatusStep (context, "Conjuring Xamarin.Android.Cecil and Xamarin.Android.Cecil.Mdb");
+			string conjurer = Path.Combine (Configurables.Paths.BuildBinDir, "conjure-xamarin-android-cecil.exe");
+			string conjurerSourceDir = Configurables.Paths.MonoProfileToolsDir;
+			string conjurerDestDir = Configurables.Paths.BuildBinDir;
+
+			result = Utilities.RunCommand (
+				haveManagedRuntime ? managedRuntime : conjurer, // command
+				BuildPaths.XamarinAndroidSourceRoot, // workingDirectory
+				true, // ignoreEmptyArguments
+
+				// arguments
+				haveManagedRuntime ? conjurer : String.Empty,
+				Configurables.Paths.MonoProfileToolsDir, // source dir
+				Configurables.Paths.BuildBinDir // destination dir
+			);
+
+			//StatusStep (context, "Re-signing Xamarin.Android.Cecil.dll");
+			var sn = new SnRunner (context);
+			string snkPath = Path.Combine (BuildPaths.XamarinAndroidSourceRoot, "mono.snk");
+			string assemblyPath = Path.Combine (Configurables.Paths.BuildBinDir, "Xamarin.Android.Cecil.dll");
+			result = await sn.ReSign (snkPath, assemblyPath, $"sign-xamarin-android-cecil");
+			if (!result) {
+				Log.ErrorLine ("Failed to re-sign Xamarin.Android.Cecil.dll");
+				return false;
+			}
+
+			//StatusStep (context, "Re-signing Xamarin.Android.Cecil.Mdb.dll");
+			assemblyPath = Path.Combine (Configurables.Paths.BuildBinDir, "Xamarin.Android.Cecil.Mdb.dll");
+			result = await sn.ReSign (snkPath, assemblyPath, $"sign-xamarin-android-cecil-mdb");
+			if (!result) {
+				Log.ErrorLine ("Failed to re-sign Xamarin.Android.Cecil.Mdb.dll");
+				return false;
+			}
+			return true;
+		}
+
 		public static string ToXamarinAndroidPropertyValue (ICollection<string> coll)
 		{
 			if (coll == null)
