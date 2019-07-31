@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -16,42 +16,62 @@ namespace Xamarin.Android.Build.Tests
 			new object[] {
 				/* supportedAbis */   "armeabi-v7a",
 				/* enableLLVM */      false,
-				/* expectedResult */  true,
+				/* profiledAot */     false,
 			},
 			new object[] {
 				/* supportedAbis */   "armeabi-v7a",
 				/* enableLLVM */      true,
-				/* expectedResult */  true,
+				/* profiledAot */     false,
+			},
+			new object[] {
+				/* supportedAbis */   "armeabi-v7a",
+				/* enableLLVM */      false,
+				/* profiledAot */     true,
 			},
 			new object[] {
 				/* supportedAbis */   "arm64-v8a",
 				/* enableLLVM */      false,
-				/* expectedResult */  true,
+				/* profiledAot */     false,
 			},
 			new object[] {
 				/* supportedAbis */   "arm64-v8a",
 				/* enableLLVM */      true,
-				/* expectedResult */  true,
+				/* profiledAot */     false,
+			},
+			new object[] {
+				/* supportedAbis */   "arm64-v8a",
+				/* enableLLVM */      false,
+				/* profiledAot */     true,
 			},
 			new object[] {
 				/* supportedAbis */   "x86",
 				/* enableLLVM */      false,
-				/* expectedResult */  true,
+				/* profiledAot */     false,
 			},
 			new object[] {
 				/* supportedAbis */   "x86",
 				/* enableLLVM */      true,
-				/* expectedResult */  true,
+				/* profiledAot */     false,
+			},
+			new object[] {
+				/* supportedAbis */   "x86",
+				/* enableLLVM */      false,
+				/* profiledAot */     true,
 			},
 			new object[] {
 				/* supportedAbis */   "x86_64",
 				/* enableLLVM */      false,
-				/* expectedResult */  true,
+				/* profiledAot */     false,
 			},
 			new object[] {
 				/* supportedAbis */   "x86_64",
 				/* enableLLVM */      true,
-				/* expectedResult */  true,
+				/* profiledAot */     false,
+			},
+			new object[] {
+				/* supportedAbis */   "x86_64",
+				/* enableLLVM */      false,
+				/* profiledAot */     true,
 			},
 		};
 		// useJackAndJill, useLatestSdk

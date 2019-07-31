@@ -733,9 +733,10 @@ namespace UnamedProject
 		[Test]
 		[TestCaseSource (nameof (AotChecks))]
 		[Category ("Minor")]
-		public void BuildAotApplication (string supportedAbis, bool enableLLVM, bool expectedResult)
+		public void BuildAotApplication (string supportedAbis, bool enableLLVM, bool profiledAot)
 		{
-			var path = Path.Combine ("temp", string.Format ("BuildAotApplication_{0}_{1}_{2}", supportedAbis, enableLLVM, expectedResult));
+			//NOTE: spaces in path
+			var path = Path.Combine ("temp", string.Format ("BuildAot App{0}{1}{2}", supportedAbis, enableLLVM, profiledAot));
 			var proj = new XamarinAndroidApplicationProject () {
 				IsRelease = true,
 				BundleAssemblies = false,
@@ -744,6 +745,7 @@ namespace UnamedProject
 			proj.SetProperty (KnownProperties.TargetFrameworkVersion, "v5.1");
 			proj.SetProperty (KnownProperties.AndroidSupportedAbis, supportedAbis);
 			proj.SetProperty ("EnableLLVM", enableLLVM.ToString ());
+			proj.SetProperty ("AndroidEnableProfiledAot", profiledAot.ToString ());
 			bool checkMinLlvmPath = enableLLVM && (supportedAbis == "armeabi-v7a" || supportedAbis == "x86");
 			if (checkMinLlvmPath) {
 				// Set //uses-sdk/@android:minSdkVersion so that LLVM uses the right libc.so
@@ -759,11 +761,7 @@ namespace UnamedProject
 					Assert.Ignore ($"Cross compiler for {supportedAbis} was not available");
 				if (!b.GetSupportedRuntimes ().Any (x => supportedAbis == x.Abi))
 					Assert.Ignore ($"Runtime for {supportedAbis} was not available.");
-				b.ThrowOnBuildFailure = false;
-				b.Verbosity = LoggerVerbosity.Diagnostic;
-				Assert.AreEqual (expectedResult, b.Build (proj), "Build should have {0}.", expectedResult ? "succeeded" : "failed");
-				if (!expectedResult)
-					return;
+				Assert.IsTrue (b.Build (proj), "Build should have succeeded.");
 				//NOTE: Windows has shortened paths such as: C:\Users\myuser\ANDROI~3\ndk\PLATFO~1\AN3971~1\arch-x86\usr\lib\libc.so
 				if (checkMinLlvmPath && !IsWindows) {
 					// LLVM passes a direct path to libc.so, and we need to use the libc.so
@@ -791,7 +789,7 @@ namespace UnamedProject
 							"UnnamedProject.dll should be in the UnnamedProject.UnnamedProject.apk");
 					}
 				}
-				Assert.AreEqual (expectedResult, b.Build (proj), "Second Build should have {0}.", expectedResult ? "succeeded" : "failed");
+				Assert.IsTrue (b.Build (proj), "Second Build should have succeeded.");
 				Assert.IsTrue (
 					b.Output.IsTargetSkipped ("_CompileJava"),
 					"the _CompileJava target should be skipped");
@@ -804,9 +802,10 @@ namespace UnamedProject
 		[Test]
 		[TestCaseSource (nameof (AotChecks))]
 		[Category ("Minor")]
-		public void BuildAotApplicationAndBundle (string supportedAbis, bool enableLLVM, bool expectedResult)
+		public void BuildAotApplicationAndBundle (string supportedAbis, bool enableLLVM, bool profiledAot)
 		{
-			var path = Path.Combine ("temp", string.Format ("BuildAotApplicationAndBundle_{0}_{1}_{2}", supportedAbis, enableLLVM, expectedResult));
+			//NOTE: spaces in path
+			var path = Path.Combine ("temp", string.Format ("BuildAotBundle App{0}{1}{2}", supportedAbis, enableLLVM, profiledAot));
 			var proj = new XamarinAndroidApplicationProject () {
 				IsRelease = true,
 				BundleAssemblies = true,
@@ -815,15 +814,13 @@ namespace UnamedProject
 			proj.SetProperty (KnownProperties.TargetFrameworkVersion, "v5.1");
 			proj.SetProperty (KnownProperties.AndroidSupportedAbis, supportedAbis);
 			proj.SetProperty ("EnableLLVM", enableLLVM.ToString ());
+			proj.SetProperty ("AndroidEnableProfiledAot", profiledAot.ToString ());
 			using (var b = CreateApkBuilder (path)) {
 				if (!b.CrossCompilerAvailable (supportedAbis))
 					Assert.Ignore ("Cross compiler was not available");
 				if (!b.GetSupportedRuntimes ().Any (x => supportedAbis == x.Abi))
 					Assert.Ignore ($"Runtime for {supportedAbis} was not available.");
-				b.ThrowOnBuildFailure = false;
-				Assert.AreEqual (expectedResult, b.Build (proj), "Build should have {0}.", expectedResult ? "succeeded" : "failed");
-				if (!expectedResult)
-					return;
+				Assert.IsTrue (b.Build (proj), "Build should have succeeded.");
 				foreach (var abi in supportedAbis.Split (new char [] { ';' })) {
 					var libapp = Path.Combine (Root, b.ProjectDirectory, proj.IntermediateOutputPath,
 						"bundles", abi, "libmonodroid_bundle_app.so");
@@ -842,7 +839,7 @@ namespace UnamedProject
 							"UnnamedProject.dll should not be in the UnnamedProject.UnnamedProject.apk");
 					}
 				}
-				Assert.AreEqual (expectedResult, b.Build (proj), "Second Build should have {0}.", expectedResult ? "succeeded" : "failed");
+				Assert.IsTrue (b.Build (proj), "Second Build should have succeeded.");
 				Assert.IsTrue (
 					b.Output.IsTargetSkipped ("_CompileJava"),
 					"the _CompileJava target should be skipped");
