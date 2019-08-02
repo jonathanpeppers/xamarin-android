@@ -735,8 +735,8 @@ namespace UnamedProject
 		[Category ("Minor")]
 		public void BuildAotApplication (string supportedAbis, bool enableLLVM, bool profiledAot)
 		{
-			//NOTE: spaces in path
-			var path = Path.Combine ("temp", string.Format ("BuildAot App{0}{1}{2}", supportedAbis, enableLLVM, profiledAot));
+			//NOTE: space & hyphen in path
+			var path = Path.Combine ("temp", string.Format ("BuildAot - App{0}{1}{2}", supportedAbis, enableLLVM, profiledAot));
 			var proj = new XamarinAndroidApplicationProject () {
 				IsRelease = true,
 				BundleAssemblies = false,
@@ -804,8 +804,8 @@ namespace UnamedProject
 		[Category ("Minor")]
 		public void BuildAotApplicationAndBundle (string supportedAbis, bool enableLLVM, bool profiledAot)
 		{
-			//NOTE: spaces in path
-			var path = Path.Combine ("temp", string.Format ("BuildAotBundle App{0}{1}{2}", supportedAbis, enableLLVM, profiledAot));
+			//NOTE: space & hyphen in path
+			var path = Path.Combine ("temp", string.Format ("BuildAotBundle - App{0}{1}{2}", supportedAbis, enableLLVM, profiledAot));
 			var proj = new XamarinAndroidApplicationProject () {
 				IsRelease = true,
 				BundleAssemblies = true,
