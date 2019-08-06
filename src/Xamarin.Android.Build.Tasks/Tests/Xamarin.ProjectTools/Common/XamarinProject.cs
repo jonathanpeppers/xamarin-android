@@ -284,17 +284,23 @@ namespace Xamarin.ProjectTools
 				*/
 				var needsUpdate = (!File.Exists (path) || p.Timestamp == null || p.Timestamp.Value > new DateTimeOffset (new FileInfo (path).LastWriteTimeUtc));
 				if (p.Content != null && needsUpdate) {
-					if (File.Exists (path)) File.SetAttributes (path, FileAttributes.Normal);
+					if (File.Exists (path)) {
+						File.SetAttributes (path, FileAttributes.Normal);
+					}
 					File.WriteAllText (path, p.Content, p.Encoding ?? Encoding.UTF8);
-					File.SetLastWriteTimeUtc (path, p.Timestamp != null ? p.Timestamp.Value.UtcDateTime : DateTime.UtcNow);
+					if (p.Timestamp != null) {
+						File.SetLastWriteTimeUtc (path, p.Timestamp.Value.UtcDateTime);
+					}
 					File.SetAttributes (path, p.Attributes);
-					p.Timestamp = new DateTimeOffset (new FileInfo (path).LastWriteTimeUtc);
+					p.Timestamp = new DateTimeOffset (File.GetLastWriteTimeUtc (path));
 				} else if (p.BinaryContent != null && needsUpdate) {
 					using (var f = File.Create (path))
 						f.Write (p.BinaryContent, 0, p.BinaryContent.Length);
-					File.SetLastWriteTimeUtc (path, p.Timestamp != null ? p.Timestamp.Value.UtcDateTime : DateTime.UtcNow);
+					if (p.Timestamp != null) {
+						File.SetLastWriteTimeUtc (path, p.Timestamp.Value.UtcDateTime);
+					}
 					File.SetAttributes (path, p.Attributes);
-					p.Timestamp = new DateTimeOffset (new FileInfo (path).LastWriteTimeUtc);
+					p.Timestamp = new DateTimeOffset (File.GetLastWriteTimeUtc (path));
 				}
 			}
 
