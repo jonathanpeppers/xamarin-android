@@ -2071,6 +2071,7 @@ because xbuild doesn't support framework reference assemblies.
     <LinkAssembliesNoShrink
         OutputDirectory="$(MonoAndroidIntermediateAssemblyDir)"
         ResolvedAssemblies="@(ResolvedAssemblies)"
+        LinkOnlyNewerThan="$(_AndroidLinkFlag)"
     />
 
     <!-- We have to use a flag instead of normal outputs because linking can delete unused assemblies -->

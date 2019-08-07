@@ -399,9 +399,9 @@ namespace Xamarin.Android.Tasks
 			}
 		}
 
-		public static void CopyAssemblyAndSymbols (string source, string destination)
+		public static bool CopyAssemblyAndSymbols (string source, string destination)
 		{
-			CopyIfChanged (source, destination);
+			bool changed = CopyIfChanged (source, destination);
 			var mdb = source + ".mdb";
 			if (File.Exists (mdb)) {
 				var mdbDestination = destination + ".mdb";
@@ -412,6 +412,7 @@ namespace Xamarin.Android.Tasks
 				var pdbDestination = Path.ChangeExtension (destination, "pdb");
 				CopyIfChanged (pdb, pdbDestination);
 			}
+			return changed;
 		}
 
 		public static bool CopyIfChanged (string source, string destination)

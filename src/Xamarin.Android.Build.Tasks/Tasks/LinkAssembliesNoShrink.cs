@@ -1,4 +1,4 @@
-﻿using Java.Interop.Tools.Cecil;
+using Java.Interop.Tools.Cecil;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Mono.Cecil;
@@ -15,6 +15,8 @@ namespace Xamarin.Android.Tasks
 
 		[Required]
 		public string OutputDirectory { get; set; }
+
+		public string LinkOnlyNewerThan { get; set; }
 
 		public override bool Execute ()
 		{
@@ -35,6 +37,11 @@ namespace Xamarin.Android.Tasks
 						resolver.SearchDirectories.Add (path);
 				}
 
+				DateTime? newerThan = default;
+				if (!string.IsNullOrWhiteSpace (LinkOnlyNewerThan) && File.Exists (LinkOnlyNewerThan)) {
+					newerThan = File.GetLastWriteTimeUtc (LinkOnlyNewerThan);
+				}
+
 				// Run the FixAbstractMethodsStep
 				var step = new FixAbstractMethodsStep (resolver, Log);
 				foreach (var assembly in ResolvedAssemblies) {
@@ -42,7 +49,11 @@ namespace Xamarin.Android.Tasks
 
 					// Only run the step on "MonoAndroid" assemblies
 					if (!MonoAndroidHelper.IsSharedRuntimeAssembly (assembly.ItemSpec) && MonoAndroidHelper.IsMonoAndroidAssembly (assembly)) {
-						Log.LogDebugMessage ($"Running FixAbstractMethods: {assembly.ItemSpec}");
+						if (newerThan != null && File.GetLastWriteTimeUtc (assembly.ItemSpec) < newerThan) {
+							Log.LogDebugMessage ($"Skip linking unchanged file: {assembly.ItemSpec}");
+							continue;
+						}
+
 						var assemblyDefinition = resolver.GetAssembly (assembly.ItemSpec);
 						if (step.FixAbstractMethods (assemblyDefinition)) {
 							Log.LogDebugMessage ($"Saving modified assembly: {assembly.ItemSpec}");
@@ -51,8 +62,9 @@ namespace Xamarin.Android.Tasks
 						}
 					}
 
-					Log.LogDebugMessage ($"Copying: {assembly.ItemSpec}");
-					MonoAndroidHelper.CopyAssemblyAndSymbols (assembly.ItemSpec, destination);
+					if (MonoAndroidHelper.CopyAssemblyAndSymbols (assembly.ItemSpec, destination)) {
+						Log.LogDebugMessage ($"Copied: {assembly.ItemSpec}");
+					}
 				}
 			}
 
