@@ -1188,6 +1188,7 @@ because xbuild doesn't support framework reference assemblies.
 	<MonoAndroidResDirIntermediate>$(IntermediateOutputPath)res\</MonoAndroidResDirIntermediate>
 	<MonoAndroidIntermediateAssetsDir>$(IntermediateOutputPath)android\assets\</MonoAndroidIntermediateAssetsDir>
 	<MonoAndroidIntermediateAssemblyDir>$(IntermediateOutputPath)android\assets\</MonoAndroidIntermediateAssemblyDir>
+	<_JniMarshalMethodsOutputDir>$(IntermediateOutputPath)jnisrc\</_JniMarshalMethodsOutputDir>
 	<MonoAndroidIntermediateAssemblyTempDir>$(IntermediateOutputPath)linkdst\</MonoAndroidIntermediateAssemblyTempDir>
 	<MonoAndroidResourcePrefix Condition="'$(MonoAndroidResourcePrefix)' == ''">Resources</MonoAndroidResourcePrefix>
 	<MonoAndroidIntermediate>$(IntermediateOutputPath)</MonoAndroidIntermediate>
@@ -1998,9 +1999,6 @@ because xbuild doesn't support framework reference assemblies.
     DependsOnTargets="_GetReferenceAssemblyPaths;_SetLatestTargetFrameworkVersion"
     Inputs="$(_AndroidBuildPropertiesCache);@(ResolvedUserAssemblies)"
     Outputs="$(_AndroidStampDirectory)_GenerateJniMarshalMethods.stamp">
-  <PropertyGroup>
-    <_JniMarshalMethodsInputDir>$(IntermediateOutputPath)jnisrc\</_JniMarshalMethodsInputDir>
-  </PropertyGroup>
   <ItemGroup>
     <_JniFrameworkAssembly Include="Mono.Android.dll" />
     <_JniFrameworkAssembly Include="OpenTK-1.0.dll" />
@@ -2008,14 +2006,14 @@ because xbuild doesn't support framework reference assemblies.
     <_JniFrameworkAssembly Include="Xamarin.Android.NUnitLite.dll" />
     <_AssembliesToProcess Include="@(ResolvedUserAssemblies)" />
     <_AssembliesToProcess Include="@(ResolvedFrameworkAssemblies)" Condition=" '%(Filename)' == '@(_JniFrameworkAssembly->'%(Filename)')' " />
-    <_JniMarshalMethodAssemblies Include="@(ResolvedAssemblies->'$(_JniMarshalMethodsInputDir)%(Filename)%(Extension)')" />
+    <_MonoPath Include="$(MonoAndroidBinDirectory)\bcl" />
+    <_MonoPath Include="$(MonoAndroidBinDirectory)\bcl\Facades" />
+    <_MonoPath Include="$(_XATargetFrameworkDirectories)" />
+    <_MonoPath Include="@(_AssembliesToProcess->'%(RootDir)%(Directory)')" />
   </ItemGroup>
-  <CopyIfChanged
-      SourceFiles="@(ResolvedAssemblies)"
-      DestinationFiles="@(_JniMarshalMethodAssemblies)"
-  />
+  <MakeDir Directories="$(_JniMarshalMethodsOutputDir)" />
   <Exec
-      Command="DYLD_LIBRARY_PATH=&quot;$(MonoAndroidLibDirectory)&quot; MONO_CONFIG=&quot;$(MonoAndroidBinDirectory)mono.config&quot; MONO_PATH=&quot;$(MonoAndroidBinDirectory)\bcl&quot;:&quot;$(MonoAndroidBinDirectory)\bcl\Facades&quot;:&quot;$(_XATargetFrameworkDirectories):$(_JniMarshalMethodsInputDir)&quot; &quot;$(MonoAndroidBinDirectory)mono&quot; --debug &quot;$(MonoAndroidToolsDirectory)\jnimarshalmethod-gen.exe&quot; --jvm=&quot;$(JdkJvmPath)&quot; $(AndroidGenerateJniMarshalMethodsAdditionalArguments) @(_AssembliesToProcess->'&quot;$(_JniMarshalMethodsInputDir)%(Filename)%(Extension)&quot;', ' ')"
+      Command="DYLD_LIBRARY_PATH=&quot;$(MonoAndroidLibDirectory)&quot; MONO_CONFIG=&quot;$(MonoAndroidBinDirectory)mono.config&quot; MONO_PATH=@(_MonoPath->Distinct(), ':') &quot;$(MonoAndroidBinDirectory)mono&quot; --debug &quot;$(MonoAndroidToolsDirectory)\jnimarshalmethod-gen.exe&quot; --jvm=&quot;$(JdkJvmPath)&quot; --o=&quot;$(_JniMarshalMethodsOutputDir)&quot; $(AndroidGenerateJniMarshalMethodsAdditionalArguments) @(_AssembliesToProcess->'&quot;%(Identity)&quot;', ' ')"
   />
   <Touch Files="$(_AndroidStampDirectory)_GenerateJniMarshalMethods.stamp" AlwaysCreate="True" />
   <ItemGroup>
@@ -2059,7 +2057,7 @@ because xbuild doesn't support framework reference assemblies.
     </PropertyGroup>
     <ItemGroup>
       <_AssembliesToLink Condition=" '$(AndroidGenerateJniMarshalMethods)' != 'True' " Include="@(ResolvedAssemblies)" />
-      <_AssembliesToLink Condition=" '$(AndroidGenerateJniMarshalMethods)' == 'True' " Include="@(_JniMarshalMethodAssemblies)" />
+      <_AssembliesToLink Condition=" '$(AndroidGenerateJniMarshalMethods)' == 'True' " Include="@(ResolvedAssemblies->'$(_JniMarshalMethodsOutputDir)%(Filename)%(Extension)')" />
     </ItemGroup>
 
     <CreateProperty
