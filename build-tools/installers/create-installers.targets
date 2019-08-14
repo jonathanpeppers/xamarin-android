@@ -306,6 +306,7 @@
     <_MSBuildFilesWin Include="$(MSBuildSrcDir)\cross-arm64.exe" />
     <_MSBuildFilesWin Include="$(MSBuildSrcDir)\cross-x86.exe" />
     <_MSBuildFilesWin Include="$(MSBuildSrcDir)\cross-x86_64.exe" />
+    <_MSBuildFilesWin Include="$(MSBuildSrcDir)\mono-sgen.exe" />
     <_MSBuildFilesWin Include="$(MSBuildSrcDir)\llc.exe" />
     <_MSBuildFilesWin Include="$(MSBuildSrcDir)\opt.exe" />
     <_MSBuildFilesUnixSignAndHarden Include="$(MSBuildSrcDir)\$(HostOS)\cross-arm" />

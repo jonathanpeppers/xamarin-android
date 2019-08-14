@@ -785,6 +785,15 @@ namespace Xamarin.Android.Prepare
 				strip: false
 			),
 
+			// Unstripped host mono binary Windows
+			new RuntimeFile (
+				sourceCreator: (Runtime runtime) => Path.Combine (MonoRuntimesHelpers.GetRootDir (runtime), "bin", "mono-sgen.exe"),
+				destinationCreator: (Runtime runtime) => Path.Combine (runtime.Name, "mono-sgen.exe"),
+				shouldSkip: (Runtime runtime) => !IsRuntimeType<MonoHostRuntime> (runtime) || !IsAbi (runtime, AbiNames.HostJit.Win32, AbiNames.HostJit.Win64),
+				type: RuntimeFileType.StrippableBinary,
+				strip: false
+			),
+
 			// Stripped cross runtime
 			new RuntimeFile (
 				sourceCreator: (Runtime runtime) => GetCrossRuntimeOutputSourcePath (runtime),
