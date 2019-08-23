@@ -140,6 +140,76 @@ class MemTest {
 		}
 
 		[Test]
+		public void AndroidXMigration ([Values (true, false)] bool isRelease)
+		{
+			var proj = new XamarinFormsAndroidApplicationProject {
+				IsRelease = isRelease,
+			};
+			proj.PackageReferences.Add (KnownPackages.AndroidXMigration);
+			proj.PackageReferences.Add (KnownPackages.AndroidXAppCompat);
+			proj.PackageReferences.Add (KnownPackages.AndroidXBrowser);
+			proj.PackageReferences.Add (KnownPackages.AndroidXMediaRouter);
+			proj.PackageReferences.Add (KnownPackages.AndroidXLegacySupportV4);
+			proj.PackageReferences.Add (KnownPackages.XamarinGoogleAndroidMaterial);
+
+			if (isRelease) {
+				// Workaround since we broke them
+				proj.Imports.Add (new Import ("foo.targets") {
+					TextContent = () => @"
+<Project>
+  <Target Name=""_AndroidXCecilfyShrinkFindFiles""
+      Inputs =""@(ResolvedAssemblies)""
+      Outputs=""@(ResolvedAssemblies->'$(IntermediateOutputPath)androidx\cecil\%(Filename)%(Extension)')"">
+    <ItemGroup>
+      <_AndroidXResolvedPdbs Include=""@(ResolvedAssemblies->'%(RootDir)%(Directory)%(Filename).pdb')"" />
+      <_AndroidXResolvedMdbs Include=""@(ResolvedAssemblies->'%(RootDir)%(Directory)%(Filename)%(Extension).mdb')"" />
+      <_AndroidXResolvedSymbols Condition=""Exists(%(Identity))"" Include=""@(_AndroidXResolvedPdbs);@(_AndroidXResolvedMdbs)"" />
+    </ItemGroup>
+    <Copy
+        SourceFiles=""@(ResolvedAssemblies)""
+        DestinationFiles=""@(ResolvedAssemblies->'$(IntermediateOutputPath)androidx\cecil\%(Filename)%(Extension)')""
+    />
+    <Copy
+        SourceFiles=""@(_AndroidXResolvedSymbols)""
+        DestinationFiles=""@(_AndroidXResolvedSymbols->'$(IntermediateOutputPath)androidx\cecil\%(Filename)%(Extension)')""
+    />
+    <ItemGroup>
+      <_AndroidXResolvedAssemblies Include=""@(ResolvedUserAssemblies)"" Condition=""'%(ResolvedUserAssemblies.AndroidXSkipAndroidXMigration)' != 'true'"" />
+      <_AndroidXFileToCecilfy Include=""@(_AndroidXResolvedAssemblies->'$(IntermediateOutputPath)androidx\cecil\%(Filename)%(Extension)')"" />
+      <ResolvedAssemblies Remove=""@(_AndroidXResolvedAssemblies)"" />
+      <ResolvedAssemblies Include=""@(_AndroidXFileToCecilfy)"" />
+      <ResolvedUserAssemblies Remove=""@(_AndroidXResolvedAssemblies)"" />
+      <ResolvedUserAssemblies Include=""@(_AndroidXFileToCecilfy)"" />
+    </ItemGroup>
+  </Target>
+</Project>
+",
+				});
+
+				// If I would instead want to test directly from Github
+				//var targets = new DownloadedCache ().GetAsFile ("https://raw.githubusercontent.com/jonathanpeppers/XamarinAndroidXMigration/fce0562539c7fec0023a10bd084b950165b8dccd/source/Xamarin.AndroidX.Migration/BuildTasks/Xamarin.AndroidX.Migration.targets");
+				//proj.Imports.Add (new Import (targets));
+			}
+
+			using (var b = CreateApkBuilder (Path.Combine ("temp", TestName))) {
+				Assert.IsTrue (b.Build (proj), "Build should have succeeded.");
+				var dexFile = b.Output.GetIntermediaryPath (Path.Combine ("android", "bin", "classes.dex"));
+				FileAssert.Exists (dexFile);
+				// classes.dex should only have the androidx Java types
+				var className = "Landroidx/appcompat/app/AppCompatActivity;";
+				Assert.IsTrue (DexUtils.ContainsClass (className, dexFile, AndroidSdkPath), $"`{dexFile}` should include `{className}`!");
+				className = "Landroid/appcompat/app/AppCompatActivity;";
+				Assert.IsFalse (DexUtils.ContainsClass (className, dexFile, AndroidSdkPath), $"`{dexFile}` should *not* include `{className}`!");
+				// FormsAppCompatActivity should inherit the AndroidX C# type
+				var forms = Path.Combine (Root, b.ProjectDirectory, proj.IntermediateOutputPath, "android", "assets", "Xamarin.Forms.Platform.Android.dll");
+				using (var assembly = AssemblyDefinition.ReadAssembly (forms)) {
+					var activity = assembly.MainModule.GetType ("Xamarin.Forms.Platform.Android.FormsAppCompatActivity");
+					Assert.AreEqual ("AndroidX.AppCompat.App.AppCompatActivity", activity.BaseType.FullName);
+				}
+			}
+		}
+
+		[Test]
 		public void DuplicateReferences ()
 		{
 			var proj = new XamarinAndroidApplicationProject ();
