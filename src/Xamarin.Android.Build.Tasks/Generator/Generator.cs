@@ -18,7 +18,7 @@ namespace Xamarin.Android.Tasks
 		{
 			string monoInit = GetMonoInitSource (androidSdkPlatform, useSharedRuntime);
 
-			bool ok = true;
+			bool changes = false;
 			using (var memoryStream = new MemoryStream ())
 			using (var writer = new StreamWriter (memoryStream)) {
 				foreach (var t in javaTypes) {
@@ -36,11 +36,10 @@ namespace Xamarin.Android.Tasks
 						writer.Flush ();
 
 						var path = jti.GetDestinationPath (outputPath);
-						MonoAndroidHelper.CopyIfStreamChanged (memoryStream, path);
+						changes |= MonoAndroidHelper.CopyIfStreamChanged (memoryStream, path);
 						if (jti.HasExport && !hasExportReference)
 							Diagnostic.Error (4210, "You need to add a reference to Mono.Android.Export.dll when you use ExportAttribute or ExportFieldAttribute.");
 					} catch (XamarinAndroidException xae) {
-						ok = false;
 						log.LogError (
 								subcategory: "",
 								errorCode: "XA" + xae.Code,
@@ -54,19 +53,17 @@ namespace Xamarin.Android.Tasks
 								messageArgs: new object [0]
 						);
 					} catch (DirectoryNotFoundException ex) {
-						ok = false;
 						if (OS.IsWindows) {
 							Diagnostic.Error (5301, "Failed to create JavaTypeInfo for class: {0} due to MAX_PATH: {1}", t.FullName, ex);
 						} else {
 							Diagnostic.Error (4209, "Failed to create JavaTypeInfo for class: {0} due to {1}", t.FullName, ex);
 						}
 					} catch (Exception ex) {
-						ok = false;
 						Diagnostic.Error (4209, "Failed to create JavaTypeInfo for class: {0} due to {1}", t.FullName, ex);
 					}
 				}
 			}
-			return ok;
+			return changes;
 		}
 
 		static string GetMonoInitSource (string androidSdkPlatform, bool useSharedRuntime)

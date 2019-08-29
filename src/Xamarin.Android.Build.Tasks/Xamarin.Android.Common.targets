@@ -59,6 +59,7 @@ Copyright (C) 2011-2012 Xamarin. All rights reserved.
 <UsingTask TaskName="Xamarin.Android.Tasks.CreateNativeLibraryArchive" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.CreateResgenManifest" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.CreateTemporaryDirectory" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
+<UsingTask TaskName="Xamarin.Android.Tasks.CreateTypemaps" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.CreateAdditionalLibraryResourceCache" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.CreateMsymManifest" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.Crunch" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
@@ -69,6 +70,8 @@ Copyright (C) 2011-2012 Xamarin. All rights reserved.
 <UsingTask TaskName="Xamarin.Android.Tasks.GenerateManagedAidlProxies" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.GenerateResourceDesigner" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.GenerateJavaStubs" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
+<UsingTask TaskName="Xamarin.Android.Tasks.GenerateIncrementalJavaStubs" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
+<UsingTask TaskName="Xamarin.Android.Tasks.GenerateManifest" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.GeneratePackageManagerJava" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.GetAndroidDefineConstants" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.GetAdditionalResourcesFromAssemblies" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
@@ -79,6 +82,7 @@ Copyright (C) 2011-2012 Xamarin. All rights reserved.
 <UsingTask TaskName="Xamarin.Android.Tasks.GetImportedLibraries" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.GetMonoPlatformJar" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.Javac" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
+<UsingTask TaskName="Xamarin.Android.Tasks.JavacIncremental" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.Desugar" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.Dx" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.D8" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
@@ -116,6 +120,8 @@ Copyright (C) 2011-2012 Xamarin. All rights reserved.
 <UsingTask TaskName="Xamarin.Android.Tasks.LinkApplicationSharedLibraries" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.PrepareAbiItems" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.WriteLockFile" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
+<UsingTask TaskName="Xamarin.Android.Tasks.OpenAssemblies" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
+<UsingTask TaskName="Xamarin.Android.Tasks.CloseAssemblies" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 
 <!--
 *******************************************
@@ -1275,6 +1281,7 @@ because xbuild doesn't support framework reference assemblies.
 		<_PropertyCacheItems Include="OS=$(OS)" />
 		<_PropertyCacheItems Include="DesignTimeBuild=$(DesignTimeBuild)" />
 		<_PropertyCacheItems Include="AndroidIncludeDebugSymbols=$(AndroidIncludeDebugSymbols)" />
+		<_PropertyCacheItems Include="_AndroidFullyIncremental=$(_AndroidFullyIncremental)" />
 	</ItemGroup>
 	<MakeDir Directories="$(_AndroidStampDirectory)" Condition="!Exists('$(_AndroidStampDirectory)')" />
 	<WriteLinesToFile
@@ -2182,7 +2189,8 @@ because xbuild doesn't support framework reference assemblies.
 	AndroidSdkDir="$(_AndroidSdkDirectory)"
 	PackageName="$(_AndroidPackage)"
 	ManifestPlaceholders="$(AndroidManifestPlaceholders)"
-	OutputDirectory="$(IntermediateOutputPath)android"
+	TypemapOutputDirectory="$(IntermediateOutputPath)android"
+	JavaSourceOutputDirectory="$(_AndroidIntermediateJavaSourceDirectory)"
 	MergedAndroidManifestOutput="$(IntermediateOutputPath)android\AndroidManifest.xml"
     UseSharedRuntime="$(AndroidUseSharedRuntime)"
 	EmbedAssemblies="$(EmbedAssembliesIntoApk)"
@@ -3424,6 +3432,8 @@ because xbuild doesn't support framework reference assemblies.
   </CalculateProjectDependencies>
 </Target>
 
+<Import Project="$(MSBuildThisFileDirectory)Xamarin.Android.Incremental.targets"
+        Condition=" '$(_AndroidFullyIncremental)' == 'True' "/>
 <Import Project="$(MSBuildThisFileDirectory)Xamarin.Android.Common.Debugging.targets"
         Condition="Exists('$(MSBuildThisFileDirectory)Xamarin.Android.Common.Debugging.targets')"/>
 

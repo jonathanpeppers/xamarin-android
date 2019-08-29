@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\..\packages\Xamarin.Build.AsyncTask.0.3.4\build\Xamarin.Build.AsyncTask.props" Condition="Exists('..\..\packages\Xamarin.Build.AsyncTask.0.3.4\build\Xamarin.Build.AsyncTask.props')" />
   <PropertyGroup>
@@ -26,7 +26,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType></DebugType>
+    <DebugType>
+    </DebugType>
     <Optimize>True</Optimize>
     <OutputPath>$(XAInstallPrefix)xbuild\Xamarin\Android\</OutputPath>
     <DefineConstants>TRACE;HAVE_CECIL;MSBUILD;ANDROID_24</DefineConstants>
@@ -148,6 +149,11 @@
     <Compile Include="Tasks\BuildAppBundle.cs" />
     <Compile Include="Tasks\BundleTool.cs" />
     <Compile Include="Tasks\BuildApkSet.cs" />
+    <Compile Include="Tasks\CloseAssemblies.cs" />
+    <Compile Include="Tasks\CreateTypemaps.cs" />
+    <Compile Include="Tasks\DirectoryAssemblyResolverTask.cs" />
+    <Compile Include="Tasks\GenerateIncrementalJavaStubs.cs" />
+    <Compile Include="Tasks\GenerateManifest.cs" />
     <Compile Include="Tasks\InstallApkSet.cs" />
     <Compile Include="Tasks\CilStrip.cs" />
     <Compile Include="Tasks\ConvertDebuggingFiles.cs" />
@@ -160,7 +166,9 @@
     <Compile Include="Tasks\JarToXml.cs" />
     <Compile Include="Tasks\GetJavaPlatformJar.cs" />
     <Compile Include="Tasks\GetFilesThatExist.cs" />
+    <Compile Include="Tasks\JavacIncremental.cs" />
     <Compile Include="Tasks\LinkAssembliesNoShrink.cs" />
+    <Compile Include="Tasks\OpenAssemblies.cs" />
     <Compile Include="Tasks\ReadAndroidManifest.cs" />
     <Compile Include="Tasks\RemoveRegisterAttribute.cs" />
     <Compile Include="Tasks\GetMonoPlatformJar.cs" />
@@ -757,6 +765,6 @@
       <ReferenceOutputAssembly>False</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
-  <Import Project="ILRepack.targets" />
+  <!-- <Import Project="ILRepack.targets" /> -->
   <Import Project="..\..\packages\Xamarin.LibZipSharp.1.0.0\build\Xamarin.LibZipSharp.targets" Condition="Exists('..\..\packages\Xamarin.LibZipSharp.1.0.0\build\Xamarin.LibZipSharp.targets')" />
 </Project>

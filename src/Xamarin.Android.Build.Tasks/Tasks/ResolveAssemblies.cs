@@ -237,11 +237,13 @@ namespace Xamarin.Android.Tasks
 			}
 
 			// Recurse into each referenced assembly
+			var assemblyReferences = new List<string> ();
 			foreach (var handle in reader.AssemblyReferences) {
 				var reference = reader.GetAssemblyReference (handle);
 				string reference_assembly;
 				try {
 					var referenceName = reader.GetString (reference.Name);
+					assemblyReferences.Add (referenceName);
 					if (assemblyItem != null && referenceName == "Mono.Android") {
 						assemblyItem.SetMetadata ("HasMonoAndroidReference", "True");
 					}
@@ -269,6 +271,9 @@ namespace Xamarin.Android.Tasks
 					return;
 				}
 				AddAssemblyReferences (resolver, assemblies, reference_assembly, resolutionPath);
+			}
+			if (assemblyItem != null) {
+				assemblyItem.SetMetadata ("AssemblyReferences", string.Join (";", assemblyReferences));
 			}
 
 			indent -= 2;

@@ -100,6 +100,14 @@ namespace Xamarin.ProjectTools
 			set { SetProperty (KnownProperties.EmbedAssembliesIntoApk, value.ToString ()); }
 		}
 
+		/// <summary>
+		/// The experimental $(_AndroidFullyIncremental) setting
+		/// </summary>
+		public bool FullyIncremental {
+			get { return string.Equals (GetProperty (KnownProperties.AndroidFullyIncremental), "True", StringComparison.OrdinalIgnoreCase); }
+			set { SetProperty (KnownProperties.AndroidFullyIncremental, value.ToString ()); }
+		}
+
 		public string DexTool {
 			get { return GetProperty (KnownProperties.AndroidDexTool); }
 			set { SetProperty (KnownProperties.AndroidDexTool, value); }

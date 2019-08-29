@@ -1,0 +1,150 @@
+<!--
+***********************************************************************************************
+Xamarin.Android.Incremental.targets
+
+WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and have
+  created a backup copy.  Incorrect changes to this file will make it
+  impossible to load or build your projects from the command-line or the IDE.
+
+This file includes new fully incremental "experimental" MSBuild targets.
+
+Enable it via:
+
+    <_AndroidFullyIncremental>True</_AndroidFullyIncremental>
+
+Copyright (C) 2019 Xamarin. All rights reserved.
+***********************************************************************************************
+-->
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <!--These targets always use d8/r8-->
+    <AndroidDexTool  Condition=" '$(AndroidDexTool)' != 'd8' ">d8</AndroidDexTool>
+    <AndroidLinkTool Condition=" '$(AndroidLinkTool)' != '' And '$(AndroidLinkTool)' != 'r8' ">r8</AndroidLinkTool>
+    <!--New sets of intermediate dirs-->
+    <_AndroidIntermediateManifestDir>$(IntermediateOutputPath)man\</_AndroidIntermediateManifestDir>
+    <_AndroidIntermediateJavaSourceDir>$(IntermediateOutputPath)src\</_AndroidIntermediateJavaSourceDir>
+    <_AndroidIntermediateJavaClassDir>$(IntermediateOutputPath)cls\</_AndroidIntermediateJavaClassDir>
+    <_AndroidIntermediateJarDir>$(IntermediateOutputPath)jar\</_AndroidIntermediateJarDir>
+    <_AndroidIntermediateDexDir>$(IntermediateOutputPath)dex\</_AndroidIntermediateDexDir>
+    <!--Override the setting in Xamarin.Android.Common.targets-->
+    <_AndroidIntermediateJavaSourceDirectory>$(_AndroidIntermediateJavaSourceDir)$(TargetName)\</_AndroidIntermediateJavaSourceDirectory>
+  </PropertyGroup>
+  <Target Name="_OpenAssemblies">
+    <OpenAssemblies SearchDirectories="$(MonoAndroidIntermediateAssetsDir)" />
+  </Target>
+  <Target Name="_GenerateAndroidManifests"
+      DependsOnTargets="_OpenAssemblies"
+      Inputs="@(_ResolvedUserMonoAndroidAssemblies);$(_AndroidBuildPropertiesCache)"
+      Outputs="@(_ResolvedUserMonoAndroidAssemblies->'$(_AndroidIntermediateManifestDir)%(Filename).xml')">
+    <GenerateManifest
+        IsApplication="False"
+        Assemblies="@(_ResolvedUserMonoAndroidAssemblies)"
+        ErrorOnCustomJavaObject="$(AndroidErrorOnCustomJavaObject)"
+        EmbedAssemblies="$(EmbedAssembliesIntoApk)"
+        ManifestOutput="@(_ResolvedUserMonoAndroidAssemblies->'$(_AndroidIntermediateManifestDir)%(Filename).xml')"
+    />
+    <ItemGroup>
+      <FileWrites Include="@(_ResolvedUserMonoAndroidAssemblies->'$(_AndroidIntermediateManifestDir)%(Filename).xml')" />
+    </ItemGroup>
+  </Target>
+  <Target Name="_MergeAndroidManifests"
+      DependsOnTargets="_GenerateAndroidManifests"
+      Inputs="@(_ResolvedUserMonoAndroidAssemblies);@(_AndroidResourceDest);$(_AndroidBuildPropertiesCache)"
+      Outputs="$(IntermediateOutputPath)android\AndroidManifest.xml">
+    <GenerateManifest
+        IsApplication="True"
+        Assemblies="@(_ResolvedUserMonoAndroidAssemblies)"
+        ErrorOnCustomJavaObject="$(AndroidErrorOnCustomJavaObject)"
+        ManifestTemplate="$(_AndroidManifestAbs)"
+        Debug="$(AndroidIncludeDebugSymbols)"
+        MultiDex="$(AndroidEnableMultiDex)"
+        NeedsInternet="$(AndroidNeedsInternetPermission)"
+        InstantRunEnabled="$(_InstantRunEnabled)"
+        AndroidSdkPlatform="$(_AndroidApiLevel)"
+        AndroidSdkDirectory="$(_AndroidSdkDirectory)"
+        PackageName="$(_AndroidPackage)"
+        ManifestPlaceholders="$(AndroidManifestPlaceholders)"
+        MergedManifestDocuments="@(_ResolvedUserMonoAndroidAssemblies->'$(_AndroidIntermediateManifestDir)%(Filename).xml')"
+        ManifestOutput="$(IntermediateOutputPath)android\AndroidManifest.xml"
+        EmbedAssemblies="$(EmbedAssembliesIntoApk)"
+        BundledWearApplicationName="$(BundledWearApplicationPackageName)"
+        ApplicationJavaClass="$(AndroidApplicationJavaClass)"
+    />
+    <CreateTypeMaps
+        ResolvedAssemblies="@(_ResolvedAssemblies)"
+        ResolvedUserAssemblies="@(_ResolvedUserMonoAndroidAssemblies)"
+        AcwMapFile="$(_AcwMapFile)"
+        SupportedAbis="@(_BuildTargetAbis)"
+        TypemapOutputDirectory="$(IntermediateOutputPath)android"
+        JavaSourceOutputDirectory="$(_AndroidIntermediateJavaSourceDirectory)"
+        UseSharedRuntime="$(AndroidUseSharedRuntime)"
+        InstantRunEnabled="$(_InstantRunEnabled)"
+        ErrorOnCustomJavaObject="$(AndroidErrorOnCustomJavaObject)"
+    />
+    <ItemGroup>
+      <FileWrites Include="$(_AndroidManifestAbs)" />
+      <FileWrites Include="@(_TypeMapAssemblySource)" />
+    </ItemGroup>
+  </Target>
+  <Target Name="_GenerateJavaStubs"
+      DependsOnTargets="$(_GenerateJavaStubsDependsOnTargets);$(BeforeGenerateAndroidManifest);_MergeAndroidManifests"
+      Inputs="@(_ResolvedUserMonoAndroidAssemblies);$(_AndroidBuildPropertiesCache)"
+      Outputs="@(_ResolvedUserMonoAndroidAssemblies->'$(_AndroidIntermediateJavaSourceDir)%(Filename).stamp')">
+    <GenerateIncrementalJavaStubs
+        Assemblies="@(_ResolvedUserMonoAndroidAssemblies)"
+        OutputDirectories="@(_ResolvedUserMonoAndroidAssemblies->'$(_AndroidIntermediateJavaSourceDir)%(Filename)')"
+        StampFiles="@(_ResolvedUserMonoAndroidAssemblies->'$(_AndroidIntermediateJavaSourceDir)%(Filename).stamp')"
+    />
+    <CloseAssemblies />
+    <ItemGroup>
+      <_JavaStubStampFiles Include="@(_ResolvedUserMonoAndroidAssemblies->'$(_AndroidIntermediateJavaSourceDir)%(Filename).stamp')">
+        <AssemblyName>%(Filename)</AssemblyName>
+      </_JavaStubStampFiles>
+      <FileWrites Include="@(_JavaStubStampFiles)" />
+    </ItemGroup>
+  </Target>
+  <PropertyGroup>
+    <_CompileJavaDependsOnTargets>
+      $(_CompileJavaDependsOnTargets);
+      _CompileJavaStubs;
+      _DetermineJavaStubJarsToCompile;
+    </_CompileJavaDependsOnTargets>
+  </PropertyGroup>
+  <Target Name="_CompileJavaStubs"
+      Inputs="@(_JavaStubStampFiles);$(_AndroidBuildPropertiesCache)"
+      Outputs="@(_JavaStubStampFiles->'$(_AndroidIntermediateJarDir)%(Filename).stamp')">
+    <JavacIncremental
+        JavaStubStampFiles="@(_JavaStubStampFiles)"
+        JavaSourceDirectory="$(_AndroidIntermediateJavaSourceDir)"
+        JavaClassDirectory="$(_AndroidIntermediateJavaClassDir)"
+        JarDirectory="$(_AndroidIntermediateJarDir)"
+        JavaPlatformJarPath="$(JavaPlatformJarPath)"
+        TargetFrameworkDirectory="$(TargetFrameworkDirectory)"
+        ToolPath="$(JavacToolPath)"
+        ToolExe="$(JavacToolExe)"
+        Jars="@(_JavaLibrariesToCompile);@(_InstantRunJavaReference);@(_ReferenceJavaLibs)"
+        JavacTargetVersion="$(JavacTargetVersion)"
+        JavacSourceVersion="$(JavacSourceVersion)"
+    />
+    <Touch
+        Files="@(_JavaStubStampFiles->'$(_AndroidIntermediateJarDir)%(Filename).stamp')"
+        AlwaysCreate="True"
+    />
+    <ItemGroup>
+      <FileWrites Include="@(_JavaStubStampFiles->'$(_AndroidIntermediateJarDir)%(Filename).stamp')" />
+    </ItemGroup>
+  </Target>
+  <!--NOTE: this target needs to run independently of _CompileJavaStubs-->
+  <Target Name="_DetermineJavaStubJarsToCompile">
+    <ItemGroup>
+      <_JavaStubJars Include="$(_AndroidIntermediateJarDir)*.jar" />
+      <_JavaLibrariesToCompileForApp Include="@(_JavaStubJars)" Condition=" '$(_InstantRunEnabled)' != 'True' " />
+      <AndroidExternalJavaLibrary    Include="@(_JavaStubJars)" Condition=" '$(_InstantRunEnabled)' == 'True' " />
+      <FileWrites Include="@(_JavaStubJars)" />
+    </ItemGroup>
+  </Target>
+  <Target Name="_CompileJava"
+      DependsOnTargets="$(_CompileJavaDependsOnTargets)">
+  </Target>
+</Project>

@@ -224,7 +224,7 @@ namespace Xamarin.Android.Tasks {
 			}
 		}
 		
-		public IList<string> Merge (List<TypeDefinition> subclasses, string applicationClass, bool embed, string bundledWearApplicationName, IEnumerable<string> mergedManifestDocuments)
+		public IList<string> Merge (List<TypeDefinition> subclasses, string applicationClass, bool embed, string bundledWearApplicationName, IEnumerable<string> mergedManifestDocuments, bool isApplication)
 		{
 			string applicationName  = ApplicationName;
 
@@ -239,10 +239,12 @@ namespace Xamarin.Android.Tasks {
 				PackageName = manifest_package;
 			
 			manifest.SetAttributeValue (XNamespace.Xmlns + "android", "http://schemas.android.com/apk/res/android");
-			if (manifest.Attribute (androidNs + "versionCode") == null)
-				manifest.SetAttributeValue (androidNs + "versionCode", "1");
-			if (manifest.Attribute (androidNs + "versionName") == null)
-				manifest.SetAttributeValue (androidNs + "versionName", "1.0");
+			if (isApplication) {
+				if (manifest.Attribute (androidNs + "versionCode") == null)
+					manifest.SetAttributeValue (androidNs + "versionCode", "1");
+				if (manifest.Attribute (androidNs + "versionName") == null)
+					manifest.SetAttributeValue (androidNs + "versionName", "1.0");
+			}
 			
 			app = CreateApplicationElement (manifest, applicationClass, subclasses);
 			
@@ -259,7 +261,7 @@ namespace Xamarin.Android.Tasks {
 
 			// If no <uses-sdk> is specified, add it with both minSdkVersion and
 			// targetSdkVersion set to TargetFrameworkVersion
-			if (!manifest.Elements ("uses-sdk").Any ()) {
+			if (!string.IsNullOrEmpty (SdkVersionName) && !manifest.Elements ("uses-sdk").Any ()) {
 				manifest.AddFirst (
 						new XElement ("uses-sdk",
 							new XAttribute (androidNs + "minSdkVersion", SdkVersionName),
@@ -268,80 +270,81 @@ namespace Xamarin.Android.Tasks {
 
 			// If no minSdkVersion is specified, set it to TargetFrameworkVersion
 			var uses = manifest.Element ("uses-sdk");
-
-			if (uses.Attribute (androidNs + "minSdkVersion") == null) {
-				int minSdkVersion;
-				if (!int.TryParse (SdkVersionName, out minSdkVersion))
-					minSdkVersion = XABuildConfig.NDKMinimumApiAvailable;
-				minSdkVersion = Math.Min (minSdkVersion, XABuildConfig.NDKMinimumApiAvailable);
-				uses.SetAttributeValue (androidNs + "minSdkVersion", minSdkVersion.ToString ());
-			}
-
-			string targetSdkVersion;
-			var tsv = uses.Attribute (androidNs + "targetSdkVersion");
-			if (tsv != null)
-				targetSdkVersion = tsv.Value;
-			else {
-				targetSdkVersion = SdkVersionName;
-				uses.AddBeforeSelf (new XComment ("suppress UsesMinSdkAttributes"));
-			}
-
-			int? tryTargetSdkVersion  = MonoAndroidHelper.SupportedVersions.GetApiLevelFromId (targetSdkVersion);
-			if (!tryTargetSdkVersion.HasValue)
-				throw new InvalidOperationException (string.Format ("The targetSdkVersion ({0}) is not a valid API level", targetSdkVersion));
-			int targetSdkVersionValue = tryTargetSdkVersion.Value;
-
-			foreach (var t in subclasses) {
-				if (t.IsAbstract)
-					continue;
-
-				if (PackageName == null)
-					PackageName = t.Namespace;
-
-				var name        = JavaNativeTypeManager.ToJniName (t).Replace ('/', '.');
-				var compatName  = JavaNativeTypeManager.ToCompatJniName (t).Replace ('/', '.');
-				if (((string) app.Attribute (attName)) == compatName) {
-					app.SetAttributeValue (attName, name);
+			if (uses != null) {
+				if (!string.IsNullOrEmpty (SdkVersionName) && uses.Attribute (androidNs + "minSdkVersion") == null) {
+					int minSdkVersion;
+					if (!int.TryParse (SdkVersionName, out minSdkVersion))
+						minSdkVersion = XABuildConfig.NDKMinimumApiAvailable;
+					minSdkVersion = Math.Min (minSdkVersion, XABuildConfig.NDKMinimumApiAvailable);
+					uses.SetAttributeValue (androidNs + "minSdkVersion", minSdkVersion.ToString ());
 				}
 
-				Func<TypeDefinition, string, int, XElement> generator = GetGenerator (t);
-				if (generator == null)
-					continue;
+				string targetSdkVersion;
+				var tsv = uses.Attribute (androidNs + "targetSdkVersion");
+				if (tsv != null)
+					targetSdkVersion = tsv.Value;
+				else {
+					targetSdkVersion = SdkVersionName;
+					uses.AddBeforeSelf (new XComment ("suppress UsesMinSdkAttributes"));
+				}
 
-				try {
-					// activity not present: create a launcher for it IFF it has attribute
-					if (!existingTypes.Contains (name) && !existingTypes.Contains (compatName)) {
-						XElement fromCode = generator (t, name, targetSdkVersionValue);
-						if (fromCode == null)
-							continue;
+				int? tryTargetSdkVersion = MonoAndroidHelper.SupportedVersions.GetApiLevelFromId (targetSdkVersion);
+				if (!tryTargetSdkVersion.HasValue)
+					throw new InvalidOperationException (string.Format ("The targetSdkVersion ({0}) is not a valid API level", targetSdkVersion));
+				int targetSdkVersionValue = tryTargetSdkVersion.Value;
 
-						IEnumerable <MethodDefinition> constructors = t.Methods.Where (m => m.IsConstructor).Cast<MethodDefinition> ();
-						if (!constructors.Any (c => !c.HasParameters && c.IsPublic)) {
-							string message = $"The type '{t.FullName}' must provide a public default constructor";
-							SequencePoint sourceLocation = FindSource (constructors);
+				foreach (var t in subclasses) {
+					if (t.IsAbstract)
+						continue;
 
-							if (sourceLocation != null && sourceLocation.Document?.Url != null) {
-								log.LogError (
-									subcategory:      String.Empty,
-									errorCode:        "XA4213",
-									helpKeyword:      String.Empty,
-									file:             sourceLocation.Document.Url,
-									lineNumber:       sourceLocation.StartLine,
-									columnNumber:     sourceLocation.StartColumn,
-									endLineNumber:    sourceLocation.EndLine,
-									endColumnNumber:  sourceLocation.EndColumn,
-									message:          message);
-							} else
-								log.LogCodedError ("XA4213", message);
-							continue;
+					if (PackageName == null)
+						PackageName = t.Namespace;
+
+					var name = JavaNativeTypeManager.ToJniName (t).Replace ('/', '.');
+					var compatName = JavaNativeTypeManager.ToCompatJniName (t).Replace ('/', '.');
+					if (((string) app.Attribute (attName)) == compatName) {
+						app.SetAttributeValue (attName, name);
+					}
+
+					Func<TypeDefinition, string, int, XElement> generator = GetGenerator (t);
+					if (generator == null)
+						continue;
+
+					try {
+						// activity not present: create a launcher for it IFF it has attribute
+						if (!existingTypes.Contains (name) && !existingTypes.Contains (compatName)) {
+							XElement fromCode = generator (t, name, targetSdkVersionValue);
+							if (fromCode == null)
+								continue;
+
+							IEnumerable<MethodDefinition> constructors = t.Methods.Where (m => m.IsConstructor).Cast<MethodDefinition> ();
+							if (!constructors.Any (c => !c.HasParameters && c.IsPublic)) {
+								string message = $"The type '{t.FullName}' must provide a public default constructor";
+								SequencePoint sourceLocation = FindSource (constructors);
+
+								if (sourceLocation != null && sourceLocation.Document?.Url != null) {
+									log.LogError (
+										subcategory: String.Empty,
+										errorCode: "XA4213",
+										helpKeyword: String.Empty,
+										file: sourceLocation.Document.Url,
+										lineNumber: sourceLocation.StartLine,
+										columnNumber: sourceLocation.StartColumn,
+										endLineNumber: sourceLocation.EndLine,
+										endColumnNumber: sourceLocation.EndColumn,
+										message: message);
+								} else
+									log.LogCodedError ("XA4213", message);
+								continue;
+							}
+							app.Add (fromCode);
 						}
-						app.Add (fromCode);
+						foreach (var d in app.Descendants ().Where (a => ((string) a.Attribute (attName)) == compatName)) {
+							d.SetAttributeValue (attName, name);
+						}
+					} catch (InvalidActivityNameException ex) {
+						log.LogErrorFromException (ex);
 					}
-					foreach (var d in app.Descendants ().Where (a => ((string) a.Attribute (attName)) == compatName)) {
-						d.SetAttributeValue (attName, name);
-					}
-				} catch (InvalidActivityNameException ex) {
-					log.LogErrorFromException (ex);
 				}
 			}
 
@@ -355,17 +358,17 @@ namespace Xamarin.Android.Tasks {
 				}
 			}
 
-			PackageName = AndroidAppManifest.CanonicalizePackageName (PackageName);
-
-			if (!PackageName.Contains ('.'))
-				throw new InvalidOperationException ("/manifest/@package attribute MUST contain a period ('.').");
-			
-			manifest.SetAttributeValue ("package", PackageName);
+			if (!string.IsNullOrEmpty (PackageName)) {
+				PackageName = AndroidAppManifest.CanonicalizePackageName (PackageName);
+				if (!PackageName.Contains ('.'))
+					throw new InvalidOperationException ("/manifest/@package attribute MUST contain a period ('.').");
+				manifest.SetAttributeValue ("package", PackageName);
+			}
 
 			if (MultiDex)
 				app.Add (CreateMonoRuntimeProvider ("mono.android.MultiDexLoader", null, initOrder: --AppInitOrder));
 
-			var providerNames = AddMonoRuntimeProviders (app);
+			var providerNames = isApplication ? AddMonoRuntimeProviders (app) : Array.Empty<string> ();
 
 			if (Debug && !embed && InstantRunEnabled) {
 				if (int.TryParse (SdkVersion, out int apiLevel) && apiLevel >= 19)
@@ -389,16 +392,7 @@ namespace Xamarin.Android.Tasks {
 			if (!embed)
 				AddFastDeployPermissions ();
 
-			// If the manifest has android:installLocation, but we are targeting
-			// API 7 or lower, remove it for the user and show a warning
-			if (manifest.Attribute (androidNs + "installLocation") != null) {
-				if (targetSdkVersionValue < 8) {
-					manifest.Attribute (androidNs + "installLocation").Remove ();
-					Console.Error.WriteLine ("monodroid: warning 1 : installLocation cannot be specified for Android versions less than 2.2.  Attribute installLocation ignored.");
-				}
-			}
-
-			AddInstrumentations (manifest, subclasses, targetSdkVersionValue);
+			AddInstrumentations (manifest, subclasses);
 			AddPermissions (app);
 			AddPermissionGroups (app);
 			AddPermissionTrees (app);
@@ -588,9 +582,6 @@ namespace Xamarin.Android.Tasks {
 
 			if (applicationClass != null && application.Attribute (androidNs + "name") == null)
 				application.Add (new XAttribute (androidNs + "name", applicationClass));
-				
-			if (application.Attribute (androidNs + "allowBackup") == null)
-				application.Add (new XAttribute (androidNs + "allowBackup", "true"));
 
 			return application;
 		}
@@ -688,7 +679,7 @@ namespace Xamarin.Android.Tasks {
 					});
 		}
 
-		XElement InstrumentationFromTypeDefinition (TypeDefinition type, string name, int targetSdkVersion)
+		XElement InstrumentationFromTypeDefinition (TypeDefinition type, string name)
 		{
 			return ToElement (type, name, 
 					t => InstrumentationAttribute.FromCustomAttributeProvider (t).FirstOrDefault (),
@@ -863,7 +854,7 @@ namespace Xamarin.Android.Tasks {
 			}
 		}
 
-		void AddInstrumentations (XElement manifest, IList<TypeDefinition> subclasses, int targetSdkVersion)
+		void AddInstrumentations (XElement manifest, IList<TypeDefinition> subclasses)
 		{
 			var assemblyAttrs = 
 				Assemblies.SelectMany (path => InstrumentationAttribute.FromCustomAttributeProvider (Resolver.GetAssembly (path)));
@@ -878,7 +869,7 @@ namespace Xamarin.Android.Tasks {
 			
 			foreach (var type in subclasses)
 				if (type.IsSubclassOf ("Android.App.Instrumentation")) {
-					var xe = InstrumentationFromTypeDefinition (type, JavaNativeTypeManager.ToJniName (type).Replace ('/', '.'), targetSdkVersion);
+					var xe = InstrumentationFromTypeDefinition (type, JavaNativeTypeManager.ToJniName (type).Replace ('/', '.'));
 					if (xe != null)
 						manifest.Add (xe);
 				}

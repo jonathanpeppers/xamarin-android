@@ -8,6 +8,7 @@ using Microsoft.Build.Utilities;
 using System.Text;
 using System.Collections.Generic;
 using Xamarin.Android.Tools;
+using Xamarin.Tools.Zip;
 
 namespace Xamarin.Android.Tasks
 {
@@ -15,61 +16,96 @@ namespace Xamarin.Android.Tasks
 	public abstract class JavaCompileToolTask : JavaToolTask
 	{
 		[Required]
-		public string StubSourceDirectory { get; set; }
-
-		public ITaskItem[] JavaSourceFiles { get; set; }
-
-		public ITaskItem[] Jars { get; set; }
-
-		[Required]
 		public string TargetFrameworkDirectory { get; set; }
+
+		public ITaskItem [] JavaSourceFiles { get; set; }
+
+		public string JavaPlatformJarPath { get; set; }
+
+		public string JavacTargetVersion { get; set; }
+
+		public string JavacSourceVersion { get; set; }
 
 		protected override string ToolName {
 			get { return OS.IsWindows ? "javac.exe" : "javac"; }
 		}
 
-		private bool IsRunningInsideVS {
-			get { 
-				var vside = false;
-				return bool.TryParse(Environment.GetEnvironmentVariable("VSIDE"), out vside) && vside; 
-			}
-		}
+		public override string DefaultErrorCode => "JAVAC0000";
 
 		internal string TemporarySourceListFile;
 
-		public override bool RunTask ()
+		/// <summary>
+		/// Calls javac to compile to .class files
+		/// </summary>
+		protected virtual bool Compile (string stubSourceDirectory, string classesOutputDirectory, IEnumerable<string> classPath)
 		{
-			GenerateResponseFile ();
-
-			var retval = base.RunTask ();
+			Directory.CreateDirectory (classesOutputDirectory);
 
 			try {
-				File.Delete (TemporarySourceListFile);
-			} catch (Exception) {
-				// Ignore exception, a tiny temp file will get left on the user's system
+				GenerateResponseFile (classesOutputDirectory, stubSourceDirectory, classPath);
+				return base.RunTask ();
+			} finally {
+				try {
+					if (!string.IsNullOrEmpty (TemporarySourceListFile))
+						File.Delete (TemporarySourceListFile);
+				} catch {
+					// Ignore exception, a tiny temp file will get left on the user's system
+				}
 			}
-
-			return retval;
 		}
 
-		protected virtual void WriteOptionsToResponseFile (StreamWriter sw)
+		/// <summary>
+		/// Uses libZipSharp to create a zip/jar file
+		/// </summary>
+		protected virtual void Compress (string classesOutputDirectory, string classesZip)
 		{
+			if (!string.IsNullOrEmpty (classesZip)) {
+				Directory.CreateDirectory (Path.GetDirectoryName (classesZip));
+				using (var zip = new ZipArchiveEx (classesZip, FileMode.OpenOrCreate)) {
+					zip.AddDirectory (classesOutputDirectory, "", CompressionMethod.Store);
+				}
+			}
 		}
 
-		private void GenerateResponseFile ()
+		protected override string GenerateCommandLineCommands ()
+		{
+			//   Running command: C:\Program Files (x86)\Java\jdk1.6.0_20\bin\javac.exe
+			//     "-J-Dfile.encoding=UTF8"
+			//     "-d" "bin\classes"
+			//     "-classpath" "C:\Users\Jonathan\Documents\Visual Studio 2010\Projects\AndroidMSBuildTest\AndroidMSBuildTest\obj\Debug\android\bin\mono.android.jar"
+			//     "-bootclasspath" "C:\Program Files (x86)\Android\android-sdk-windows\platforms\android-8\android.jar"
+			//     "-encoding" "UTF-8"
+			//     "@C:\Users\Jonathan\AppData\Local\Temp\tmp79c4ac38.tmp"
+
+			var cmd = new CommandLineBuilder ();
+			cmd.AppendSwitchIfNotNull ("-J-Dfile.encoding=", "UTF8");
+			cmd.AppendFileNameIfNotNull (string.Format ("@{0}", TemporarySourceListFile));
+			cmd.AppendSwitchIfNotNull ("-target ", JavacTargetVersion);
+			cmd.AppendSwitchIfNotNull ("-source ", JavacSourceVersion);
+
+			return cmd.ToString ();
+		}
+
+		void GenerateResponseFile (string classesOutputDirectory, string stubSourceDirectory, IEnumerable<string> classPath)
 		{
 			TemporarySourceListFile = Path.GetTempFileName ();
 
-			using (var sw = new StreamWriter (path:TemporarySourceListFile, append:false,
-						encoding:new UTF8Encoding (encoderShouldEmitUTF8Identifier:false))) {
+			using (var sw = new StreamWriter (path: TemporarySourceListFile, append: false,
+						encoding: new UTF8Encoding (encoderShouldEmitUTF8Identifier: false))) {
 
-				WriteOptionsToResponseFile (sw);
+				sw.WriteLine ($"-d \"{classesOutputDirectory.Replace (@"\", @"\\")}\"");
+				if (classPath != null && classPath.Any ()) {
+					sw.WriteLine ("-classpath \"{0}\"", string.Join (Path.PathSeparator.ToString (), classPath.Select (c => c.Replace (@"\", @"\\"))));
+				}
+				sw.WriteLine ("-bootclasspath \"{0}\"", JavaPlatformJarPath.Replace (@"\", @"\\"));
+				sw.WriteLine ($"-encoding UTF8");
+
 				// Include any user .java files
 				if (JavaSourceFiles != null)
 					foreach (var file in JavaSourceFiles.Where (p => Path.GetExtension (p.ItemSpec) == ".java"))
-						sw.WriteLine (string.Format ("\"{0}\"", file.ItemSpec.Replace (@"\", @"\\")));					
+						sw.WriteLine (string.Format ("\"{0}\"", file.ItemSpec.Replace (@"\", @"\\")));
 
-				foreach (var file in Directory.GetFiles (StubSourceDirectory, "*.java", SearchOption.AllDirectories)) {
+				foreach (var file in Directory.GetFiles (stubSourceDirectory, "*.java", SearchOption.AllDirectories)) {
 					// This makes sense.  BAD sense.  but sense.
 					// Problem:
 					//    A perfectly sensible path like "E:\tmp\a.java" generates a
