@@ -4029,5 +4029,37 @@ namespace UnnamedProject
 				Assert.IsFalse (StringAssertEx.ContainsText (b.LastBuildOutput, Path.Combine ("armeabi", "libe_sqlite3.so")), "Build should not use `armeabi`.");
 			}
 		}
+
+		[Test]
+		public void LotsOfAssemblies ()
+		{
+			var path = Path.Combine ("temp", TestName);
+
+			// 10 MB byte array
+			var bytes = new byte [10 * 1024 * 1024];
+			var app = new XamarinFormsMapsApplicationProject {
+				IsRelease = true,
+				AndroidLinkModeRelease = AndroidLinkMode.None,
+			};
+			for (int i = 0; i < 100; i++) {
+				var lib = new XamarinAndroidLibraryProject {
+					IsRelease = true,
+					ProjectName = "Library" + i,
+					OtherBuildItems = {
+						new BuildItem ("EmbeddedResource", "Foo.bin") {
+							BinaryContent = () => bytes,
+						}
+					}
+				};
+				app.References.Add (new BuildItem.ProjectReference ($"..\\{lib.ProjectName}\\{lib.ProjectName}.csproj", lib.ProjectName, lib.ProjectGuid));
+				using (var libBuilder = CreateDllBuilder (Path.Combine (path, lib.ProjectName))) {
+					Assert.IsTrue (libBuilder.Build (lib), $"Library build {lib.ProjectName} should have succeeded.");
+				}
+			}
+
+			using (var appBuilder = CreateApkBuilder (Path.Combine (path, app.ProjectName))) {
+				Assert.IsTrue (appBuilder.Build (app), "App build should have succeeded.");
+			}
+		}
 	}
 }
