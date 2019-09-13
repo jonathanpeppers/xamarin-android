@@ -1,0 +1,17 @@
+{
+  "solution": {
+    "path": "Xamarin.Android.sln",
+    "projects": [
+      "external\\debugger-libs\\Mono.Debugger.Soft\\Mono.Debugger.Soft.csproj",
+      "external\\debugger-libs\\Mono.Debugging.Soft\\Mono.Debugging.Soft.csproj",
+      "external\\debugger-libs\\Mono.Debugging\\Mono.Debugging.csproj",
+      "external\\nrefactory\\ICSharpCode.NRefactory.CSharp\\ICSharpCode.NRefactory.CSharp.csproj",
+      "external\\nrefactory\\ICSharpCode.NRefactory\\ICSharpCode.NRefactory.csproj",
+      "src\\Xamarin.Android.Build.Tasks\\Tests\\Xamarin.Android.Build.Tests\\Xamarin.Android.Build.Tests.Shared.shproj",
+      "src\\Xamarin.Android.Build.Tasks\\Tests\\Xamarin.Android.Build.Tests\\Xamarin.Android.Build.Tests.csproj",
+      "src\\Xamarin.Android.Build.Tasks\\Tests\\Xamarin.ProjectTools\\Xamarin.ProjectTools.csproj",
+      "src\\Xamarin.Android.Build.Tasks\\Xamarin.Android.Build.Tasks.csproj",
+      "tests\\MSBuildDeviceIntegration\\MSBuildDeviceIntegration.csproj"
+    ]
+  }
+}
