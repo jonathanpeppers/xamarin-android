@@ -1052,7 +1052,9 @@ LocalRefsAreIndirect (JNIEnv *env, jclass runtimeClass, int version)
 		return 0;
 
 	System = utils.get_class_from_runtime_field(env, runtimeClass, "java_lang_System", true);
+	log_warn (LOG_DEFAULT, "WOOT java_lang_System: %i", System);
 	System_identityHashCode = env->GetStaticMethodID (System, "identityHashCode", "(Ljava/lang/Object;)I");
+	log_warn (LOG_DEFAULT, "WOOT identityHashCode: %i", System_identityHashCode);
 
 	return 1;
 }
@@ -1061,6 +1063,7 @@ MONO_API void*
 _monodroid_get_identity_hash_code (JNIEnv *env, void *v)
 {
 	intptr_t rv = env->CallStaticIntMethod (System, System_identityHashCode, v);
+	log_warn (LOG_DEFAULT, "WOOT identityHashCode, returned: %i", rv);
 	return (void*) rv;
 }
 
