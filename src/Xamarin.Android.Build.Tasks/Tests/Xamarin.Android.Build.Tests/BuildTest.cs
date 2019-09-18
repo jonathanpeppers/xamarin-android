@@ -865,7 +865,7 @@ namespace UnamedProject
 				if (isRelease && !string.IsNullOrEmpty (linkTool)) {
 					var proguardProjectPrimary = Path.Combine (Root, b.ProjectDirectory, proj.IntermediateOutputPath, "proguard", "proguard_project_primary.cfg");
 					FileAssert.Exists (proguardProjectPrimary);
-					Assert.IsTrue (StringAssertEx.ContainsText (File.ReadAllLines (proguardProjectPrimary), "-keep class md52d9cf6333b8e95e8683a477bc589eda5.MainActivity"), "`md52d9cf6333b8e95e8683a477bc589eda5.MainActivity` should exist in `proguard_project_primary.cfg`!");
+					Assert.IsTrue (StringAssertEx.ContainsText (File.ReadAllLines (proguardProjectPrimary), $"-keep class {proj.JavaPackageName}.MainActivity"), $"`{proj.PackageName}.MainActivity` should exist in `proguard_project_primary.cfg`!");
 				}
 
 				var dexFile = b.Output.GetIntermediaryPath (Path.Combine ("android", "bin", "classes.dex"));
@@ -2590,7 +2590,7 @@ AAMMAAABzYW1wbGUvSGVsbG8uY2xhc3NQSwUGAAAAAAMAAwC9AAAA1gEAAAAA") });
 
 				//Since this is using an old support library, its main R.java should "match" the library one
 				var src = Path.Combine (Root, b.ProjectDirectory, proj.IntermediateOutputPath, "android", "src");
-				var main_r_java = Path.Combine (src, "unnamedproject", "unnamedproject", "R.java");
+				var main_r_java = Path.Combine (src, "com", "unnamedproject", "R.java");
 				FileAssert.Exists (main_r_java);
 				var lib_r_java = Path.Combine (src, "android", "support", "v4", "R.java");
 				FileAssert.Exists (lib_r_java);
@@ -3877,9 +3877,9 @@ public class ApplicationRegistration { }");
 				Assert.IsTrue (b.Build (proj), "build should have succeeded.");
 
 				// We should have a java stub
-				var intermediate = Path.Combine (Root, b.ProjectDirectory, proj.IntermediateOutputPath);
-				var javaStub = Path.Combine (intermediate, "android", "src", "md54908d67eb9afef4acc92753cc61471e9", "CircleImageView.java");
-				FileAssert.Exists (javaStub);
+				var javaStubDir = Path.Combine (Root, b.ProjectDirectory, proj.IntermediateOutputPath, "android", "src");
+				var files = Directory.GetFiles (javaStubDir, "CircleImageView.java", SearchOption.AllDirectories);
+				CollectionAssert.IsNotEmpty (files, $"{javaStubDir} should contain CircleImageView.java!");
 			}
 		}
 

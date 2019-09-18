@@ -309,10 +309,8 @@ Copyright (C) 2011-2012 Xamarin. All rights reserved.
 	<AndroidUseAapt2            Condition=" '$(AndroidPackageFormat)' == 'aab' ">True</AndroidUseAapt2>
 	<AndroidUseApkSigner        Condition=" '$(AndroidPackageFormat)' == 'aab' ">False</AndroidUseApkSigner>
 	<AndroidCreatePackagePerAbi Condition=" '$(AndroidCreatePackagePerAbi)' == 'aab' ">False</AndroidCreatePackagePerAbi>
-	<AndroidApkSigningAlgorithm Condition=" '$(AndroidApkSigningAlgorithm)' == '' And '$(AndroidPackageFormat)' != 'aab' ">md5withRSA</AndroidApkSigningAlgorithm>
-	<AndroidApkSigningAlgorithm Condition=" '$(AndroidApkSigningAlgorithm)' == '' And '$(AndroidPackageFormat)' == 'aab' ">SHA256withRSA</AndroidApkSigningAlgorithm>
-	<AndroidApkDigestAlgorithm  Condition=" '$(AndroidApkDigestAlgorithm)' == '' And '$(AndroidPackageFormat)' != 'aab' ">SHA1</AndroidApkDigestAlgorithm>
-	<AndroidApkDigestAlgorithm  Condition=" '$(AndroidApkDigestAlgorithm)' == '' And '$(AndroidPackageFormat)' == 'aab' ">SHA-256</AndroidApkDigestAlgorithm>
+	<AndroidApkSigningAlgorithm Condition=" '$(AndroidApkSigningAlgorithm)' == '' ">SHA256withRSA</AndroidApkSigningAlgorithm>
+	<AndroidApkDigestAlgorithm  Condition=" '$(AndroidApkDigestAlgorithm)' == '' ">SHA-256</AndroidApkDigestAlgorithm>
 
 	<!-- Default Java heap size to 1GB (-Xmx1G) if not specified-->
 	<JavaMaximumHeapSize Condition=" '$(JavaMaximumHeapSize)' == '' ">1G</JavaMaximumHeapSize>
@@ -1275,6 +1273,7 @@ because xbuild doesn't support framework reference assemblies.
 		<_PropertyCacheItems Include="OS=$(OS)" />
 		<_PropertyCacheItems Include="DesignTimeBuild=$(DesignTimeBuild)" />
 		<_PropertyCacheItems Include="AndroidIncludeDebugSymbols=$(AndroidIncludeDebugSymbols)" />
+		<_PropertyCacheItems Include="AndroidPackageNamingPolicy=$(AndroidPackageNamingPolicy)" />
 	</ItemGroup>
 	<MakeDir Directories="$(_AndroidStampDirectory)" Condition="!Exists('$(_AndroidStampDirectory)')" />
 	<WriteLinesToFile
@@ -2230,20 +2229,6 @@ because xbuild doesn't support framework reference assemblies.
   </PropertyGroup>
 </Target>
 
-<Target Name="_SetupAssemblyPreload"
-    Condition=" '$(AndroidEnablePreloadAssemblies)' != 'True' ">
-  <WriteLinesToFile
-      File="$(IntermediateOutputPath)preloadAssembliesEnvironment.txt"
-      Lines="mono.enable_assembly_preload=0"
-      Overwrite="True"
-      WriteOnlyWhenDifferent="True"
-  />
-  <ItemGroup>
-    <AndroidEnvironment Include="$(IntermediateOutputPath)preloadAssembliesEnvironment.txt" />
-    <FileWrites         Include="$(IntermediateOutputPath)preloadAssembliesEnvironment.txt" />
-  </ItemGroup>
-</Target>
-
 <Target Name="_PrepareEnvironmentAssemblySources">
   <PrepareAbiItems
     BuildTargetAbis="@(_BuildTargetAbis)"
@@ -2252,7 +2237,22 @@ because xbuild doesn't support framework reference assemblies.
   </PrepareAbiItems>
 </Target>
 
-<Target Name="_GenerateEnvironmentFiles" DependsOnTargets="_ReadAndroidManifest;_SetupAssemblyPreload" />
+<Target Name="_GenerateEnvironmentFiles" DependsOnTargets="_ReadAndroidManifest">
+  <ItemGroup>
+    <_GeneratedAndroidEnvironment Include="__XA_PACKAGE_NAMING_POLICY__=$(AndroidPackageNamingPolicy)" />
+    <_GeneratedAndroidEnvironment Include="mono.enable_assembly_preload=0" Condition=" '$(AndroidEnablePreloadAssemblies)' != 'True' " />
+  </ItemGroup>
+  <WriteLinesToFile
+      File="$(IntermediateOutputPath)__environment__.txt"
+      Lines="@(_GeneratedAndroidEnvironment)"
+      Overwrite="True"
+      WriteOnlyWhenDifferent="True"
+  />
+  <ItemGroup>
+    <AndroidEnvironment Include="$(IntermediateOutputPath)__environment__.txt" />
+    <FileWrites         Include="$(IntermediateOutputPath)__environment__.txt" />
+  </ItemGroup>
+</Target>
 
 <PropertyGroup>
   <_GeneratePackageManagerJavaDependsOn>
@@ -2264,7 +2264,7 @@ because xbuild doesn't support framework reference assemblies.
     $(_AfterAddStaticResources);
     _PrepareAssemblies;
     _PrepareEnvironmentAssemblySources;
-    _SetupAssemblyPreload;
+    _GenerateEnvironmentFiles;
   </_GeneratePackageManagerJavaDependsOn>
 </PropertyGroup>
 

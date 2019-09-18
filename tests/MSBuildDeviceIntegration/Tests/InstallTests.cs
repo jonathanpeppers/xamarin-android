@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using NUnit.Framework;
 using Xamarin.ProjectTools;
 using System.IO;
@@ -321,6 +321,29 @@ namespace Xamarin.Android.Build.Tests
 				// Build again, no $(AdbTarget)
 				b.Build (proj);
 				Assert.IsTrue (b.Output.IsTargetSkipped ("_BuildApkFastDev"), "_BuildApkFastDev should be skipped!");
+			}
+		}
+
+		[Test]
+		public void PackageNamingPolicy ([Values ("LowercaseMD5", "LowercaseCrc64")] string packageNamingPolicy)
+		{
+			if (!HasDevices)
+				Assert.Ignore ("Skipping Test. No devices available.");
+
+			var proj = new XamarinAndroidApplicationProject ();
+			proj.SetProperty ("AndroidPackageNamingPolicy", packageNamingPolicy);
+			proj.SetProperty (KnownProperties.AndroidSupportedAbis, "armeabi-v7a;x86");
+			using (var b = CreateApkBuilder ()) {
+				Assert.IsTrue (b.Install (proj), "Install should have succeeded.");
+				var environment = b.Output.GetIntermediaryPath (Path.Combine ("__environment__.txt"));
+				FileAssert.Exists (environment);
+				Assert.AreEqual ($"__XA_PACKAGE_NAMING_POLICY__={packageNamingPolicy}", File.ReadAllText (environment).Trim ());
+				ClearAdbLogcat ();
+				RunAdbCommand ($"shell pm grant {proj.PackageName} android.permission.READ_EXTERNAL_STORAGE");
+				RunAdbCommand ($"shell pm grant {proj.PackageName} android.permission.WRITE_EXTERNAL_STORAGE");
+				AdbStartActivity ($"{proj.PackageName}/{proj.JavaPackageName}.MainActivity");
+				Assert.IsTrue (WaitForActivityToStart (proj.PackageName, "MainActivity",
+					Path.Combine (Root, b.ProjectDirectory, "startup-logcat.log")), "Activity should have started");
 			}
 		}
 	}
