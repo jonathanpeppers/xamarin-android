@@ -528,6 +528,71 @@ namespace Lib2
 		}
 
 		[Test]
+		public void ProduceReferenceAssemblyDependency ()
+		{
+			// MyApp -> MyLibrary -> MyLibrary2
+
+			var path = Path.Combine ("temp", TestName);
+			var app = new XamarinAndroidApplicationProject {
+				ProjectName = "MyApp",
+				Sources = {
+					new BuildItem.Source ("Foo.cs") {
+						TextContent = () => "public class Foo : Bar { }"
+					},
+				}
+			};
+
+			var lib = new DotNetStandard {
+				ProjectName = "MyLibrary",
+				Sdk = "Microsoft.NET.Sdk",
+				TargetFramework = "netstandard2.0",
+				Sources = {
+					new BuildItem.Source ("Bar.cs") {
+						TextContent = () => "public class Bar { public Bar () => Baz.WriteLine (); }"
+					},
+				}
+			};
+			lib.SetProperty ("ProduceReferenceAssembly", "True");
+			app.References.Add (new BuildItem.ProjectReference ($"..\\{lib.ProjectName}\\{lib.ProjectName}.csproj", lib.ProjectName, lib.ProjectGuid));
+
+			int count = 0;
+			var lib2 = new DotNetStandard {
+				ProjectName = "MyLibrary2",
+				Sdk = "Microsoft.NET.Sdk",
+				TargetFramework = "netstandard2.0",
+				Sources = {
+					new BuildItem.Source ("Baz.cs") {
+						TextContent = () => "public static class Baz { public static void WriteLine () { System.Console.WriteLine (" + count++ + "); } }"
+					},
+				}
+			};
+			lib.References.Add (new BuildItem.ProjectReference ($"..\\{lib2.ProjectName}\\{lib2.ProjectName}.csproj"));
+
+			using (var libBuilder  = CreateDllBuilder (Path.Combine (path, lib.ProjectName)))
+			using (var lib2Builder = CreateDllBuilder (Path.Combine (path, lib2.ProjectName)))
+			using (var appBuilder  = CreateApkBuilder (Path.Combine (path, app.ProjectName))) {
+				Assert.IsTrue (lib2Builder.Build (lib2), "first library2 build should have succeeded.");
+				Assert.IsTrue (libBuilder.Build (lib), "first library build should have succeeded.");
+				Assert.IsTrue (appBuilder.Build (app), "first app build should have succeeded.");
+
+				var library2Path = Path.Combine (Root, appBuilder.ProjectDirectory, app.OutputPath, "MyLibrary2.dll");
+				FileAssert.Exists (library2Path);
+				var library2Time = File.GetLastWriteTimeUtc (library2Path);
+
+				lib2.Touch ("Baz.cs");
+
+				Assert.IsTrue (lib2Builder.Build (lib2, doNotCleanupOnUpdate: true, saveProject: false), "second library2 build should have succeeded.");
+				Assert.IsTrue (libBuilder.Build (lib, doNotCleanupOnUpdate: true, saveProject: false), "second library build should have succeeded.");
+
+				// Simulate what happens in IDEs, Build is skipped
+				appBuilder.Target = "SignAndroidPackage";
+				Assert.IsTrue (appBuilder.Build (app, doNotCleanupOnUpdate: true, saveProject: false), "second app build should have succeeded.");
+
+				Assert.AreNotEqual (library2Time, File.GetLastWriteTimeUtc (library2Path), $"{library2Path} should change!");
+			}
+		}
+
+		[Test]
 		public void LinkAssembliesNoShrink ()
 		{
 			var proj = new XamarinFormsAndroidApplicationProject ();

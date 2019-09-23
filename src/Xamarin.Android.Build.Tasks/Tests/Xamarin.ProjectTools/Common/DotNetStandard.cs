@@ -60,6 +60,15 @@ namespace Xamarin.ProjectTools
 				}
 				sb.AppendLine ("\t</ItemGroup>");
 			}
+			if (References.Count > 0)
+			{
+				sb.AppendLine("\t<ItemGroup>");
+				foreach (var r in References)
+				{
+					sb.AppendLine($"\t\t<{r.BuildAction} Include=\"{r.Include ()}\"/>");
+				}
+				sb.AppendLine("\t</ItemGroup>");
+			}
 			if (OtherBuildItems.Count > 0) {
 				sb.AppendLine ("\t<ItemGroup>");
 				foreach (var bi in OtherBuildItems) {
