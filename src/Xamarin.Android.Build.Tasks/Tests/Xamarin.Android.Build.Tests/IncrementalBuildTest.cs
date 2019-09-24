@@ -967,8 +967,7 @@ namespace Lib2
 
 				proj.SetProperty ("AndroidPackageNamingPolicy", "LowercaseCrc64");
 				Assert.IsTrue (b.Build (proj), "second build should have succeeded.");
-				//FIXME: we aren't removing the old stubs yet
-				//Assert.IsFalse (DexUtils.ContainsClass (className, dexFile, AndroidSdkPath), $"`{dexFile}` should *not* include `{className}`!");
+				Assert.IsFalse (DexUtils.ContainsClass (className, dexFile, AndroidSdkPath), $"`{dexFile}` should *not* include `{className}`!");
 				className = "Lcrc64dca3aed1e0ff8a1a/Bar;";
 				Assert.IsTrue (DexUtils.ContainsClass (className, dexFile, AndroidSdkPath), $"`{dexFile}` should include `{className}`!");
 			}
