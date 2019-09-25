@@ -5,16 +5,10 @@ namespace Android.Runtime {
 
 	sealed class UncaughtExceptionHandler : Java.Lang.Object, Java.Lang.Thread.IUncaughtExceptionHandler {
 
-		static Action<Exception> mono_unhandled_exception;
-
 		static Action<AppDomain, UnhandledExceptionEventArgs>      AppDomain_DoUnhandledException;
 
 		static UncaughtExceptionHandler ()
 		{
-			var mono_UnhandledException = typeof (System.Diagnostics.Debugger)
-				.GetMethod ("Mono_UnhandledException", BindingFlags.NonPublic | BindingFlags.Static);
-			mono_unhandled_exception = (Action<Exception>) Delegate.CreateDelegate (typeof(Action<Exception>), mono_UnhandledException);
-
 			var ad_due = typeof (AppDomain)
 				.GetMethod ("DoUnhandledException",
 					bindingAttr:  BindingFlags.NonPublic | BindingFlags.Instance,
@@ -40,7 +34,8 @@ namespace Android.Runtime {
 
 		public void UncaughtException (Java.Lang.Thread thread, Java.Lang.Throwable ex)
 		{
-			mono_unhandled_exception (ex);
+			System.Diagnostics.Debugger.Mono_UnhandledException (ex);
+
 			if (AppDomain_DoUnhandledException != null) {
 				try {
 					var jltp = ex as JavaProxyThrowable;
