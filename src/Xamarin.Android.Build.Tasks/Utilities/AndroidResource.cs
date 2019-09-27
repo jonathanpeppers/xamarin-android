@@ -3,22 +3,23 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
+using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
+using Microsoft.Build.Framework;
 
 namespace Monodroid {
 	static class AndroidResource {
 		
-		public static bool UpdateXmlResource (string res, string filename, Dictionary<string, string> acwMap, IEnumerable<string> additionalDirectories = null, Action<TraceLevel, string> logMessage = null, Action<string, string> registerCustomView = null)
+		public static bool UpdateXmlResource (string res, string filename, Dictionary<string, string> acwMap, IEnumerable<string> additionalDirectories = null, Action<TraceLevel, string> logMessage = null, Action<IXmlLineInfo, string, string> registerCustomView = null)
 		{
 			// use a temporary file so we only update the real file if things actually changed
 			string tmpfile = filename + ".bk";
 			try {
 				XDocument doc = XDocument.Load (filename, LoadOptions.SetLineInfo);
-				UpdateXmlResource (res, doc.Root, acwMap, additionalDirectories, logMessage, (e) => {
-					registerCustomView?.Invoke (e, filename);
+				UpdateXmlResource (res, doc.Root, acwMap, additionalDirectories, logMessage, (lineInfo, e) => {
+					registerCustomView?.Invoke (lineInfo, e, filename);
 				});
 				using (var stream = File.OpenWrite (tmpfile))
 					using (var xw = new LinePreservedXmlWriter (new StreamWriter (stream)))
@@ -55,10 +56,10 @@ namespace Monodroid {
 			UpdateXmlResource (null, e, acwMap);
 		}
 
-		static void UpdateXmlResource (string resourcesBasePath, XElement e, Dictionary<string, string> acwMap, IEnumerable<string> additionalDirectories = null, Action<TraceLevel, string> logMessage = null, Action<string> registerCustomView = null)
+		static void UpdateXmlResource (string resourcesBasePath, XElement e, Dictionary<string, string> acwMap, IEnumerable<string> additionalDirectories = null, Action<TraceLevel, string> logMessage = null, Action<IXmlLineInfo, string> registerCustomView = null)
 		{
 			foreach (var elem in GetElements (e).Prepend (e)) {
-				registerCustomView?.Invoke (elem.Name.ToString ());
+				registerCustomView?.Invoke (elem, elem.Name.ToString ());
 			}
 
 			foreach (var path in fixResourcesAliasPaths) {
@@ -73,10 +74,10 @@ namespace Monodroid {
 
 				TryFixFragment (a, acwMap, registerCustomView);
 				
-				if (TryFixResAuto (a, acwMap))
+				if (TryFixResAuto (a))
 					continue;
 
-				TryFixCustomClassAttribute (a, acwMap, registerCustomView);
+				TryFixCustomClassAttribute (a, registerCustomView);
 
 				if (a.Name.Namespace != android &&
 						!(a.Name.LocalName == "layout" && a.Name.Namespace == XNamespace.None &&
@@ -140,7 +141,13 @@ namespace Monodroid {
 			// No need to change the reference case.
 			return false;
 		}
-		
+
+		internal static string GetResourceDirectory (string file, ITaskItem [] resourceDirectories)
+		{
+			ITaskItem resdir = resourceDirectories?.FirstOrDefault (x => file.StartsWith (x.ItemSpec, StringComparison.OrdinalIgnoreCase));
+			return resdir?.ItemSpec;
+		}
+
 		internal static IEnumerable<XAttribute> GetAttributes (XElement e)
 		{
 			foreach (XAttribute a in e.Attributes ())
@@ -175,7 +182,7 @@ namespace Monodroid {
 			}
 		}
 
-		private static void TryFixFragment (XAttribute attr, Dictionary<string, string> acwMap, Action<string> registerCustomView = null)
+		private static void TryFixFragment (XAttribute attr, Dictionary<string, string> acwMap, Action<IXmlLineInfo, string> registerCustomView = null)
 		{
 			// Looks for any: 
 			//   <fragment class="My.DotNet.Class" 
@@ -193,11 +200,11 @@ namespace Monodroid {
 					// see e5b1c92c, https://github.com/xamarin/xamarin-android/issues/1296#issuecomment-365091948
 					n = attr.Value.Substring (0, attr.Value.IndexOf (','));
 				}
-				registerCustomView?.Invoke (n);
+				registerCustomView?.Invoke (attr, n);
 			}
 		}
 
-		private static bool TryFixResAuto (XAttribute attr, Dictionary<string, string> acwMap)
+		private static bool TryFixResAuto (XAttribute attr)
 		{
 			if (attr.Name.Namespace != res_auto)
 				return false;
@@ -208,7 +215,7 @@ namespace Monodroid {
 			return false;
 		}
 
-		private static void TryFixCustomClassAttribute (XAttribute attr, Dictionary<string, string> acwMap, Action<string> registerCustomView = null)
+		private static void TryFixCustomClassAttribute (XAttribute attr, Action<IXmlLineInfo, string> registerCustomView = null)
 		{
 			/* Some attributes reference a Java class name.
 			 * try to convert those like for TryFixCustomView
@@ -217,7 +224,7 @@ namespace Monodroid {
 			    && (attr.Parent.Name != "transition" || attr.Name.LocalName != "class")) // For custom transitions
 				return;
 
-			registerCustomView?.Invoke (attr.Value);
+			registerCustomView?.Invoke (attr, attr.Value);
 		}
 
 		private static string TryLowercaseValue (string value, string resourceBasePath, IEnumerable<string> additionalDirectories)

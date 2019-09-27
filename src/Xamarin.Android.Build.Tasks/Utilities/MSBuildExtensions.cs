@@ -236,8 +236,13 @@ namespace Xamarin.Android.Tasks
 
 		public static void FixupResourceFilenameAndLogCodedWarning (this TaskLoggingHelper log, string code, string message, string file, string resourceDir, Dictionary<string, string> resourceNameCaseMap)
 		{
+			FixupResourceFilenameAndLogCodedWarning (log, code, message, file, (IXmlLineInfo) null, resourceDir, resourceNameCaseMap);
+		}
+
+		public static void FixupResourceFilenameAndLogCodedWarning (this TaskLoggingHelper log, string code, string message, string file, IXmlLineInfo xml, string resourceDir, Dictionary<string, string> resourceNameCaseMap)
+		{
 			var targetfile = FixupResourceFilename (file, resourceDir, resourceNameCaseMap);
-			log.LogCodedWarning (code, file: targetfile, lineNumber: 0, message: message);
+			log.LogCodedWarning (code, file: targetfile, lineNumber: xml == null ? 0 : xml.LineNumber, message: message);
 		}
 	}
 }

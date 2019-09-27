@@ -100,35 +100,38 @@ namespace Xamarin.Android.Tasks
 			}
 
 			// Fix up each file
-			foreach (string file in xmls) {
-				var srcmodifiedDate = File.GetLastWriteTimeUtc (file);
+			foreach (string xml in xmls) {
+				var srcmodifiedDate = File.GetLastWriteTimeUtc (xml);
 				if (srcmodifiedDate <= lastUpdate) {
-					Log.LogDebugMessage ("  Skipping: {0}  {1} <= {2}", file, srcmodifiedDate, lastUpdate);
+					Log.LogDebugMessage ("  Skipping: {0}  {1} <= {2}", xml, srcmodifiedDate, lastUpdate);
 					continue;
 				}
-				Log.LogDebugMessage ("  Processing: {0}   {1} > {2}", file, srcmodifiedDate, lastUpdate);
-				MonoAndroidHelper.SetWriteable (file);
-				bool success = AndroidResource.UpdateXmlResource (resdir, file, acwMap,
+				Log.LogDebugMessage ("  Processing: {0}   {1} > {2}", xml, srcmodifiedDate, lastUpdate);
+				MonoAndroidHelper.SetWriteable (xml);
+				bool success = AndroidResource.UpdateXmlResource (resdir, xml, acwMap,
 					resourcedirectories, (level, message) => {
 						switch (level) {
 						case TraceLevel.Error:
-							Log.FixupResourceFilenameAndLogCodedError ("XA1002", message, file, resdir, resource_name_case_map);
+							Log.FixupResourceFilenameAndLogCodedError ("XA1002", message, xml, resdir, resource_name_case_map);
 							break;
 						case TraceLevel.Warning:
-							Log.FixupResourceFilenameAndLogCodedWarning ("XA1001", message, file, resdir, resource_name_case_map);
+							Log.FixupResourceFilenameAndLogCodedWarning ("XA1001", message, xml, resdir, resource_name_case_map);
 							break;
 						default:
 							Log.LogDebugMessage (message);
 							break;
 						}
-					}, registerCustomView : (e, filename) => {
-					if (customViewMap == null)
-						return;
-					HashSet<string> set;
-					if (!customViewMap.TryGetValue (e, out set))
-						customViewMap.Add (e, set = new HashSet<string> ());
-					set.Add (filename);
-				});
+					}, registerCustomView : (lineInfo, e, file) => {
+						if (customViewMap == null)
+							return;
+						if (!customViewMap.TryGetValue (e, out HashSet<string> set))
+							customViewMap.Add (e, set = new HashSet<string> ());
+						set.Add (file);
+						if (!acwMap.ContainsKey (e) && (e.StartsWith ("md5", StringComparison.Ordinal) || e.StartsWith ("crc64", StringComparison.Ordinal))) {
+							var message = $"Element '{e}' has a hashed package name, which is an implementation detail. Consider using [RegisterAttribute] to use a known value instead.";
+							Log.FixupResourceFilenameAndLogCodedWarning ("XA0000", message, file, lineInfo, AndroidResource.GetResourceDirectory (file, ResourceDirectories), resource_name_case_map);
+						}
+					});
 				if (!success) {
 					//If we failed to write the file, a warning is logged, we should skip to the next file
 					continue;
@@ -139,7 +142,7 @@ namespace Xamarin.Android.Tasks
 				// doesn't support those type of BOM (it really wants the document to start
 				// with "<?"). Since there is no way to plug into the file saving mechanism in X.S
 				// we strip those here and point the designer to use resources from obj/
-				MonoAndroidHelper.CleanBOM (file);
+				MonoAndroidHelper.CleanBOM (xml);
 			}
 		}
 	}

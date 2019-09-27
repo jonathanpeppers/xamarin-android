@@ -110,14 +110,16 @@ namespace Xamarin.Android.Tasks
 						Log.LogDebugMessage (message);
 						break;
 					}
-				}, registerCustomView: (e, file) => {
+				}, registerCustomView: (lineInfo, e, file) => {
 					if (customViewMap == null)
 						return;
-					HashSet<string> set;
-					if (!customViewMap.TryGetValue (e, out set))
+					if (!customViewMap.TryGetValue (e, out HashSet<string> set))
 						customViewMap.Add (e, set = new HashSet<string> ());
 					set.Add (file);
-
+					if (!acw_map.ContainsKey (e) && (e.StartsWith ("md5", StringComparison.Ordinal) || e.StartsWith ("crc64", StringComparison.Ordinal))) {
+						var message = $"Element '{e}' has a hashed package name, which is an implementation detail. Consider using [RegisterAttribute] to use a known value instead.";
+						Log.FixupResourceFilenameAndLogCodedWarning ("XA0000", message, file, lineInfo, AndroidResource.GetResourceDirectory (file, ResourceDirectories), resource_name_case_map);
+					}
 				});
 				if (updated) {
 					if (!modifiedFiles.Any (i => i.ItemSpec == destfilename))

@@ -578,7 +578,7 @@ namespace Lib2
 				}
 			};
 			// Use a custom view
-			app.LayoutMain = app.LayoutMain.Replace ("</LinearLayout>", "<MyApp.CustomTextView android:id=\"@+id/myText\" /></LinearLayout>");
+			app.LayoutMain = app.LayoutMain.Replace ("</LinearLayout>", "<asdf.CustomTextView android:id=\"@+id/myText\" /></LinearLayout>");
 			app.SetProperty ("AndroidUseAapt2", useAapt2.ToString ());
 
 			int count = 0;

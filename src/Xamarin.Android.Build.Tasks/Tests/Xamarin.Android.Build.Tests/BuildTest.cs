@@ -1353,6 +1353,7 @@ namespace App1
 			}
 		}
 
+		[Test]
 		public void BuildApplicationCheckItEmitsAWarningWithContentItems ()
 		{
 			var proj = new XamarinAndroidApplicationProject ();
@@ -1371,6 +1372,40 @@ namespace App1
 				Assert.IsTrue (
 					b.LastBuildOutput.Contains ("TestContent1.txt:  warning XA0101: @(Content) build action is not supported"),
 					"Build Output did not contain the correct error message");
+			}
+		}
+
+		[Test]
+		public void MD5PackageNameWarns ([Values (true, false)] bool useAapt2)
+		{
+			var proj = new XamarinAndroidApplicationProject {
+				ProjectName = "MyApp",
+				Sources = {
+					new BuildItem.Source ("CustomTextView.cs") {
+						TextContent = () =>
+							@"using Android.Widget;
+							using Android.Content;
+							using Android.Util;
+							namespace MyApp
+							{
+								public class CustomTextView : TextView
+								{
+									public CustomTextView(Context context, IAttributeSet attributes) : base(context, attributes)
+									{
+									}
+								}
+							}"
+					}
+				}
+			};
+			//NOTE: even though this <md51234madethisup.CustomTextView /> tag is completely wrong aapt/aapt2 does not give an error.
+			// The best we can do here is warn if the type is not found in acw-map.txt, since the Java classes are not easily known.
+			proj.LayoutMain = proj.LayoutMain.Replace ("</LinearLayout>", "<md51234madethisup.CustomTextView android:id=\"@+id/myText\" /></LinearLayout>");
+			proj.SetProperty ("AndroidUseAapt2", useAapt2.ToString ());
+			using (var b = CreateApkBuilder ()) {
+				Assert.IsTrue (b.Build (proj), "build should have succeeded");
+				Assert.IsTrue (StringAssertEx.ContainsText (b.LastBuildOutput, "XA0000"), "Output should contain XA0000 warnings");
+				Assert.IsTrue (StringAssertEx.ContainsText (b.LastBuildOutput, "Main.axml(13,0)"), "Output should contain a line number");
 			}
 		}
 
