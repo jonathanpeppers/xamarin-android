@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using Xamarin.Tools.Zip;
@@ -7,21 +7,19 @@ namespace Xamarin.Android.Tasks
 {
 	public class ZipArchiveEx : IDisposable
 	{
+		static int ZipFlushLimit = 50;
 
-		public static int ZipFlushLimit = 50;
-
+		int count = 0;
 		ZipArchive zip;
 		string archive;
 
-		public ZipArchive Archive {
-			get { return zip; }
-		}
+		public ZipArchive Archive => zip;
 
 		public ZipArchiveEx (string archive) : this (archive, FileMode.CreateNew)
 		{
 		}
 
-		public ZipArchiveEx(string archive, FileMode filemode)
+		public ZipArchiveEx (string archive, FileMode filemode)
 		{
 			this.archive = archive;
 			zip = ZipArchive.Open(archive, filemode);
@@ -34,6 +32,7 @@ namespace Xamarin.Android.Tasks
 				zip.Dispose ();
 				zip = null;
 			}
+			count = 0;
 			zip = ZipArchive.Open (archive, FileMode.Open);
 		}
 
@@ -54,7 +53,6 @@ namespace Xamarin.Android.Tasks
 
 		void AddFiles (string folder, string folderInArchive, CompressionMethod method)
 		{
-			int count = 0;
 			foreach (string fileName in Directory.GetFiles (folder, "*.*", SearchOption.TopDirectoryOnly)) {
 				var fi = new FileInfo (fileName);
 				if ((fi.Attributes & FileAttributes.Hidden) != 0)
@@ -64,15 +62,26 @@ namespace Xamarin.Android.Tasks
 				if (zip.ContainsEntry (archiveFileName, out index)) {
 					var e = zip.First (x => x.FullName == archiveFileName);
 					if (e.ModificationTime < fi.LastWriteTimeUtc)
-						zip.AddFile (fileName, archiveFileName, compressionMethod: method);
+						AddFile (fileName, archiveFileName, compressionMethod: method);
 				} else {
-					zip.AddFile (fileName, archiveFileName, compressionMethod: method);
+					AddFile (fileName, archiveFileName, compressionMethod: method);
 				}
-				count++;
-				if (count == ZipArchiveEx.ZipFlushLimit) {
-					Flush ();
-					count = 0;
-				}
+			}
+		}
+
+		public void AddEntry (string archivePath, Stream data, CompressionMethod compressionMethod)
+		{
+			zip.AddEntry (archivePath, data, compressionMethod: compressionMethod);
+			if (++count == ZipFlushLimit) {
+				Flush ();
+			}
+		}
+
+		public void AddFile (string sourcePath, string archivePath, CompressionMethod compressionMethod)
+		{
+			zip.AddFile (sourcePath, archivePath, compressionMethod: compressionMethod);
+			if (++count == ZipFlushLimit) {
+				Flush ();
 			}
 		}
 
