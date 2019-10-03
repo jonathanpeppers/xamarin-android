@@ -16,11 +16,10 @@ namespace Xamarin.Android.Tasks
 	{
 		public override string TaskPrefix => "CMD";
 
-		[Required]
-		public string ClassesOutputDirectory { get; set; }
+		protected override string MainClass => "proguard.ProGuard";
 
 		[Required]
-		public string ProguardJarPath { get; set; }
+		public string ClassesOutputDirectory { get; set; }
 
 		[Required]
 		public string AndroidSdkBuildToolsPath { get; set; }
@@ -80,7 +79,6 @@ namespace Xamarin.Android.Tasks
 		{
 			var enclosingChar = OS.IsWindows ? "\"" : string.Empty;
 			var jars = JavaLibraries.Select (i => i.ItemSpec).Concat (new string [] { Path.Combine (ClassesOutputDirectory, "..", "classes.zip") });
-			cmd.AppendSwitchIfNotNull ("-jar ", ProguardJarPath);
 			cmd.AppendSwitchUnquotedIfNotNull ("-injars ", "\"'" + string.Join ($"'{ProguardInputJarFilter}{Path.PathSeparator}'", jars) + $"'{ProguardInputJarFilter}\"");
 			cmd.AppendSwitch ("-dontwarn");
 			cmd.AppendSwitch ("-forceprocessing");
