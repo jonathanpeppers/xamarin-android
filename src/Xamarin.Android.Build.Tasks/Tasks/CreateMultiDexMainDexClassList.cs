@@ -16,11 +16,12 @@ namespace Xamarin.Android.Tasks
 	{
 		public override string TaskPrefix => "CMD";
 
-		[Required]
-		public string ClassesOutputDirectory { get; set; }
+		protected override string MainClass => mainClass;
+
+		string mainClass;
 
 		[Required]
-		public string ProguardJarPath { get; set; }
+		public string ClassesOutputDirectory { get; set; }
 
 		[Required]
 		public string AndroidSdkBuildToolsPath { get; set; }
@@ -40,12 +41,14 @@ namespace Xamarin.Android.Tasks
 		public override bool RunTask ()
 		{
 			tempJar = Path.Combine (Path.GetTempPath (), Path.GetRandomFileName () + ".jar");
+			mainClass = "proguard.ProGuard";
 			commandlineAction = GenerateProguardCommands;
 			// run proguard first
 			var retval = base.RunTask ();
 			if (!retval || Log.HasLoggedErrors)
 				return false;
 
+			mainClass = "com.android.multidex.MainDexListBuilder";
 			commandlineAction = GenerateMainDexListBuilderCommands;
 			// run java second
 
@@ -71,7 +74,7 @@ namespace Xamarin.Android.Tasks
 
 		protected override string GenerateCommandLineCommands ()
 		{
-			var cmd = new CommandLineBuilder ();
+			var cmd = base.GetCommandLineBuilder ();
 			commandlineAction (cmd);
 			return cmd.ToString ();
 		}
@@ -80,7 +83,6 @@ namespace Xamarin.Android.Tasks
 		{
 			var enclosingChar = OS.IsWindows ? "\"" : string.Empty;
 			var jars = JavaLibraries.Select (i => i.ItemSpec).Concat (new string [] { Path.Combine (ClassesOutputDirectory, "..", "classes.zip") });
-			cmd.AppendSwitchIfNotNull ("-jar ", ProguardJarPath);
 			cmd.AppendSwitchUnquotedIfNotNull ("-injars ", "\"'" + string.Join ($"'{ProguardInputJarFilter}{Path.PathSeparator}'", jars) + $"'{ProguardInputJarFilter}\"");
 			cmd.AppendSwitch ("-dontwarn");
 			cmd.AppendSwitch ("-forceprocessing");
@@ -97,8 +99,6 @@ namespace Xamarin.Android.Tasks
 			var enclosingDoubleQuote = OS.IsWindows ? "\"" : string.Empty;
 			var enclosingQuote = OS.IsWindows ? string.Empty : "'";
 			var jars = JavaLibraries.Select (i => i.ItemSpec).Concat (new string [] { Path.Combine (ClassesOutputDirectory, "..", "classes.zip") });
-			cmd.AppendSwitchIfNotNull ("-Djava.ext.dirs=", Path.Combine (AndroidSdkBuildToolsPath, "lib"));
-			cmd.AppendSwitch ("com.android.multidex.MainDexListBuilder");
 			if (!string.IsNullOrWhiteSpace (ExtraArgs))
 				cmd.AppendSwitch (ExtraArgs);
 			cmd.AppendSwitch ($"{enclosingDoubleQuote}{tempJar}{enclosingDoubleQuote}");
