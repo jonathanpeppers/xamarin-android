@@ -13,8 +13,7 @@ namespace Xamarin.Android.Tasks
 	{
 		public override string TaskPrefix => "DES";
 
-		[Required]
-		public string DesugarJarPath { get; set; }
+		protected override string MainClass => "com.google.devtools.build.android.desugar.Desugar";
 
 		[Required]
 		public string JavaPlatformJarPath { get; set; }
@@ -41,7 +40,7 @@ namespace Xamarin.Android.Tasks
 			return base.RunTask ();
 		}
 
-		protected override string GenerateCommandLineCommands ()
+		protected override CommandLineBuilder GetCommandLineBuilder ()
 		{
 			//   Running command: C:\Program Files (x86)\Java\jdk1.6.0_20\bin\java.exe
 			//     "-jar" "C:\Program Files (x86)\Android\android-sdk-windows\platform-tools\jill.jar"
@@ -54,19 +53,7 @@ namespace Xamarin.Android.Tasks
 			var doc = AndroidAppManifest.Load (ManifestFile, MonoAndroidHelper.SupportedVersions);
 			int minApiVersion = doc.MinSdkVersion == null ? 4 : (int)doc.MinSdkVersion;
 
-			var cmd = new CommandLineBuilder ();
-
-			// Add the JavaOptions if they are not null
-			// These could be any of the additional options
-			if (!string.IsNullOrEmpty (JavaOptions)) {
-				cmd.AppendSwitch (JavaOptions);
-			}
-
-			// Add the specific -XmxN to override the default heap size for the JVM
-			// N can be in the form of Nm or NGB (e.g 100m or 1GB ) 
-			cmd.AppendSwitchIfNotNull ("-Xmx", JavaMaximumHeapSize);
-
-			cmd.AppendSwitchIfNotNull ("-jar ", DesugarJarPath);
+			var cmd = base.GetCommandLineBuilder ();
 
 			cmd.AppendSwitch ("--bootclasspath_entry ");
 			cmd.AppendFileNameIfNotNull (JavaPlatformJarPath);
@@ -97,7 +84,7 @@ namespace Xamarin.Android.Tasks
 
 			OutputJars = outputs.ToArray ();
 
-			return cmd.ToString ();
+			return cmd;
 		}
 	}
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
@@ -66,6 +66,7 @@ namespace Xamarin.Android.Tasks
 			at com.android.dx.command.Main.main(Main.java:106)
 		*/
 		const string ExceptionRegExString = @"(?<exception>java.lang.+):(?<error>.+)";
+		static readonly string JavaDaemonKey = $"{nameof (JavaToolTask)}_{nameof (JavaDaemonClient)}";
 		protected static readonly Regex CodeErrorRegEx = new Regex (CodeErrorRegExString, RegexOptions.Compiled);
 		protected static readonly Regex ExceptionRegEx = new Regex (ExceptionRegExString, RegexOptions.Compiled);
 		bool foundError = false;
@@ -74,14 +75,81 @@ namespace Xamarin.Android.Tasks
 		string file;
 		int line, column;
 
+		public string JarPath { get; set; }
+
 		public string JavaOptions { get; set; }
 
 		public string JavaMaximumHeapSize { get; set; }
+
+		public bool UseDaemon { get; set; }
+
+		public ITaskItem [] DaemonClassPath { get; set; }
+
+		public override bool Execute ()
+		{
+			if (UseDaemon) {
+				var client = BuildEngine4.GetRegisteredTaskObject (JavaDaemonKey, RegisteredTaskObjectLifetime.AppDomain) as JavaDaemonClient;
+				if (client == null) {
+					client = new JavaDaemonClient ();
+					BuildEngine4.RegisterTaskObject (JavaDaemonKey, client, RegisteredTaskObjectLifetime.AppDomain, allowEarlyCollection: false);
+				}
+				client.Log = m => Log.LogDebugMessage (m);
+				try {
+					if (!client.IsConnected) {
+						var cmd = new CommandLineBuilder ();
+						if (!string.IsNullOrEmpty (JavaOptions)) {
+							cmd.AppendSwitch (JavaOptions);
+						}
+						cmd.AppendSwitch ("-XX:+UseG1GC");
+						cmd.AppendSwitchIfNotNull ("-Xmx", JavaMaximumHeapSize);
+						cmd.AppendSwitchIfNotNull ("-classpath ", string.Join (";", DaemonClassPath.Select (c => c.GetMetadata ("FullPath"))));
+						cmd.AppendSwitch ("xamarin.android.Main"); //TODO: better name
+						client.Connect (GenerateFullPathToTool (), cmd.ToString ());
+					}
+
+					(int exitCode, string stdout, string stderr) = client.Invoke (MainClass, JarPath, GenerateCommandLineCommands ());
+					//TODO: these should probably be string[] so I don't have to string.Split
+					foreach (var line in stdout.Split ('\n')) {
+						LogEventsFromTextOutput (line, MessageImportance.Normal);
+					}
+					foreach (var line in stderr.Split ('\n')) {
+						LogEventsFromTextOutput (line, MessageImportance.Normal);
+					}
+					if (exitCode != 0) {
+						Log.LogError ($"{MainClass} exited with code: {exitCode}");
+					}
+				} finally {
+					client.Log = null;
+				}
+				return !Log.HasLoggedErrors;
+			} else {
+				return base.Execute ();
+			}
+		}
 
 		public virtual string DefaultErrorCode => null;
 
 		protected override string ToolName {
 			get { return OS.IsWindows ? "java.exe" : "java"; }
+		}
+
+		protected override string GenerateCommandLineCommands ()
+		{
+			return GetCommandLineBuilder ().ToString ();
+		}
+
+		protected virtual CommandLineBuilder GetCommandLineBuilder ()
+		{
+			var cmd = new CommandLineBuilder ();
+			if (!UseDaemon) {
+				if (!string.IsNullOrEmpty (JavaOptions)) {
+					cmd.AppendSwitch (JavaOptions);
+				}
+				cmd.AppendSwitchIfNotNull ("-Xmx", JavaMaximumHeapSize);
+				cmd.AppendSwitchIfNotNull ("-classpath ", JarPath);
+				cmd.AppendSwitch (MainClass);
+			}
+			return cmd;
 		}
 
 		protected override bool HandleTaskExecutionErrors ()
@@ -104,6 +172,8 @@ namespace Xamarin.Android.Tasks
 		{
 			return Path.Combine (ToolPath, ToolExe);
 		}
+
+		protected abstract string MainClass { get; }
 
 		void LogFromException (string exception, string error) {
 			switch (exception) {
