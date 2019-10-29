@@ -7,6 +7,7 @@ import org.apache.tools.ant.types.Path;
 import org.json.JSONObject;
 
 import java.io.*;
+import java.util.Scanner;
 
 public class Main {
     public static void main (String[] args) throws IOException {
@@ -17,8 +18,8 @@ public class Main {
         // { "className": "com.android.tools.r8.R8", "jar": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Preview\\MSBuild\\Xamarin\\Android\\r8.jar", "arguments": "--version" }
 
         while (true) {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-            String line = reader.readLine();
+            Scanner scanner = new Scanner(System.in);
+            String line = scanner.nextLine(); //NOTE: that this line throws if the parent process is killed
             try {
                 JSONObject input = new JSONObject(line);
                 if (input.has("exit")) {
