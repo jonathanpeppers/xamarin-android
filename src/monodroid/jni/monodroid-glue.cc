@@ -1426,20 +1426,6 @@ MonodroidRuntime::Java_mono_android_Runtime_initInternal (JNIEnv *env, jclass kl
 	set_debug_env_vars ();
 #endif
 
-#ifndef RELEASE
-	jstr = env->GetObjectArrayElement (externalStorageDirs, 0);
-	androidSystem.set_override_dir (1, utils.strdup_new (jstr.get_cstr ()));
-
-	jstr = env->GetObjectArrayElement (externalStorageDirs, 1);
-	androidSystem.set_override_dir (2, utils.strdup_new (jstr.get_cstr ()));
-
-	for (uint32_t i = 0; i < AndroidSystem::MAX_OVERRIDES; ++i) {
-		const char *p = androidSystem.get_override_dir (i);
-		if (!utils.directory_exists (p))
-			continue;
-		log_warn (LOG_DEFAULT, "Using override path: %s", p);
-	}
-#endif
 	setup_bundled_app ("libmonodroid_bundle_app.so");
 
 	if (runtimeNativeLibDir != nullptr) {

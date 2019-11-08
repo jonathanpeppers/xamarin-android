@@ -11,6 +11,7 @@
 #endif
 
 #include "basic-android-system.hh"
+#include "android-system.hh"
 #include "basic-utilities.hh"
 #include "debug-app-helper.hh"
 #include "shared-constants.hh"
@@ -83,10 +84,23 @@ Java_mono_android_DebugRuntime_init (JNIEnv *env, jclass klass, jobjectArray run
 	androidSystem.set_override_dir (0, androidSystem.get_primary_override_dir ());
 	androidSystem.setup_app_library_directories (env, runtimeApks, applicationDirs, androidApiLevel);
 
+	jstring_wrapper jstr (env, runtimeNativeLibDir);
 	if (runtimeNativeLibDir != nullptr) {
-		jstring_wrapper jstr (env, runtimeNativeLibDir);
 		androidSystem.set_runtime_libdir (utils.strdup_new (jstr.get_cstr ()));
 		log_warn (LOG_DEFAULT, "Using runtime path: %s", androidSystem.get_runtime_libdir ());
+	}
+
+	jstr = env->GetObjectArrayElement (externalStorageDirs, 0);
+	androidSystem.set_override_dir (1, utils.strdup_new (jstr.get_cstr ()));
+
+	jstr = env->GetObjectArrayElement (externalStorageDirs, 1);
+	androidSystem.set_override_dir (2, utils.strdup_new (jstr.get_cstr ()));
+
+	for (uint32_t i = 0; i < AndroidSystem::MAX_OVERRIDES; ++i) {
+		const char *p = androidSystem.get_override_dir (i);
+		if (!utils.directory_exists (p))
+			continue;
+		log_warn (LOG_DEFAULT, "Using override path: %s", p);
 	}
 
 	char *monosgen_path = get_libmonosgen_path ();
