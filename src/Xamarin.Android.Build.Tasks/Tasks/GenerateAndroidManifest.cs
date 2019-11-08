@@ -32,19 +32,32 @@ namespace Xamarin.Android.Tasks
 
 		public override bool RunTask ()
 		{
+			using (var resolver = new MetadataResolver ()) {
+				Run (resolver);
+			}
+
+			return !Log.HasLoggedErrors;
+		}
+
+		void Run (MetadataResolver resolver)
+		{
 			List<string> assemblies = GetAssemblies ();
+
+			foreach (var assembly in assemblies) {
+				resolver.EnumerateTypes (assembly);
+			}
 
 			// Step 3 - Merge [Activity] and friends into AndroidManifest.xml
 			var manifest = new ManifestDocument (ManifestTemplate, this.Log);
 
-			List<Mono.Cecil.TypeDefinition> java_types = null;
+			//List<Mono.Cecil.TypeDefinition> java_types = null;
 			List<Mono.Cecil.TypeDefinition> all_java_types = null;
 
 			manifest.PackageName = PackageName;
 			manifest.ApplicationName = ApplicationName ?? PackageName;
 			manifest.Placeholders = ManifestPlaceholders;
 			//manifest.Assemblies.AddRange (assemblies);
-			//manifest.Resolver = res;
+			manifest.Resolver = resolver;
 			manifest.SdkDir = AndroidSdkDir;
 			manifest.SdkVersion = AndroidSdkPlatform;
 			manifest.Debug = Debug;
@@ -91,8 +104,6 @@ namespace Xamarin.Android.Tasks
 			if (Log.HasLoggedErrors) {
 				Files.DeleteFile (MergedAndroidManifestOutput, Log);
 			}
-
-			return !Log.HasLoggedErrors;
 		}
 
 		string GetResource (string resource)

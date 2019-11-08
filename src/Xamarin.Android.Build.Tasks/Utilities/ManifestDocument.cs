@@ -2,29 +2,21 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using System.Xml.XPath;
 using Microsoft.Build.Utilities;
-
 using Android.App;
 using Android.Content;
-
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-
-using MonoDroid.Utils;
 using Monodroid;
-
 using Java.Interop.Tools.Cecil;
 using Java.Interop.Tools.TypeNameMappings;
-
 using System.Xml;
 using System.Text;
 using Xamarin.Android.Tools;
 
-namespace Xamarin.Android.Tasks {
+namespace Xamarin.Android.Tasks
+{
 
 	internal class ManifestDocument
 	{
@@ -79,7 +71,7 @@ namespace Xamarin.Android.Tasks {
 		public string ApplicationName { get; set; }
 		public string [] Placeholders { get; set; }
 		public List<string> Assemblies { get; set; }
-		public DirectoryAssemblyResolver Resolver { get; set; }
+		public MetadataResolver Resolver { get; set; }
 		public string SdkDir { get; set; }
 		public string SdkVersion { get; set; }
 		public bool Debug { get; set; }
