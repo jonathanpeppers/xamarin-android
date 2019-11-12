@@ -1228,7 +1228,7 @@ because xbuild doesn't support framework reference assemblies.
 		$(MSBuildAllProjects);
 		@(AndroidResource);
 		@(AndroidBoundLayout);
-		@(_ReferencePath);
+		@(_MonoAndroidReferencePath);
 		@(_LibraryResourceDirectoryStamps);
 		@(_AdditonalAndroidResourceCachePaths->'%(Identity)\cache.stamp');
 		$(_AndroidBuildPropertiesCache);
@@ -1253,7 +1253,7 @@ because xbuild doesn't support framework reference assemblies.
 		ResourceDirectory="$(MonoAndroidResourcePrefix)"
 		AdditionalResourceDirectories="@(LibraryResourceDirectories)"
 		IsApplication="$(AndroidApplication)"
-		References="@(_ReferencePath)"
+		References="@(_MonoAndroidReferencePath)"
 		UseManagedResourceGenerator="True"
 		DesignTimeBuild="$(DesignTimeBuild)"
 		JavaPlatformJarPath="$(JavaPlatformJarPath)"
@@ -1614,7 +1614,7 @@ because xbuild doesn't support framework reference assemblies.
 		ResourceDirectory="$(MonoAndroidResDirIntermediate)"
 		AdditionalResourceDirectories="@(LibraryResourceDirectories)"
 		IsApplication="$(AndroidApplication)"
-		References="@(_ReferencePath)"
+		References="@(_MonoAndroidReferencePath)"
 		UseManagedResourceGenerator="$(_UseManagedResourceGenerator)"
 		DesignTimeBuild="$(DesignTimeBuild)"
 		JavaPlatformJarPath="$(JavaPlatformJarPath)"
