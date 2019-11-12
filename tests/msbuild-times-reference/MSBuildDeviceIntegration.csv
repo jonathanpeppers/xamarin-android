@@ -2,6 +2,9 @@
 # First non-comment row is human description of columns
 Test Name,Time in ms (int)
 # Data
+DesignTimeBuild_Fresh,1000
+DesignTimeBuild_NoChanges,1000
+DesignTimeBuild_AndroidResource_Change,1000
 Build_No_Changes,3350
 Build_CSharp_Change,4100
 Build_AndroidResource_Change,4850

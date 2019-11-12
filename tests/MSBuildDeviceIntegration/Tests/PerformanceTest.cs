@@ -68,6 +68,46 @@ namespace Xamarin.Android.Build.Tests
 		}
 
 		[Test]
+		public void DesignTimeBuild_Fresh ()
+		{
+			var proj = new XamarinAndroidApplicationProject ();
+			proj.MainActivity = proj.DefaultMainActivity;
+			using (var builder = CreateApkBuilder ()) {
+				builder.Save (proj);
+
+				// Profile first DTB
+				Profile (builder, b => b.DesignTimeBuild (proj));
+			}
+		}
+
+		[Test]
+		public void DesignTimeBuild_NoChanges ()
+		{
+			var proj = new XamarinAndroidApplicationProject ();
+			proj.MainActivity = proj.DefaultMainActivity;
+			using (var builder = CreateApkBuilder ()) {
+				builder.DesignTimeBuild (proj);
+
+				// Profile no changes
+				Profile (builder, b => b.DesignTimeBuild (proj));
+			}
+		}
+
+		[Test]
+		public void DesignTimeBuild_AndroidResource_Change ()
+		{
+			var proj = new XamarinAndroidApplicationProject ();
+			using (var builder = CreateApkBuilder ()) {
+				builder.DesignTimeBuild (proj);
+
+				// Profile AndroidResource change
+				proj.LayoutMain += $"{Environment.NewLine}<!--comment-->";
+				proj.Touch ("Resources\\layout\\Main.axml");
+				Profile (builder, b => b.DesignTimeBuild (proj));
+			}
+		}
+
+		[Test]
 		public void Build_No_Changes ()
 		{
 			var proj = new XamarinAndroidApplicationProject ();
