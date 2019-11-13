@@ -47,6 +47,7 @@ namespace Xamarin.Android.Tasks
 					if (string.IsNullOrEmpty (resourceDesignerName)) {
 						continue;
 					}
+					bool nestedFound = false;
 					foreach (var handle in reader.TypeDefinitions) {
 						var typeDefinition = reader.GetTypeDefinition (handle);
 						if (!typeDefinition.IsNested)
@@ -54,7 +55,18 @@ namespace Xamarin.Android.Tasks
 						var declaringType = reader.GetTypeDefinition (typeDefinition.GetDeclaringType ());
 						var declaringTypeName = $"{reader.GetString (declaringType.Namespace)}.{reader.GetString (declaringType.Name)}";
 						if (declaringTypeName == resourceDesignerName) {
+							nestedFound = true;
 							CreateImportFor (true, declaringTypeName, typeDefinition, method, reader);
+						}
+					}
+					// F# has no nested types, so we need special care.
+					if (!nestedFound) {
+						foreach (var handle in reader.TypeDefinitions) {
+							var typeDefinition = reader.GetTypeDefinition (handle);
+							var typeName = $"{reader.GetString (typeDefinition.Namespace)}.{reader.GetString (typeDefinition.Name)}";
+							if (typeName.StartsWith (resourceDesignerName, StringComparison.Ordinal) && typeName != resourceDesignerName) {
+								CreateImportFor (false, typeName, typeDefinition, method, reader);
+							}
 						}
 					}
 				}
