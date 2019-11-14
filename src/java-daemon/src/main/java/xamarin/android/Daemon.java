@@ -9,7 +9,7 @@ import org.json.JSONObject;
 import java.io.*;
 import java.util.Scanner;
 
-public class Main {
+public class Daemon {
     public static void main (String[] args) throws IOException {
         // Examples
         // { "className": "com.android.tools.r8.D8", "jar": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\MSBuild\\Xamarin\\Android\\r8.jar", "arguments": "--version" }
