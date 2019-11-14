@@ -127,9 +127,6 @@ namespace Xamarin.Android.Tasks
 					apk.Archive.AddFile (dex.ItemSpec, DalvikPath + dexPath);
 				}
 
-				if (EmbedAssemblies && !BundleAssemblies)
-					AddAssemblies (apk);
-
 				AddRuntimeLibraries (apk, supportedAbis);
 				apk.Flush();
 				AddNativeLibraries (files, supportedAbis);
@@ -199,6 +196,9 @@ namespace Xamarin.Android.Tasks
 						count = 0;
 					}
 				}
+
+				if (EmbedAssemblies && !BundleAssemblies)
+					AddAssemblies (apk);
 				FixupArchive (apk);
 			}
 			if (MonoAndroidHelper.CopyIfZipChanged (temp, apkOutputPath)) {
@@ -245,7 +245,10 @@ namespace Xamarin.Android.Tasks
 			bool use_shared_runtime = String.Equals (UseSharedRuntime, "true", StringComparison.OrdinalIgnoreCase);
 
 			int count = 0;
-			foreach (ITaskItem assembly in ResolvedUserAssemblies) {
+
+			// Add framework assemblies
+			if (!use_shared_runtime)
+			foreach (ITaskItem assembly in ResolvedFrameworkAssemblies) {
 				if (bool.TryParse (assembly.GetMetadata ("AndroidSkipAddToPackage"), out bool value) && value) {
 					Log.LogDebugMessage ($"Skipping {assembly.ItemSpec} due to 'AndroidSkipAddToPackage' == 'true' ");
 					continue;
@@ -253,13 +256,9 @@ namespace Xamarin.Android.Tasks
 				if (MonoAndroidHelper.IsReferenceAssembly (assembly.ItemSpec)) {
 					Log.LogCodedWarning ("XA0107", assembly.ItemSpec, 0, "{0} is a Reference Assembly!", assembly.ItemSpec);
 				}
-				// Add assembly
-				apk.Archive.AddFile (assembly.ItemSpec, GetTargetDirectory (assembly.ItemSpec) + "/"  + Path.GetFileName (assembly.ItemSpec), compressionMethod: UncompressedMethod);
-
-				// Try to add config if exists
+				apk.Archive.AddFile (assembly.ItemSpec, AssembliesPath + Path.GetFileName (assembly.ItemSpec), compressionMethod: UncompressedMethod);
 				var config = Path.ChangeExtension (assembly.ItemSpec, "dll.config");
 				AddAssemblyConfigEntry (apk, config);
-
 				// Try to add symbols if Debug
 				if (debug) {
 					var symbols = Path.ChangeExtension (assembly.ItemSpec, "dll.mdb");
@@ -279,12 +278,8 @@ namespace Xamarin.Android.Tasks
 				}
 			}
 
-			if (use_shared_runtime)
-				return;
-
 			count = 0;
-			// Add framework assemblies
-			foreach (ITaskItem assembly in ResolvedFrameworkAssemblies) {
+			foreach (ITaskItem assembly in ResolvedUserAssemblies) {
 				if (bool.TryParse (assembly.GetMetadata ("AndroidSkipAddToPackage"), out bool value) && value) {
 					Log.LogDebugMessage ($"Skipping {assembly.ItemSpec} due to 'AndroidSkipAddToPackage' == 'true' ");
 					continue;
@@ -292,9 +287,13 @@ namespace Xamarin.Android.Tasks
 				if (MonoAndroidHelper.IsReferenceAssembly (assembly.ItemSpec)) {
 					Log.LogCodedWarning ("XA0107", assembly.ItemSpec, 0, "{0} is a Reference Assembly!", assembly.ItemSpec);
 				}
-				apk.Archive.AddFile (assembly.ItemSpec, AssembliesPath + Path.GetFileName (assembly.ItemSpec), compressionMethod: UncompressedMethod);
+				// Add assembly
+				apk.Archive.AddFile (assembly.ItemSpec, GetTargetDirectory (assembly.ItemSpec) + "/" + Path.GetFileName (assembly.ItemSpec), compressionMethod: UncompressedMethod);
+
+				// Try to add config if exists
 				var config = Path.ChangeExtension (assembly.ItemSpec, "dll.config");
 				AddAssemblyConfigEntry (apk, config);
+
 				// Try to add symbols if Debug
 				if (debug) {
 					var symbols = Path.ChangeExtension (assembly.ItemSpec, "dll.mdb");
