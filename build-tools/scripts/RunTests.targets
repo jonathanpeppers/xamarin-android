@@ -7,6 +7,7 @@
   <Import Project="$(_TopDir)\Configuration.props" />
   <UsingTask AssemblyFile="$(MSBuildThisFileDirectory)..\..\bin\Build$(Configuration)\xa-prep-tasks.dll" TaskName="Xamarin.Android.BuildTools.PrepTasks.RunParallelTargets" />
   <UsingTask AssemblyFile="$(MSBuildThisFileDirectory)..\..\bin\Build$(Configuration)\xa-prep-tasks.dll" TaskName="Xamarin.Android.BuildTools.PrepTasks.SetEnvironmentVariable" />
+  <UsingTask AssemblyFile="$(MSBuildThisFileDirectory)..\..\bin\Build$(Configuration)\Xamarin.Android.Tools.BootstrapTasks.dll" TaskName="Xamarin.Android.Tools.BootstrapTasks.WatchLingeringProcesses" />
   <PropertyGroup>
     <_Test Condition=" '$(TEST)' != '' ">--test=&quot;$(TEST)&quot;</_Test>
     <_XABuild>$(_TopDir)\bin\$(Configuration)\bin\xabuild</_XABuild>
@@ -42,6 +43,7 @@
     />
   </Target>
   <Target Name="RunNUnitTests">
+    <WatchLingeringProcesses Condition=" '$(HostOS)' == 'Windows' " ProcessNames="adb;xabuild" />
     <SetEnvironmentVariable Name="USE_MSBUILD" Value="0" Condition=" '$(USE_MSBUILD)' == '' " />
     <ItemGroup>
       <NUnitTarget Include="@(_TestAssembly)">
