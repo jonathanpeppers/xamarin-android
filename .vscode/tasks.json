@@ -50,6 +50,11 @@
             "problemMatcher": [
                 "$msCompile"
             ]
+        },
+        {
+            "label": "Run Hello World",
+            "type": "shell",
+            "command": "bin/Debug/bin/xabuild samples/HelloWorld/HelloWorld.csproj /t:Install,LaunchDebugger /p:AndroidAttachDebugger=true",
         }
     ]
 }

@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch",
+            "name": "MSBuild Tests",
             "type": "mono",
             "request": "launch",
             "program": "${workspaceRoot}packages/NUnit.ConsoleRunner.3.9.0/tools/nunit3-console.exe ${workspaceRoot}bin/TestDebug/Xamarin.Android.Build.Tests.dll",
@@ -17,6 +17,14 @@
             "request": "attach",
             "address": "localhost",
             "port": 55555
+        },
+        {
+            "name": "Debug Hello World",
+            "type": "mono",
+            "request": "attach",
+            "address": "localhost",
+            "port": 10000,
+            "preLaunchTask": "Run Hello World",
         }
     ]
 }
