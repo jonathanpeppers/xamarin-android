@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+using NUnit.Framework;
 using System;
 using System.IO;
 using System.Text;
@@ -112,6 +112,17 @@ namespace Xamarin.Android.Build.Tests
 		}
 
 		[Test]
+		public void CopyIfChanged_FileSharing ()
+		{
+			var src = NewFile ("foo");
+			var dest = NewFile ("foo");
+			using (var s = new FileStream (dest, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+				Assert.IsFalse (Files.CopyIfChanged (src, dest), "No change should have occurred");
+				FileAssert.AreEqual (src, dest);
+			}
+		}
+
+		[Test]
 		public void CopyIfChanged_CasingChange ()
 		{
 			var src = NewFile (contents: "foo");
@@ -164,6 +175,16 @@ namespace Xamarin.Android.Build.Tests
 			File.SetAttributes (dest, FileAttributes.ReadOnly);
 			Assert.IsTrue (Files.CopyIfStringChanged ("foo", dest), "Changes should have occurred");
 			FileAssert.Exists (dest);
+		}
+
+		[Test]
+		public void CopyIfStringChanged_FileSharing ()
+		{
+			var dest = NewFile ("foo");
+			using (var s = new FileStream (dest, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+				Assert.IsFalse (Files.CopyIfStringChanged ("foo", dest), "No change should have occurred");
+				FileAssert.Exists (dest);
+			}
 		}
 
 		[Test]
@@ -228,6 +249,18 @@ namespace Xamarin.Android.Build.Tests
 				File.SetAttributes (dest, FileAttributes.ReadOnly);
 				Assert.IsTrue (Files.CopyIfStreamChanged (src, dest), "Changes should have occurred");
 				FileAssert.Exists (dest);
+			}
+		}
+
+		[Test]
+		public void CopyIfStreamChanged_FileSharing ()
+		{
+			using (var src = NewStream ("foo")) {
+				var dest = NewFile ("foo");
+				using (var s = new FileStream (dest, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+					Assert.IsFalse (Files.CopyIfStreamChanged (src, dest), "No change should have occurred");
+					FileAssert.Exists (dest);
+				}
 			}
 		}
 
