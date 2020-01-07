@@ -4183,6 +4183,46 @@ namespace UnnamedProject
 		}
 
 		[Test]
+		public void GlobalNuGetPackagesFolder ()
+		{
+			var path = Path.Combine ("temp", TestName);
+
+			var lib = new XamarinAndroidLibraryProject {
+				ProjectName = "MyLibrary",
+				Sources = {
+					new BuildItem.Source ("Bar.cs") {
+						TextContent = () => "public class Bar { public Bar () { Microsoft.EntityFrameworkCore.ChangeTrackingStrategy.Snapshot.ToString(); } }"
+					},
+				},
+				PackageReferences = {
+					new Package { Id = "Microsoft.EntityFrameworkCore", Version = "3.1.0" }
+				}
+			};
+			var app = new XamarinAndroidApplicationProject {
+				ProjectName = "MyApp",
+				Sources = {
+					new BuildItem.Source ("Foo.cs") {
+						TextContent = () => "public class Foo : Bar { }"
+					},
+				},
+				// NOTE: adding this to the app project actually solves the issue, hmm...
+				PackageReferences = {
+					new Package { Id = "Microsoft.EntityFrameworkCore", Version = "3.1.0" }
+				}
+			};
+			var reference = $"..\\{lib.ProjectName}\\{lib.ProjectName}.csproj";
+			app.References.Add (new BuildItem.ProjectReference (reference, lib.ProjectName, lib.ProjectGuid));
+
+			using (var libBuilder = CreateDllBuilder (Path.Combine (path, lib.ProjectName)))
+			using (var appBuilder = CreateApkBuilder (Path.Combine (path, app.ProjectName))) {
+				var globalPackagesFolder = Path.GetFullPath (Path.Combine (Root, path, "MyPackages"));
+				var environmentVariables = new Dictionary<string, string> { { "NUGET_PACKAGES", globalPackagesFolder } };
+				Assert.IsTrue (libBuilder.Build (lib, environmentVariables: environmentVariables), "lib build should have succeeded.");
+				Assert.IsTrue (appBuilder.Build (app, environmentVariables: environmentVariables), "app build should have succeeded.");
+			}
+		}
+
+		[Test]
 		public void KotlinServiceLoader ([Values ("apk", "aab")] string packageFormat)
 		{
 			var proj = new XamarinAndroidApplicationProject ();
