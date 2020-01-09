@@ -227,6 +227,7 @@
     <Compile Include="Android.Runtime\OutputStreamInvoker.cs" />
     <Compile Include="Android.Runtime\PreserveAttribute.cs" />
     <Compile Include="Android.Runtime\RaiseThrowableEventArgs.cs" />
+    <Compile Include="Android.Runtime\ReflectionExtensions.cs" />
     <Compile Include="Android.Runtime\RequiresPermissionAttribute.cs" />
     <Compile Include="Android.Runtime\ResourceDesignerAttribute.cs" />
     <Compile Include="Android.Runtime\ResourceIdManager.cs" />

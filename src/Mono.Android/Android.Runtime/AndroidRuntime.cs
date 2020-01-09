@@ -234,7 +234,7 @@ namespace Android.Runtime {
 			var simpleRef = base.GetSimpleReference (type);
 			if (simpleRef != null)
 				return simpleRef;
-			var j = JNIEnv.monodroid_typemap_managed_to_java (type.FullName + ", " + type.Assembly.GetName ().Name);
+			var j = JNIEnv.monodroid_typemap_managed_to_java (type.GetTypeAndAssemblyName ());
 			if (j != IntPtr.Zero) {
 				return Marshal.PtrToStringAnsi (j);
 			}
@@ -249,7 +249,7 @@ namespace Android.Runtime {
 			foreach (var simpleRef in base.GetSimpleReferences (type)) {
 				yield return simpleRef;
 			}
-			var j = JNIEnv.monodroid_typemap_managed_to_java (type.FullName + ", " + type.Assembly.GetName ().Name);
+			var j = JNIEnv.monodroid_typemap_managed_to_java (type.GetTypeAndAssemblyName ());
 			if (j != IntPtr.Zero) {
 				yield return Marshal.PtrToStringAnsi (j);
 			}

@@ -638,7 +638,7 @@ namespace Android.Runtime {
 		{
 			if (type == null)
 				throw new ArgumentNullException ("type");
-			var java  = monodroid_typemap_managed_to_java (type.FullName + ", " + type.Assembly.GetName ().Name);
+			var java  = monodroid_typemap_managed_to_java (type.GetTypeAndAssemblyName ());
 			return java == IntPtr.Zero
 				? JavaNativeTypeManager.ToJniName (type)
 				: Marshal.PtrToStringAnsi (java);
