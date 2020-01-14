@@ -92,8 +92,6 @@ namespace Xamarin.Android.Tasks
 				// by ensuring that the target outputs have been deleted.
 				Files.DeleteFile (MergedAndroidManifestOutput, Log);
 				Files.DeleteFile (AcwMapFile, Log);
-				Files.DeleteFile (Path.Combine (OutputDirectory, "typemap.jm"), Log);
-				Files.DeleteFile (Path.Combine (OutputDirectory, "typemap.mj"), Log);
 			}
 
 			return !Log.HasLoggedErrors;
@@ -146,8 +144,6 @@ namespace Xamarin.Android.Tasks
 				ErrorOnCustomJavaObject     = ErrorOnCustomJavaObject,
 			};
 			var all_java_types = scanner.GetJavaTypes (assemblies, res);
-
-			WriteTypeMappings (all_java_types);
 
 			var java_types = all_java_types
 				.Where (t => !JavaTypeScanner.ShouldSkipJavaCallableWrapperGeneration (t))
@@ -299,77 +295,6 @@ namespace Xamarin.Android.Tasks
 			string template = GetResource (resource);
 			template = applyTemplate (template);
 			MonoAndroidHelper.CopyIfStringChanged (template, Path.Combine (destDir, filename));
-		}
-
-		void WriteTypeMappings (List<TypeDefinition> types)
-		{
-			void logger (TraceLevel level, string value) => Log.LogDebugMessage (value);
-			TypeNameMapGenerator createTypeMapGenerator () => UseSharedRuntime ?
-				new TypeNameMapGenerator (types, logger) :
-				new TypeNameMapGenerator (ResolvedAssemblies.Select (p => p.ItemSpec), logger);
-			using (var gen = createTypeMapGenerator ()) {
-				using (var ms = new MemoryStream ()) {
-					UpdateWhenChanged (Path.Combine (OutputDirectory, "typemap.jm"), "jm", ms, gen.WriteJavaToManaged);
-					UpdateWhenChanged (Path.Combine (OutputDirectory, "typemap.mj"), "mj", ms, gen.WriteManagedToJava);
-				}
-			}
-		}
-
-		void UpdateWhenChanged (string path, string type, MemoryStream ms, Action<Stream> generator)
-		{
-			if (!EmbedAssemblies) {
-				ms.SetLength (0);
-				generator (ms);
-				MonoAndroidHelper.CopyIfStreamChanged (ms, path);
-			}
-
-			string dataFilePath = $"{path}.inc";
-			using (var stream = new NativeAssemblyDataStream ()) {
-				if (EmbedAssemblies) {
-					generator (stream);
-					stream.EndOfFile ();
-					MonoAndroidHelper.CopyIfStreamChanged (stream, dataFilePath);
-				} else {
-					stream.EmptyFile ();
-				}
-
-				var generatedFiles = new List <ITaskItem> ();
-				string mappingFieldName = $"{type}_typemap";
-				string dataFileName = Path.GetFileName (dataFilePath);
-				NativeAssemblerTargetProvider asmTargetProvider;
-				var utf8Encoding = new UTF8Encoding (false);
-				foreach (string abi in SupportedAbis) {
-					ms.SetLength (0);
-					switch (abi.Trim ()) {
-						case "armeabi-v7a":
-							asmTargetProvider = new ARMNativeAssemblerTargetProvider (is64Bit: false);
-							break;
-
-						case "arm64-v8a":
-							asmTargetProvider = new ARMNativeAssemblerTargetProvider (is64Bit: true);
-							break;
-
-						case "x86":
-							asmTargetProvider = new X86NativeAssemblerTargetProvider (is64Bit: false);
-							break;
-
-						case "x86_64":
-							asmTargetProvider = new X86NativeAssemblerTargetProvider (is64Bit: true);
-							break;
-
-						default:
-							throw new InvalidOperationException ($"Unknown ABI {abi}");
-					}
-
-					var asmgen = new TypeMappingNativeAssemblyGenerator (asmTargetProvider, stream, dataFileName, stream.MapByteCount, mappingFieldName);
-					asmgen.EmbedAssemblies = EmbedAssemblies;
-					string asmFileName = $"{path}.{abi.Trim ()}.s";
-					using (var sw = new StreamWriter (ms, utf8Encoding, bufferSize: 8192, leaveOpen: true)) {
-						asmgen.Write (sw, dataFileName);
-						MonoAndroidHelper.CopyIfStreamChanged (ms, asmFileName);
-					}
-				}
-			}
 		}
 	}
 }
