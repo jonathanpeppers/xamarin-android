@@ -7,6 +7,7 @@ import org.apache.tools.ant.types.Path;
 import org.w3c.dom.*;
 import org.xml.sax.InputSource;
 
+import javax.sound.sampled.Line;
 import javax.xml.parsers.*;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
@@ -14,18 +15,19 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.*;
 import java.util.*;
 
+// Examples of input:
+// <Java ClassName="com.android.tools.r8.D8" Jar="C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Xamarin\Android\r8.jar" Arguments="--version" />
+// <Java ClassName="com.android.tools.r8.D8" Jar="C:\Program Files (x86)\Microsoft Visual Studio\2019\Preview\MSBuild\Xamarin\Android\r8.jar" Arguments="--version" />
+// <Java ClassName="com.android.tools.r8.R8" Jar="C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Xamarin\Android\r8.jar" Arguments="--version" />
+// <Java ClassName="com.android.tools.r8.R8" Jar="C:\Program Files (x86)\Microsoft Visual Studio\2019\Preview\MSBuild\Xamarin\Android\r8.jar" Arguments="--version" />
+// <Java Exit="True" />
+
 public class JavaDaemon {
-    static DocumentBuilder builder;
-    static Transformer transformer;
+    private static DocumentBuilder builder;
+    private static Transformer transformer;
 
     public static void main (String[] args)
             throws ParserConfigurationException, TransformerException, IOException {
-        // Examples
-        // <Java ClassName="com.android.tools.r8.D8" Jar="C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Xamarin\Android\r8.jar" Arguments="--version" />
-        // <Java ClassName="com.android.tools.r8.D8" Jar="C:\Program Files (x86)\Microsoft Visual Studio\2019\Preview\MSBuild\Xamarin\Android\r8.jar" Arguments="--version" />
-        // <Java ClassName="com.android.tools.r8.R8" Jar="C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Xamarin\Android\r8.jar" Arguments="--version" />
-        // <Java ClassName="com.android.tools.r8.R8" Jar="C:\Program Files (x86)\Microsoft Visual Studio\2019\Preview\MSBuild\Xamarin\Android\r8.jar" Arguments="--version" />
-        // <Java Exit="True" />
         Scanner scanner = new Scanner(System.in);
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         builder = factory.newDocumentBuilder();
@@ -48,7 +50,7 @@ public class JavaDaemon {
                 //This means that scanner.nextLine() reached the end, we can exit
                 break;
             } catch (Exception e) {
-                out (-1, "", toErrorString (e));
+                out (-1, new String[0], toErrorString (e));
             } finally {
                 if (reader != null)
                     reader.close();
@@ -63,12 +65,10 @@ public class JavaDaemon {
             throws IOException, TransformerException {
         PrintStream oldSystemOut = System.out;
         PrintStream oldSystemErr = System.err;
-        try (ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-             ByteArrayOutputStream errStream = new ByteArrayOutputStream();
-             PrintStream outPrintStream = new PrintStream(outStream, true);
-             PrintStream errPrintStream = new PrintStream(errStream, true)) {
-            System.setOut(outPrintStream);
-            System.setErr(errPrintStream);
+        try (LineBuffer outBuffer = new LineBuffer();
+             LineBuffer errBuffer = new LineBuffer()) {
+            System.setOut(outBuffer);
+            System.setErr(errBuffer);
             int exitCode = 0;
             try {
                 Java java = new Java();
@@ -87,34 +87,36 @@ public class JavaDaemon {
                 System.setErr(oldSystemErr);
             }
             // NOTE: we have to call out() *after* System.out/err is restored
-            out(exitCode, outStream.toString(), errStream.toString());
+            out(exitCode, outBuffer.getLines(), errBuffer.getLines());
         }
     }
 
-    static void out (int exitCode, String out, String err)
+    static void out (int exitCode, String[] out, String[] err)
             throws TransformerException {
         Document document = builder.newDocument();
         Element java = document.createElement("Java");
         java.setAttribute("ExitCode", Integer.toString(exitCode));
-        if (!out.isEmpty())
-            java.setAttribute("StandardOutput", out);
-        if (!err.isEmpty())
-            java.setAttribute("StandardError", err);
+        for (String line : out) {
+            Element child = document.createElement("StandardOutput");
+            child.setTextContent(line);
+            java.appendChild(child);
+        }
+        for (String line : err) {
+            Element child = document.createElement("StandardError");
+            child.setTextContent(line);
+            java.appendChild(child);
+        }
         document.appendChild(java);
         transformer.transform(new DOMSource(document), new StreamResult(System.out));
         System.out.println();
     }
 
-    static String toErrorString (Throwable t)
+    static String[] toErrorString (Throwable t)
             throws IOException {
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        try {
-            t.printStackTrace(pw);
-        } finally {
-            pw.close();
-            sw.close();
+        try (LineBuffer buffer = new LineBuffer()) {
+            t.printStackTrace(buffer);
+            buffer.flush();
+            return buffer.getLines();
         }
-        return sw.toString();
     }
 }
