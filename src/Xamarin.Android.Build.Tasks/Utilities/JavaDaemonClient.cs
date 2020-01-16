@@ -1,9 +1,9 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Text;
-using Newtonsoft.Json;
+using System.Xml;
 
 namespace Xamarin.Android.Tasks
 {
@@ -11,8 +11,8 @@ namespace Xamarin.Android.Tasks
 	{
 		const int Timeout = 3000;
 
-		readonly JsonSerializerSettings settings = new JsonSerializerSettings {
-			NullValueHandling = NullValueHandling.Ignore,
+		readonly XmlWriterSettings settings = new XmlWriterSettings {
+			OmitXmlDeclaration = true,
 		};
 		Process process;
 
@@ -60,40 +60,90 @@ namespace Xamarin.Android.Tasks
 			if (!IsConnected)
 				throw new InvalidOperationException ("Not connected to Java daemon");
 
-			Write (new {
-				className,
-				jar,
-				arguments,
+			Write (new Request {
+				ClassName = className,
+				Jar = jar,
+				Arguments = arguments,
 			});
 
 			var jsonOutput = Read ();
-			return (jsonOutput.exitCode, jsonOutput.stdout, jsonOutput.stderr);
+			return (jsonOutput.ExitCode, jsonOutput.StandardOutput, jsonOutput.StandardError);
 		}
 
-		void Write (object value)
+		void Write (Request request)
 		{
-			string json = JsonConvert.SerializeObject (value, settings);
-			Log?.Invoke ("Send: " + json);
-			process.StandardInput.WriteLine (json);
+			var builder = new StringBuilder ();
+			using (var xml = XmlWriter.Create (builder, settings)) {
+				xml.WriteStartElement ("Java");
+				if (request.Exit)
+					xml.WriteAttributeString (nameof (request.Exit), bool.TrueString);
+				if (!string.IsNullOrEmpty (request.ClassName))
+					xml.WriteAttributeString (nameof (request.ClassName), request.ClassName);
+				if (!string.IsNullOrEmpty (request.Jar))
+					xml.WriteAttributeString (nameof (request.Jar), request.Jar);
+				if (!string.IsNullOrEmpty (request.Arguments))
+					xml.WriteAttributeString (nameof (request.Arguments), request.Arguments);
+				xml.WriteEndElement ();
+			}
+
+			string text = builder.ToString ();
+			Log?.Invoke ("Send: " + text);
+			process.StandardInput.WriteLine (text);
 		}
 
 		Response Read ()
 		{
-			string line = process.StandardOutput.ReadLine ();
-			Log?.Invoke ("Receive: " + line);
-			return JsonConvert.DeserializeObject<Response> (line, settings);
+			var response = new Response ();
+			string text = process.StandardOutput.ReadLine ();
+			using (var str = new StringReader (text))
+			using (var xml = XmlReader.Create (str)) {
+				xml.ReadStartElement ("Java");
+				while (xml.Read ()) {
+					if (xml.NodeType == XmlNodeType.EndElement)
+						break;
+					if (xml.NodeType == XmlNodeType.Attribute) {
+						switch (xml.Name) {
+							case nameof (Response.ExitCode):
+								response.ExitCode = int.Parse (xml.Value, CultureInfo.InvariantCulture);
+								break;
+							case nameof (Response.StandardOutput):
+								response.StandardOutput = xml.Value;
+								break;
+							case nameof (Response.StandardError):
+								response.StandardError = xml.Value;
+								break;
+							default:
+								break;
+						}
+					}
+				}
+			}
+
+			Log?.Invoke ("Receive: " + text);
+			return response;
 		}
 
 		/// <summary>
-		/// A quick class for parsing the response
+		/// A class for writing the request
+		/// </summary>
+		class Request
+		{
+			public bool Exit { get; set; }
+			public string ClassName { get; set; }
+			public string Jar { get; set; }
+			public string Arguments { get; set; }
+		}
+
+		/// <summary>
+		/// A class for parsing the response
 		/// </summary>
 		class Response
 		{
-			public int exitCode { get; set; }
+			public int ExitCode { get; set; }
 
-			public string stdout { get; set; }
+			public string StandardOutput { get; set; } = "";
 
-			public string stderr { get; set; }
+			public string StandardError { get; set; } = "";
 		}
 
 		public void Dispose ()
@@ -107,7 +157,7 @@ namespace Xamarin.Android.Tasks
 				return;
 			}
 
-			Write (new { exit = true });
+			Write (new Request { Exit = true });
 
 			if (!process.WaitForExit (Timeout)) {
 				process.Kill ();

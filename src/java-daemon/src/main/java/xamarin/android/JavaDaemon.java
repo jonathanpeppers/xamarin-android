@@ -4,39 +4,56 @@ import org.apache.tools.ant.Project;
 import org.apache.tools.ant.taskdefs.Java;
 import org.apache.tools.ant.types.Commandline.Argument;
 import org.apache.tools.ant.types.Path;
-import org.json.JSONObject;
+import org.w3c.dom.*;
+import org.xml.sax.InputSource;
 
+import javax.xml.parsers.*;
+import javax.xml.transform.*;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import java.io.*;
 import java.util.Scanner;
 
 public class JavaDaemon {
-    public static void main (String[] args) throws IOException {
-        // Examples
-        // { "className": "com.android.tools.r8.D8", "jar": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\MSBuild\\Xamarin\\Android\\r8.jar", "arguments": "--version" }
-        // { "className": "com.android.tools.r8.D8", "jar": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Preview\\MSBuild\\Xamarin\\Android\\r8.jar", "arguments": "--version" }
-        // { "className": "com.android.tools.r8.R8", "jar": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\MSBuild\\Xamarin\\Android\\r8.jar", "arguments": "--version" }
-        // { "className": "com.android.tools.r8.R8", "jar": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Preview\\MSBuild\\Xamarin\\Android\\r8.jar", "arguments": "--version" }
+    static DocumentBuilder builder;
+    static Transformer transformer;
 
+    public static void main (String[] args)
+            throws ParserConfigurationException, TransformerException, IOException {
+        // Examples
+        // <Java ClassName="com.android.tools.r8.D8" Jar="C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Xamarin\Android\r8.jar" Arguments="--version" />
+        // <Java ClassName="com.android.tools.r8.D8" Jar="C:\Program Files (x86)\Microsoft Visual Studio\2019\Preview\MSBuild\Xamarin\Android\r8.jar" Arguments="--version" />
+        // <Java ClassName="com.android.tools.r8.R8" Jar="C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Xamarin\Android\r8.jar" Arguments="--version" />
+        // <Java ClassName="com.android.tools.r8.R8" Jar="C:\Program Files (x86)\Microsoft Visual Studio\2019\Preview\MSBuild\Xamarin\Android\r8.jar" Arguments="--version" />
+        // <Java Exit="True" />
         Scanner scanner = new Scanner(System.in);
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        builder = factory.newDocumentBuilder();
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        transformer = transformerFactory.newTransformer();
+        transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
         while (true) {
-            String line = scanner.nextLine(); //NOTE: that this line throws if the parent process is killed
+            String line = scanner.nextLine(); //NOTE: that this line exits the process if the parent process dies
+            StringReader reader = new StringReader(line);
             try {
-                JSONObject input = new JSONObject(line);
-                if (input.has("exit")) {
+                Document document = builder.parse(new InputSource(reader));
+                Element input = document.getDocumentElement();
+                if (!input.getAttribute("Exit").isEmpty()) {
                     break;
                 }
                 exec(input);
             } catch (Exception e) {
-                out (-1, "", e.getMessage());
+                out (-1, "", toErrorString (e));
+            } finally {
+                reader.close();
             }
-
             // Try to free as much memory as we can while idle
             System.gc();
         }
     }
 
-    static void exec (JSONObject input) throws IOException {
-        String oldWorkingDirectory = null;
+    static void exec (Element input)
+            throws IOException, TransformerException {
         PrintStream oldSystemOut = System.out;
         PrintStream oldSystemErr = System.err;
         try (ByteArrayOutputStream outStream = new ByteArrayOutputStream();
@@ -49,12 +66,12 @@ public class JavaDaemon {
             try {
                 Java java = new Java();
                 java.setProject(new Project());
-                java.setClassname(input.getString("className"));
+                java.setClassname(input.getAttribute("ClassName"));
                 Argument arg = java.getCommandLine().createArgument();
-                arg.setLine(input.getString("arguments"));
+                arg.setLine(input.getAttribute("Arguments"));
 
                 Path path = java.createClasspath();
-                path.setPath(input.getString("jar"));
+                path.setPath(input.getAttribute("Jar"));
                 java.setClasspath(path);
 
                 exitCode = java.executeJava();
@@ -68,11 +85,29 @@ public class JavaDaemon {
     }
 
     static void out (int exitCode, String out, String err)
-    {
-        JSONObject json = new JSONObject();
-        json.put("exitCode", exitCode);
-        json.put("stdout", out);
-        json.put("stderr", err);
-        System.out.println(json.toString());
+            throws TransformerException {
+        Document document = builder.newDocument();
+        Element java = document.createElement("Java");
+        java.setAttribute("ExitCode", Integer.toString(exitCode));
+        if (!out.isEmpty())
+            java.setAttribute("StandardOutput", out);
+        if (!err.isEmpty())
+            java.setAttribute("StandardError", err);
+        document.appendChild(java);
+        transformer.transform(new DOMSource(document), new StreamResult(System.out));
+        System.out.println();
+    }
+
+    static String toErrorString (Throwable t)
+            throws IOException {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        try {
+            t.printStackTrace(pw);
+        } finally {
+            pw.close();
+            sw.close();
+        }
+        return sw.toString();
     }
 }
