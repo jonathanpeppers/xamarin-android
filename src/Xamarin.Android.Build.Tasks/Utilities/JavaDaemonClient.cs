@@ -92,8 +92,13 @@ namespace Xamarin.Android.Tasks
 
 		Response Read ()
 		{
-			var response = new Response ();
+			if (process.StandardOutput.EndOfStream)
+				throw new InvalidOperationException ("Reached the end of the StandardOutput!");
+
 			string text = process.StandardOutput.ReadLine ();
+			Log?.Invoke ("Receive: " + text);
+
+			var response = new Response ();
 			using (var str = new StringReader (text))
 			using (var xml = XmlReader.Create (str)) {
 				xml.ReadStartElement ("Java");
@@ -117,8 +122,6 @@ namespace Xamarin.Android.Tasks
 					}
 				}
 			}
-
-			Log?.Invoke ("Receive: " + text);
 			return response;
 		}
 
