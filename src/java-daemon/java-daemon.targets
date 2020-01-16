@@ -15,7 +15,7 @@
   <Target Name="Clean" DependsOnTargets="$(CleanDependsOn)" />
 
   <Target Name="_BuildGradle"
-      Inputs="$(MSBuildThisFile);build.gradle;src\java-daemon\src\main\java\xamarin\android\Main.java"
+      Inputs="$(MSBuildThisFile);build.gradle;src\java-daemon\src\main\java\xamarin\android\JavaDaemon.java"
       Outputs="$(_Destination)">
     <Exec
         Command="&quot;$(GradleWPath)&quot; jar $(GradleArgs)"

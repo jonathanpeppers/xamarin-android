@@ -9,7 +9,7 @@ import org.json.JSONObject;
 import java.io.*;
 import java.util.Scanner;
 
-public class Main {
+public class JavaDaemon {
     public static void main (String[] args) throws IOException {
         // Examples
         // { "className": "com.android.tools.r8.D8", "jar": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\MSBuild\\Xamarin\\Android\\r8.jar", "arguments": "--version" }
@@ -17,8 +17,8 @@ public class Main {
         // { "className": "com.android.tools.r8.R8", "jar": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\MSBuild\\Xamarin\\Android\\r8.jar", "arguments": "--version" }
         // { "className": "com.android.tools.r8.R8", "jar": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Preview\\MSBuild\\Xamarin\\Android\\r8.jar", "arguments": "--version" }
 
+        Scanner scanner = new Scanner(System.in);
         while (true) {
-            Scanner scanner = new Scanner(System.in);
             String line = scanner.nextLine(); //NOTE: that this line throws if the parent process is killed
             try {
                 JSONObject input = new JSONObject(line);

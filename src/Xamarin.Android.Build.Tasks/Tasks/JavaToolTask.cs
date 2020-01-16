@@ -103,7 +103,7 @@ namespace Xamarin.Android.Tasks
 						cmd.AppendSwitch ("-XX:+UseG1GC");
 						cmd.AppendSwitchIfNotNull ("-Xmx", JavaMaximumHeapSize);
 						cmd.AppendSwitchIfNotNull ("-classpath ", string.Join (";", DaemonClassPath.Select (c => c.GetMetadata ("FullPath"))));
-						cmd.AppendSwitch ("xamarin.android.Main"); //TODO: better name
+						cmd.AppendSwitch ("xamarin.android.JavaDaemon");
 						client.Connect (GenerateFullPathToTool (), cmd.ToString ());
 					}
 

@@ -20,7 +20,7 @@ dependencies {
 
 jar {
     manifest {
-        attributes 'Main-Class': 'xamarin.android.Main'
+        attributes 'Main-Class': 'xamarin.android.JavaDaemon'
     }
     from {
         configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
