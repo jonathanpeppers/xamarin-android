@@ -41,7 +41,6 @@ namespace Xamarin.Android.Tasks
 				CreateNoWindow = true,
 				WindowStyle = ProcessWindowStyle.Hidden,
 				RedirectStandardInput = true,
-				RedirectStandardError = true,
 				RedirectStandardOutput = true,
 				UseShellExecute = false,
 			};
@@ -66,8 +65,8 @@ namespace Xamarin.Android.Tasks
 				Arguments = arguments,
 			});
 
-			var jsonOutput = Read ();
-			return (jsonOutput.ExitCode, jsonOutput.StandardOutput, jsonOutput.StandardError);
+			var response = Read ();
+			return (response.ExitCode, response.StandardOutput, response.StandardError);
 		}
 
 		void Write (Request request)
