@@ -12,7 +12,7 @@ import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.*;
-import java.util.Scanner;
+import java.util.*;
 
 public class JavaDaemon {
     static DocumentBuilder builder;
@@ -33,23 +33,30 @@ public class JavaDaemon {
         transformer = transformerFactory.newTransformer();
         transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
         while (true) {
-            String line = scanner.nextLine(); //NOTE: that this line exits the process if the parent process dies
-            StringReader reader = new StringReader(line);
+            StringReader reader = null;
             try {
+                //This line throws NoSuchElementException if the parent process dies
+                String line = scanner.nextLine();
+                reader = new StringReader(line);
                 Document document = builder.parse(new InputSource(reader));
                 Element input = document.getDocumentElement();
                 if (!input.getAttribute("Exit").isEmpty()) {
                     break;
                 }
                 exec(input);
+            } catch (NoSuchElementException e) {
+                //This means that scanner.nextLine() reached the end, we can exit
+                break;
             } catch (Exception e) {
                 out (-1, "", toErrorString (e));
             } finally {
-                reader.close();
+                if (reader != null)
+                    reader.close();
             }
             // Try to free as much memory as we can while idle
             System.gc();
         }
+        scanner.close();
     }
 
     static void exec (Element input)

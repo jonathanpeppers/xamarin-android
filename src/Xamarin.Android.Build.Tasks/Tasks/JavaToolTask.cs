@@ -110,10 +110,14 @@ namespace Xamarin.Android.Tasks
 					(int exitCode, string stdout, string stderr) = client.Invoke (MainClass, JarPath, GenerateCommandLineCommands ());
 					//TODO: these should probably be string[] so I don't have to string.Split
 					foreach (var line in stdout.Split ('\n')) {
-						LogEventsFromTextOutput (line, MessageImportance.Normal);
+						var text = line.Trim ();
+						if (!string.IsNullOrEmpty (text))
+							LogEventsFromTextOutput (text, MessageImportance.Normal);
 					}
 					foreach (var line in stderr.Split ('\n')) {
-						LogEventsFromTextOutput (line, MessageImportance.Normal);
+						var text = line.Trim ();
+						if (!string.IsNullOrEmpty (text))
+							LogEventsFromTextOutput (line, MessageImportance.Normal);
 					}
 					if (exitCode != 0) {
 						Log.LogError ($"{MainClass} exited with code: {exitCode}");
