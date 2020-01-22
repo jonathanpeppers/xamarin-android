@@ -93,6 +93,7 @@ Copyright (C) 2011-2012 Xamarin. All rights reserved.
 <UsingTask TaskName="Xamarin.Android.Tasks.RemoveDirFixed" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.RemoveRegisterAttribute" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.ResolveAssemblies" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
+<UsingTask TaskName="Xamarin.Android.Tasks.ResolveAssembliesNET5" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.ReadImportedLibrariesCache" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.ReadAndroidManifest" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
 <UsingTask TaskName="Xamarin.Android.Tasks.GetExtraPackages" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
@@ -316,6 +317,7 @@ Copyright (C) 2011-2012 Xamarin. All rights reserved.
 	<AndroidApkSigningAlgorithm Condition=" '$(AndroidApkSigningAlgorithm)' == '' ">SHA256withRSA</AndroidApkSigningAlgorithm>
 	<AndroidApkDigestAlgorithm  Condition=" '$(AndroidApkDigestAlgorithm)' == '' ">SHA-256</AndroidApkDigestAlgorithm>
 	<AndroidManifestMerger      Condition=" '$(AndroidManifestMerger)' == '' ">legacy</AndroidManifestMerger>
+	<_ResolveAssembliesMode     Condition=" '$(_ResolveAssembliesMode)' == '' ">legacy</_ResolveAssembliesMode>
 
 	<!-- Default Java heap size to 1GB (-Xmx1G) if not specified-->
 	<JavaMaximumHeapSize Condition=" '$(JavaMaximumHeapSize)' == '' ">1G</JavaMaximumHeapSize>
@@ -1688,32 +1690,8 @@ because xbuild doesn't support framework reference assemblies.
 			Condition="$(_ObsoleteAssemblies.Contains('OpenTK.dll'))" />
 </Target>
 
-<Target Name="_ResolveAssemblies">
-	<!--- Remove the ImplicitlyExpandDesignTimeFacades assemblies. We have already build the app there are not required for packaging  -->
-	<ItemGroup>
-		<FilteredAssemblies Include="$(OutDir)$(TargetFileName)"
-				Condition="Exists ('$(OutDir)$(TargetFileName)')" />
-		<FilteredAssemblies Include="@(ReferenceCopyLocalPaths)"
-				Condition="'%(ReferenceCopyLocalPaths.ResolvedFrom)' != 'ImplicitlyExpandDesignTimeFacades' And '%(ReferenceCopyLocalPaths.Extension)' == '.dll' And '%(ReferenceCopyLocalPaths.RelativeDir)' == '' And Exists('%(ReferenceCopyLocalPaths.Identity)') "/>
-		<FilteredAssemblies Include="@(_ReferencePath)"
-				Condition="'%(ReferencePath.ResolvedFrom)' != 'ImplicitlyExpandDesignTimeFacades' And Exists('%(_ReferencePath.Identity)') "/>
-	</ItemGroup>
-	<!-- Find all the assemblies this app requires -->
-	<ResolveAssemblies
-		Assemblies="@(FilteredAssemblies)"
-		I18nAssemblies="$(MandroidI18n)"
-		LinkMode="$(AndroidLinkMode)"
-		ProjectFile="$(MSBuildProjectFullPath)"
-		TargetFrameworkVersion="$(TargetFrameworkVersion)"
-		ProjectAssetFile="$(ProjectLockFile)"
-		TargetMoniker="$(NuGetTargetMoniker)"
-		ReferenceAssembliesDirectory="$(TargetFrameworkDirectory)">
-      <Output TaskParameter="ResolvedAssemblies" ItemName="ResolvedAssemblies" />
-      <Output TaskParameter="ResolvedUserAssemblies" ItemName="ResolvedUserAssemblies" />
-      <Output TaskParameter="ResolvedFrameworkAssemblies" ItemName="ResolvedFrameworkAssemblies" />
-      <Output TaskParameter="ResolvedSymbols" ItemName="ResolvedSymbols" />
-      <Output TaskParameter="ResolvedDoNotPackageAttributes" ItemName="_ResolvedDoNotPackageAttributes" />
-  </ResolveAssemblies>
+<Target Name="_ResolveAssemblies"
+    DependsOnTargets="_ResolveAssembliesLegacy;_ResolveAssembliesNET5">
   <Hash ItemsToHash="@(ResolvedAssemblies)">
     <Output TaskParameter="HashResult" PropertyName="_ResolvedUserAssembliesHash" />
   </Hash>
@@ -1726,6 +1704,69 @@ because xbuild doesn't support framework reference assemblies.
   <ItemGroup>
     <FileWrites Include="$(_ResolvedUserAssembliesHashFile)" />
   </ItemGroup>
+</Target>
+
+<Target Name="_ResolveAssembliesLegacy"
+    Condition=" '$(_ResolveAssembliesMode)' == 'legacy' ">
+  <ItemGroup>
+    <!--- Remove the ImplicitlyExpandDesignTimeFacades assemblies. We have already build the app there are not required for packaging  -->
+    <FilteredAssemblies
+        Include="$(OutDir)$(TargetFileName)"
+        Condition="Exists ('$(OutDir)$(TargetFileName)')"
+    />
+    <FilteredAssemblies
+        Include="@(ReferenceCopyLocalPaths)"
+        Condition="'%(ReferenceCopyLocalPaths.ResolvedFrom)' != 'ImplicitlyExpandDesignTimeFacades' And '%(ReferenceCopyLocalPaths.Extension)' == '.dll' And '%(ReferenceCopyLocalPaths.RelativeDir)' == '' And Exists('%(ReferenceCopyLocalPaths.Identity)') "
+    />
+    <FilteredAssemblies
+        Include="@(_ReferencePath)"
+        Condition="'%(ReferencePath.ResolvedFrom)' != 'ImplicitlyExpandDesignTimeFacades' And Exists('%(_ReferencePath.Identity)') "
+    />
+  </ItemGroup>
+  <ResolveAssemblies
+      Assemblies="@(FilteredAssemblies)"
+      I18nAssemblies="$(MandroidI18n)"
+      ProjectFile="$(MSBuildProjectFullPath)"
+      TargetFrameworkVersion="$(TargetFrameworkVersion)"
+      ProjectAssetFile="$(ProjectLockFile)"
+      TargetMoniker="$(NuGetTargetMoniker)"
+      ReferenceAssembliesDirectory="$(TargetFrameworkDirectory)">
+    <Output TaskParameter="ResolvedAssemblies" ItemName="ResolvedAssemblies" />
+    <Output TaskParameter="ResolvedUserAssemblies" ItemName="ResolvedUserAssemblies" />
+    <Output TaskParameter="ResolvedFrameworkAssemblies" ItemName="ResolvedFrameworkAssemblies" />
+    <Output TaskParameter="ResolvedSymbols" ItemName="ResolvedSymbols" />
+    <Output TaskParameter="ResolvedDoNotPackageAttributes" ItemName="_ResolvedDoNotPackageAttributes" />
+  </ResolveAssemblies>
+</Target>
+
+<Target Name="_ResolveAssembliesNET5"
+    Condition=" '$(_ResolveAssembliesMode)' == 'net5' ">
+  <ItemGroup>
+    <FilteredAssemblies
+        Include="$(OutDir)$(TargetFileName)"
+        Condition="Exists ('$(OutDir)$(TargetFileName)')"
+    />
+    <FilteredAssemblies
+        Include="@(_ReferencePath)"
+        Condition="Exists ('%(_ReferencePath.Identity)') "
+    />
+    <FilteredAssemblies
+        Include="@(_ReferenceDependencyPaths)"
+        Condition="Exists ('%(_ReferenceDependencyPaths.Identity)') "
+    />
+  </ItemGroup>
+  <ResolveAssembliesNET5
+        Assemblies="@(FilteredAssemblies)"
+        I18nAssemblies="$(MandroidI18n)"
+        ProjectFile="$(MSBuildProjectFullPath)"
+        TargetFrameworkVersion="$(TargetFrameworkVersion)"
+        ReferenceAssembliesDirectory="$(TargetFrameworkDirectory)">
+      <Output TaskParameter="ResolvedAssemblies" ItemName="ResolvedAssemblies" />
+      <Output TaskParameter="ResolvedUserAssemblies" ItemName="ResolvedUserAssemblies" />
+      <Output TaskParameter="ResolvedFrameworkAssemblies" ItemName="ResolvedFrameworkAssemblies" />
+      <Output TaskParameter="ResolvedSymbols" ItemName="ResolvedSymbols" />
+      <Output TaskParameter="ResolvedDoNotPackageAttributes" ItemName="_ResolvedDoNotPackageAttributes" />
+  </ResolveAssembliesNET5>
 </Target>
 
 <Target Name="_CreatePackageWorkspace">

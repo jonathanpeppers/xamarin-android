@@ -139,6 +139,7 @@
     <Compile Include="Tasks\AndroidUpdateResDir.cs" />
     <Compile Include="Tasks\AndroidSignPackage.cs" />
     <Compile Include="Tasks\RemoveDirFixed.cs" />
+    <Compile Include="Tasks\ResolveAssembliesNET5.cs" />
     <Compile Include="Tasks\ResolveJdkJvmPath.cs" />
     <Compile Include="Tasks\ResolveSdksTask.cs" />
     <Compile Include="Tasks\CompileToDalvik.cs" />
