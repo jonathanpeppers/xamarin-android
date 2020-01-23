@@ -1702,7 +1702,6 @@ because xbuild doesn't support framework reference assemblies.
 	<ResolveAssemblies
 		Assemblies="@(FilteredAssemblies)"
 		I18nAssemblies="$(MandroidI18n)"
-		LinkMode="$(AndroidLinkMode)"
 		ProjectFile="$(MSBuildProjectFullPath)"
 		TargetFrameworkVersion="$(TargetFrameworkVersion)"
 		ProjectAssetFile="$(ProjectLockFile)"

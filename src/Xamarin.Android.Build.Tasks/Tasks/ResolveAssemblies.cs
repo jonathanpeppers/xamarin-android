@@ -76,9 +76,19 @@ namespace Xamarin.Android.Tasks
 				LogDebugMessage ("{0}", s);
 			});
 
-			LockFile lockFile = null;
 			if (!string.IsNullOrEmpty (ProjectAssetFile) && File.Exists (ProjectAssetFile)) {
 				lockFile = LockFileUtilities.GetLockFile (ProjectAssetFile, logger);
+				if (!string.IsNullOrEmpty (TargetMoniker)) {
+					var framework = NuGetFramework.Parse (TargetMoniker);
+					if (framework != null) {
+						var target = lockFile.GetTarget (framework, string.Empty);
+						if (target == null) {
+							LogCodedWarning ("XA0118", $"Could not resolve target for '{TargetMoniker}'");
+						}
+					} else {
+						LogCodedWarning ("XA0118", $"Could not parse '{TargetMoniker}'");
+					}
+				}
 			}
 
 			try {
@@ -87,20 +97,20 @@ namespace Xamarin.Android.Tasks
 					string resolved_assembly = resolver.Resolve (assembly.ItemSpec);
 					bool refAssembly = !string.IsNullOrEmpty (assembly.GetMetadata ("NuGetPackageId")) && resolved_assembly.Contains ($"{Path.DirectorySeparatorChar}ref{Path.DirectorySeparatorChar}");
 					if (refAssembly || MonoAndroidHelper.IsReferenceAssembly (resolved_assembly)) {
+						LogDebugMessage ($"{resolved_assembly} is a reference assembly");
 						// Resolve "runtime" library
 						if (lockFile != null)
-							resolved_assembly = ResolveRuntimeAssemblyForReferenceAssembly (lockFile, assembly.ItemSpec);
+							resolved_assembly = ResolveRuntimeAssemblyForReferenceAssembly (assembly.ItemSpec);
 						if (lockFile == null || resolved_assembly == null) {
 							var file  = resolved_assembly ?? assembly.ItemSpec;
 							LogCodedWarning ("XA0107", file, 0, "Ignoring Reference Assembly `{0}`.", file);
 							continue;
 						}
 					}
-					LogDebugMessage ($"Adding {resolved_assembly} to topAssemblyReferences");
 					topAssemblyReferences.Add (resolved_assembly);
 					resolver.AddSearchDirectory (Path.GetDirectoryName (resolved_assembly));
 					var taskItem = new TaskItem (assembly) {
-						ItemSpec = Path.GetFullPath (resolved_assembly),
+						ItemSpec = resolved_assembly,
 					};
 					if (string.IsNullOrEmpty (taskItem.GetMetadata ("ReferenceAssembly"))) {
 						taskItem.SetMetadata ("ReferenceAssembly", taskItem.ItemSpec);
@@ -156,25 +166,17 @@ namespace Xamarin.Android.Tasks
 			ResolvedDoNotPackageAttributes = do_not_package_atts.ToArray ();
 		}
 
+		LockFile lockFile;
+		LockFileTarget target;
 		readonly List<string> do_not_package_atts = new List<string> ();
 		readonly Dictionary<string, int> api_levels = new Dictionary<string, int> ();
 		int indent = 2;
 
-		string ResolveRuntimeAssemblyForReferenceAssembly (LockFile lockFile, string assemblyPath)
+		string ResolveRuntimeAssemblyForReferenceAssembly (string assemblyPath)
 		{
-			if (string.IsNullOrEmpty(TargetMoniker)) 
+			if (lockFile == null || target == null)
 				return null;
 
-			var framework = NuGetFramework.Parse (TargetMoniker);
-			if (framework == null) {
-				LogCodedWarning ("XA0118", $"Could not parse '{TargetMoniker}'");
-				return null;
-			}
-			var target = lockFile.GetTarget (framework, string.Empty);
-			if (target == null) {
-				LogCodedWarning ("XA0118", $"Could not resolve target for '{TargetMoniker}'");
-				return null;
-			}
 			foreach (var folder in lockFile.PackageFolders) {
 				var path = assemblyPath.Replace (folder.Path, string.Empty);
 				if (path.StartsWith ($"{Path.DirectorySeparatorChar}"))
@@ -221,7 +223,7 @@ namespace Xamarin.Android.Tasks
 			indent += 2;
 
 			// Add this assembly
-			ITaskItem assemblyItem = null;
+			ITaskItem assemblyItem;
 			if (topLevel) {
 				if (assemblies.TryGetValue (assemblyName, out assemblyItem)) {
 					if (!string.IsNullOrEmpty (targetFrameworkIdentifier) && string.IsNullOrEmpty (assemblyItem.GetMetadata ("TargetFrameworkIdentifier"))) {
@@ -307,7 +309,6 @@ namespace Xamarin.Android.Tasks
 												var apiLevel = MonoAndroidHelper.SupportedVersions.GetApiLevelFromFrameworkVersion (version);
 												if (apiLevel != null) {
 													var assemblyName = reader.GetString (assembly.Name);
-													LogDebugMessage ("{0}={1}", assemblyName, apiLevel);
 													api_levels [assemblyName] = apiLevel.Value;
 												}
 											}
@@ -338,7 +339,6 @@ namespace Xamarin.Android.Tasks
 		void AddI18nAssemblies (MetadataResolver resolver, Dictionary<string, ITaskItem> assemblies)
 		{
 			var i18n = Linker.ParseI18nAssemblies (I18nAssemblies);
-			var link = ParseLinkMode (LinkMode);
 
 			// Check if we should add any I18N assemblies
 			if (i18n == Mono.Linker.I18nAssemblies.None)
@@ -370,13 +370,12 @@ namespace Xamarin.Android.Tasks
 
 		static ITaskItem CreateAssemblyTaskItem (string assembly, string targetFrameworkIdentifier = null)
 		{
-			var assemblyFullPath = Path.GetFullPath (assembly);
 			var dictionary = new Dictionary<string, string> (2) {
-				{ "ReferenceAssembly", assemblyFullPath },
+				{ "ReferenceAssembly", assembly },
 			};
 			if (!string.IsNullOrEmpty (targetFrameworkIdentifier))
 				dictionary.Add ("TargetFrameworkIdentifier", targetFrameworkIdentifier);
-			return new TaskItem (assemblyFullPath, dictionary);
+			return new TaskItem (assembly, dictionary);
 		}
 	}
 }
