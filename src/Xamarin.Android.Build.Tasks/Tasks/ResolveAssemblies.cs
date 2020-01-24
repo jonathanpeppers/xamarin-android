@@ -22,7 +22,7 @@ namespace Xamarin.Android.Tasks
 		public ITaskItem[] Assemblies { get; set; }
 
 		[Required]
-		public string ReferenceAssembliesDirectory { get; set; }
+		public string [] ReferenceAssembliesDirectories { get; set; }
 
 		[Required]
 		public string TargetFrameworkVersion { get; set; }
@@ -62,8 +62,9 @@ namespace Xamarin.Android.Tasks
 
 		void Execute (MetadataResolver resolver)
 		{
-			foreach (var dir in ReferenceAssembliesDirectory.Split (new char [] { ';' }, StringSplitOptions.RemoveEmptyEntries))
+			foreach (var dir in ReferenceAssembliesDirectories) {
 				resolver.AddSearchDirectory (dir);
+			}
 
 			var assemblies = new Dictionary<string, ITaskItem> (Assemblies.Length, StringComparer.Ordinal);
 			try {

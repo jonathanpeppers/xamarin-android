@@ -147,7 +147,7 @@ namespace Xamarin.Android.Tasks
 			};
 			var all_java_types = scanner.GetJavaTypes (assemblies, res);
 
-			WriteTypeMappings (all_java_types);
+			WriteTypeMappings (res, all_java_types);
 
 			var java_types = all_java_types
 				.Where (t => !JavaTypeScanner.ShouldSkipJavaCallableWrapperGeneration (t))
@@ -301,12 +301,12 @@ namespace Xamarin.Android.Tasks
 			MonoAndroidHelper.CopyIfStringChanged (template, Path.Combine (destDir, filename));
 		}
 
-		void WriteTypeMappings (List<TypeDefinition> types)
+		void WriteTypeMappings (DirectoryAssemblyResolver resolver, List<TypeDefinition> types)
 		{
 			void logger (TraceLevel level, string value) => Log.LogDebugMessage (value);
 			TypeNameMapGenerator createTypeMapGenerator () => UseSharedRuntime ?
 				new TypeNameMapGenerator (types, logger) :
-				new TypeNameMapGenerator (ResolvedAssemblies.Select (p => p.ItemSpec), logger);
+				new TypeNameMapGenerator (resolver, ResolvedAssemblies.Select (p => p.ItemSpec), logger);
 			using (var gen = createTypeMapGenerator ()) {
 				using (var ms = new MemoryStream ()) {
 					UpdateWhenChanged (Path.Combine (OutputDirectory, "typemap.jm"), "jm", ms, gen.WriteJavaToManaged);

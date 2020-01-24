@@ -40,6 +40,9 @@ namespace Xamarin.Android.Tasks
 		[Required]
 		public ITaskItem[] LinkDescriptions { get; set; }
 
+		[Required]
+		public string [] FrameworkDirectories { get; set; }
+
 		public string I18nAssemblies { get; set; }
 		public string LinkMode { get; set; }
 		public string LinkSkip { get; set; }
@@ -56,7 +59,7 @@ namespace Xamarin.Android.Tasks
 
 		public bool Deterministic { get; set; }
 
-		IEnumerable<AssemblyDefinition> GetRetainAssemblies (DirectoryAssemblyResolver res)
+		IEnumerable<AssemblyDefinition> GetRetainAssemblies (AssemblyResolver res)
 		{
 			List<AssemblyDefinition> retainList = null;
 			foreach (var assembly in ResolvedAssemblies) {
@@ -72,26 +75,30 @@ namespace Xamarin.Android.Tasks
 
 		public override bool RunTask ()
 		{
-			var rp = new ReaderParameters {
-				InMemory    = true,
-			};
-			using (var res = new DirectoryAssemblyResolver (this.CreateTaskLogger (), loadDebugSymbols: false, loadReaderParameters: rp)) {
-				return Execute (res);
+			using (var resolver = new AssemblyResolver ()) {
+				return Execute (resolver);
 			}
 		}
 
-		bool Execute (DirectoryAssemblyResolver res)
+		bool Execute (AssemblyResolver resolver)
 		{
+			var rp = new ReaderParameters {
+				InMemory = true,
+				ReadSymbols = false,
+				AssemblyResolver = resolver,
+			};
 			// Put every assembly we'll need in the resolver
 			foreach (var assembly in ResolvedAssemblies) {
-				res.Load (Path.GetFullPath (assembly.ItemSpec));
+				var path = Path.GetFullPath (assembly.ItemSpec);
+				resolver.CacheAssembly (AssemblyDefinition.ReadAssembly (path, rp));
 			}
-
-			var resolver = new AssemblyResolver (res.ToResolverCache ());
+			foreach (var dir in FrameworkDirectories) {
+				resolver.AddSearchDirectory (dir);
+			}
 
 			// Set up for linking
 			var options = new LinkerOptions ();
-			options.MainAssembly = res.GetAssembly (MainAssembly);
+			options.MainAssembly = resolver.GetAssembly (MainAssembly);
 			options.OutputDirectory = Path.GetFullPath (OutputDirectory);
 			options.LinkSdkOnly = string.Compare (LinkMode, "SdkOnly", true) == 0;
 			options.LinkNone = false;
@@ -99,7 +106,7 @@ namespace Xamarin.Android.Tasks
 			options.LinkDescriptions = LinkDescriptions.Select (item => Path.GetFullPath (item.ItemSpec)).ToArray ();
 			options.I18nAssemblies = Linker.ParseI18nAssemblies (I18nAssemblies);
 			if (!options.LinkSdkOnly)
-				options.RetainAssemblies = GetRetainAssemblies (res);
+				options.RetainAssemblies = GetRetainAssemblies (resolver);
 			options.DumpDependencies = DumpDependencies;
 			options.HttpClientHandlerType = HttpClientHandlerType;
 			options.TlsProvider = TlsProvider;
