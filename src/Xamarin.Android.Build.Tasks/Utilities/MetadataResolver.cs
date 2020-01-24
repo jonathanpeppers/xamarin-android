@@ -14,9 +14,11 @@ namespace Xamarin.Android.Tasks
 		readonly Dictionary<string, PEReader> cache = new Dictionary<string, PEReader> ();
 		readonly List<string> searchDirectories = new List<string> ();
 
-		public MetadataReader GetAssemblyReader (string assemblyName)
+		public MetadataReader GetAssemblyReader (string assemblyName) => GetAssemblyReader (assemblyName, out _);
+
+		public MetadataReader GetAssemblyReader (string assemblyName, out string assemblyPath)
 		{
-			var assemblyPath = Resolve (assemblyName);
+			assemblyPath = Resolve (assemblyName);
 			if (!cache.TryGetValue (assemblyPath, out PEReader reader)) {
 				cache.Add (assemblyPath, reader = new PEReader (File.OpenRead (assemblyPath)));
 			}
