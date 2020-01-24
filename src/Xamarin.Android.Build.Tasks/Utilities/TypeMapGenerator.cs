@@ -76,12 +76,7 @@ namespace Xamarin.Android.Tasks
 			typemapIndexMagicString = binaryEncoding.GetBytes (TypeMapIndexMagicString);
 		}
 
-		void LoggerShim (TraceLevel level, string message)
-		{
-			logger (message);
-		}
-
-		public bool Generate (DirectoryAssemblyResolver resolver, IEnumerable<string> assemblies, string outputDirectory, bool generateNativeAssembly)
+		public bool Generate (DirectoryAssemblyResolver resolver, IEnumerable<string> assemblies, List<TypeDefinition> javaTypes, string outputDirectory, bool generateNativeAssembly)
 		{
 			if (assemblies == null)
 				throw new ArgumentNullException (nameof (assemblies));
@@ -90,12 +85,6 @@ namespace Xamarin.Android.Tasks
 
 			if (!Directory.Exists (outputDirectory))
 				Directory.CreateDirectory (outputDirectory);
-
-			var scanner = new JavaTypeScanner (LoggerShim) {
-				ErrorOnCustomJavaObject = false
-			};
-
-			List<TypeDefinition> javaTypes = scanner.GetJavaTypes (assemblies, resolver);
 
 			int assemblyId = 0;
 			int maxJavaNameLength = 0;

@@ -23,21 +23,12 @@ namespace Xamarin.Android.Tasks
 {
 	using PackageNamingPolicyEnum   = PackageNamingPolicy;
 
-	public class GenerateJavaStubs : AndroidTask
+	public class GenerateJavaStubs : DirectoryAssemblyResolverTask
 	{
 		public override string TaskPrefix => "GJS";
 
 		[Required]
-		public ITaskItem[] ResolvedAssemblies { get; set; }
-
-		[Required]
-		public ITaskItem[] ResolvedUserAssemblies { get; set; }
-
-		[Required]
 		public string AcwMapFile { get; set; }
-
-		[Required]
-		public ITaskItem [] FrameworkDirectories { get; set; }
 
 		[Required]
 		public string [] SupportedAbis { get; set; }
@@ -63,24 +54,29 @@ namespace Xamarin.Android.Tasks
 
 		public bool UseSharedRuntime { get; set; }
 
-		public bool ErrorOnCustomJavaObject { get; set; }
-
 		public string BundledWearApplicationName { get; set; }
 
 		public string PackageNamingPolicy { get; set; }
 		
 		public string ApplicationJavaClass { get; set; }
 
-		internal const string AndroidSkipJavaStubGeneration = "AndroidSkipJavaStubGeneration";
+		public override bool Execute ()
+		{
+			try {
+				return base.Execute ();
+			} finally {
+				// NOTE: GenerateJavaStubs is currently the task running last during a build.
+				//       If that ever changes, we will need to move this call.
+				UnregisterAll ();
+			}
+		}
 
 		public override bool RunTask ()
 		{
 			try {
 				// We're going to do 3 steps here instead of separate tasks so
 				// we can share the list of JLO TypeDefinitions between them
-				using (var res = new DirectoryAssemblyResolver (this.CreateTaskLogger (), loadDebugSymbols: true)) {
-					Run (res);
-				}
+				Run ();
 			} catch (XamarinAndroidException e) {
 				Log.LogCodedError (string.Format ("XA{0:0000}", e.Code), e.MessageWithoutCode);
 				if (MonoAndroidHelper.LogInternalExceptions)
@@ -97,53 +93,15 @@ namespace Xamarin.Android.Tasks
 			return !Log.HasLoggedErrors;
 		}
 
-		void Run (DirectoryAssemblyResolver res)
+		void Run ()
 		{
+			DirectoryAssemblyResolver res = GetResolver ();
+
 			PackageNamingPolicy pnp;
 			JavaNativeTypeManager.PackageNamingPolicy = Enum.TryParse (PackageNamingPolicy, out pnp) ? pnp : PackageNamingPolicyEnum.LowercaseCrc64;
 
-			foreach (var dir in FrameworkDirectories) {
-				if (Directory.Exists (dir.ItemSpec))
-					res.SearchDirectories.Add (dir.ItemSpec);
-			}
-
-			// Put every assembly we'll need in the resolver
-			foreach (var assembly in ResolvedAssemblies) {
-				if (bool.TryParse (assembly.GetMetadata (AndroidSkipJavaStubGeneration), out bool value) && value) {
-					Log.LogDebugMessage ($"Skipping Java Stub Generation for {assembly.ItemSpec}");
-					continue;
-				}
-				res.Load (assembly.ItemSpec);
-			}
-
-			// However we only want to look for JLO types in user code
-			List<string> assemblies = new List<string> ();
-			foreach (var asm in ResolvedUserAssemblies) {
-				if (bool.TryParse (asm.GetMetadata (AndroidSkipJavaStubGeneration), out bool value) && value) {
-					Log.LogDebugMessage ($"Skipping Java Stub Generation for {asm.ItemSpec}");
-					continue;
-				}
-				if (!assemblies.All (x => Path.GetFileName (x) != Path.GetFileName (asm.ItemSpec)))
-					continue;
-				Log.LogDebugMessage ($"Adding {asm.ItemSpec} to assemblies.");
-				assemblies.Add (asm.ItemSpec);
-			}
-			foreach (var asm in MonoAndroidHelper.GetFrameworkAssembliesToTreatAsUserAssemblies (ResolvedAssemblies)) {
-				if (bool.TryParse (asm.GetMetadata (AndroidSkipJavaStubGeneration), out bool value) && value) {
-					Log.LogDebugMessage ($"Skipping Java Stub Generation for {asm.ItemSpec}");
-					continue;
-				}
-				if (!assemblies.All (x => Path.GetFileName (x) != Path.GetFileName (asm.ItemSpec)))
-					continue;
-				Log.LogDebugMessage ($"Adding {asm.ItemSpec} to assemblies.");
-				assemblies.Add (asm.ItemSpec);
-			}
-
 			// Step 1 - Find all the JLO types
-			var scanner = new JavaTypeScanner (this.CreateTaskLogger ()) {
-				ErrorOnCustomJavaObject     = ErrorOnCustomJavaObject,
-			};
-			var all_java_types = scanner.GetJavaTypes (assemblies, res);
+			var all_java_types = GetJavaTypes (res);
 
 			var java_types = all_java_types
 				.Where (t => !JavaTypeScanner.ShouldSkipJavaCallableWrapperGeneration (t))
@@ -237,7 +195,7 @@ namespace Xamarin.Android.Tasks
 			manifest.PackageName = PackageName;
 			manifest.ApplicationName = ApplicationName ?? PackageName;
 			manifest.Placeholders = ManifestPlaceholders;
-			manifest.Assemblies.AddRange (assemblies);
+			manifest.Assemblies.AddRange (Assemblies);
 			manifest.Resolver = res;
 			manifest.SdkDir = AndroidSdkDir;
 			manifest.SdkVersion = AndroidSdkPlatform;
