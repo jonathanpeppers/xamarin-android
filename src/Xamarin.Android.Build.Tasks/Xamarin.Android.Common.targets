@@ -1210,6 +1210,7 @@ because xbuild doesn't support framework reference assemblies.
 	</ItemGroup>
 	<MakeDir Directories="$(_AndroidStampDirectory)" Condition="!Exists('$(_AndroidStampDirectory)')" />
 	<WriteLinesToFile
+			Condition=" '$(SkipCompilerExecution)' != 'True' "
 			File="$(_AndroidBuildPropertiesCache)"
 			Lines="@(_PropertyCacheItems->ToLowerInvariant())"
 			Overwrite="true"
