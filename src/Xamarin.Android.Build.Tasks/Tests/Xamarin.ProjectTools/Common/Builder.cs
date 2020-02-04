@@ -39,6 +39,8 @@ namespace Xamarin.ProjectTools
 		}
 		public TimeSpan LastBuildTime { get; protected set; }
 		public string BuildLogFile { get; set; }
+
+		public string BinLogFile { get; set; } = "msbuild.binlog";
 		public bool ThrowOnBuildFailure { get; set; }
 		public bool RequiresMSBuild { get; set; }
 		/// <summary>
@@ -294,151 +296,155 @@ namespace Xamarin.ProjectTools
 			var start = DateTime.UtcNow;
 			var args  = new StringBuilder ();
 			var psi   = new ProcessStartInfo (XABuildExe);
-			var responseFile = Path.Combine (XABuildPaths.TestOutputDirectory, Path.GetDirectoryName (projectOrSolution), "project.rsp");
-			args.AppendFormat ("{0} /t:{1} {2}",
-					QuoteFileName (Path.Combine (XABuildPaths.TestOutputDirectory, projectOrSolution)), target, logger);
-			if (AutomaticNuGetRestore && restore) {
-				args.Append (" /restore");
-			}
-			args.Append ($" @\"{responseFile}\"");
-			using (var sw = new StreamWriter (responseFile, append: false, encoding: Encoding.UTF8)) {
-				sw.WriteLine ($" /p:BuildingInsideVisualStudio={BuildingInsideVisualStudio}");
-				if (BuildingInsideVisualStudio && RunningMSBuild) {
-					sw.WriteLine (" /p:BuildingOutOfProcess=true");
+			var responseFile = Path.GetTempFileName ();
+			try {
+				args.AppendFormat ("{0} /t:{1} {2}",
+						QuoteFileName (Path.Combine (XABuildPaths.TestOutputDirectory, projectOrSolution)), target, logger);
+				if (AutomaticNuGetRestore && restore) {
+					args.Append (" /restore");
 				}
-				string sdkPath = AndroidSdkResolver.GetAndroidSdkPath ();
-				if (Directory.Exists (sdkPath)) {
-					sw.WriteLine (" /p:AndroidSdkDirectory=\"{0}\" ", sdkPath);
-				}
-				string ndkPath = AndroidSdkResolver.GetAndroidNdkPath ();
-				if (Directory.Exists (ndkPath)) {
-					sw.WriteLine (" /p:AndroidNdkDirectory=\"{0}\" ", ndkPath);
-				}
-				if (parameters != null) {
-					foreach (var param in parameters) {
-						sw.WriteLine (" /p:{0}", param);
+				args.Append ($" @\"{responseFile}\"");
+				using (var sw = new StreamWriter (responseFile, append: false, encoding: Encoding.UTF8)) {
+					sw.WriteLine ($" /p:BuildingInsideVisualStudio={BuildingInsideVisualStudio}");
+					if (BuildingInsideVisualStudio && RunningMSBuild) {
+						sw.WriteLine (" /p:BuildingOutOfProcess=true");
 					}
-				}
-				var msbuildArgs = Environment.GetEnvironmentVariable ("NUNIT_MSBUILD_ARGS");
-				if (!string.IsNullOrEmpty (msbuildArgs)) {
-					sw.WriteLine (msbuildArgs);
-				}
-				if (RunningMSBuild) {
-					psi.EnvironmentVariables ["MSBUILD"] = "msbuild";
-					sw.WriteLine ($" /bl:\"{Path.GetFullPath (Path.Combine (XABuildPaths.TestOutputDirectory, Path.GetDirectoryName (projectOrSolution), "msbuild.binlog"))}\"");
-				}
-				if (environmentVariables != null) {
-					foreach (var kvp in environmentVariables) {
-						psi.EnvironmentVariables [kvp.Key] = kvp.Value;
+					string sdkPath = AndroidSdkResolver.GetAndroidSdkPath ();
+					if (Directory.Exists (sdkPath)) {
+						sw.WriteLine (" /p:AndroidSdkDirectory=\"{0}\" ", sdkPath);
 					}
-				}
-			}
-
-			//NOTE: commit messages can "accidentally" cause test failures
-			// Consider if you added an error message in a commit message, then wrote a test asserting the error no longer occurs.
-			// Both Jenkins and VSTS have an environment variable containing the full commit message, which will inexplicably cause your test to fail...
-			// For a Jenkins case, see https://github.com/xamarin/xamarin-android/pull/1049#issuecomment-347625456
-			// For a VSTS case, see http://build.devdiv.io/1806783
-			psi.EnvironmentVariables ["ghprbPullLongDescription"] =
-				psi.EnvironmentVariables ["BUILD_SOURCEVERSIONMESSAGE"] = "";
-
-			psi.Arguments = args.ToString ();
-			
-			psi.CreateNoWindow = true;
-			psi.UseShellExecute = false;
-			psi.RedirectStandardOutput = true;
-			psi.RedirectStandardError = true;
-			psi.StandardErrorEncoding = Encoding.UTF8;
-			psi.StandardOutputEncoding = Encoding.UTF8;
-
-			bool nativeCrashDetected = false;
-			bool result = false;
-			bool ranToCompletion = false;
-			int attempts = 1;
-			ManualResetEvent err = new ManualResetEvent (false);
-			ManualResetEvent stdout = new ManualResetEvent (false);
-			for (int attempt = 0; attempt < attempts; attempt++) {
-				if (processLog != null)
-					File.AppendAllText (processLog, psi.FileName + " " + args.ToString () + Environment.NewLine);
-				using (var p = new Process ()) {
-					p.ErrorDataReceived += (sender, e) => {
-						if (e.Data != null && !string.IsNullOrEmpty (processLog)) {
-							File.AppendAllText (processLog, e.Data + Environment.NewLine);
-							if (e.Data.StartsWith (SigSegvError, StringComparison.OrdinalIgnoreCase)) {
-								nativeCrashDetected = true;
-							}
-							if (e.Data.StartsWith (ConsoleLoggerError, StringComparison.OrdinalIgnoreCase)) {
-								nativeCrashDetected = true;
-							}
+					string ndkPath = AndroidSdkResolver.GetAndroidNdkPath ();
+					if (Directory.Exists (ndkPath)) {
+						sw.WriteLine (" /p:AndroidNdkDirectory=\"{0}\" ", ndkPath);
+					}
+					if (parameters != null) {
+						foreach (var param in parameters) {
+							sw.WriteLine (" /p:{0}", param);
 						}
-						if (e.Data == null)
-							err.Set ();
-					};
-					p.OutputDataReceived += (sender, e) => {
-						if (e.Data != null && !string.IsNullOrEmpty (processLog)) {
-							File.AppendAllText (processLog, e.Data + Environment.NewLine);
-							if (e.Data.StartsWith (SigSegvError, StringComparison.OrdinalIgnoreCase)) {
-								nativeCrashDetected = true;
-							}
-							if (e.Data.StartsWith (ConsoleLoggerError, StringComparison.OrdinalIgnoreCase)) {
-								nativeCrashDetected = true;
-							}
-						}
-						if (e.Data == null)
-							stdout.Set ();
-					};
-					p.StartInfo = psi;
-					p.Start ();
-					p.BeginOutputReadLine ();
-					p.BeginErrorReadLine ();
-					ranToCompletion = p.WaitForExit ((int)new TimeSpan (0, 15, 0).TotalMilliseconds);
-					if (psi.RedirectStandardOutput)
-						stdout.WaitOne ();
-					if (psi.RedirectStandardError)
-						err.WaitOne ();
-					result = ranToCompletion && p.ExitCode == 0;
-				}
-
-				LastBuildTime = DateTime.UtcNow - start;
-
-				if (processLog != null && !ranToCompletion)
-					File.AppendAllText (processLog, "Build Timed Out!");
-				if (buildLogFullPath != null && File.Exists (buildLogFullPath)) {
-					foreach (var line in LastBuildOutput) {
-						if (line.StartsWith ("Time Elapsed", StringComparison.OrdinalIgnoreCase)) {
-							var match = timeElapsedRegEx.Match (line);
-							if (match.Success) {
-								LastBuildTime = TimeSpan.Parse (match.Groups ["TimeSpan"].Value);
-								Console.WriteLine ($"Found Time Elapsed {LastBuildTime}");
-							}
+					}
+					var msbuildArgs = Environment.GetEnvironmentVariable ("NUNIT_MSBUILD_ARGS");
+					if (!string.IsNullOrEmpty (msbuildArgs)) {
+						sw.WriteLine (msbuildArgs);
+					}
+					if (RunningMSBuild) {
+						psi.EnvironmentVariables ["MSBUILD"] = "msbuild";
+						sw.WriteLine ($" /bl:\"{Path.GetFullPath (Path.Combine (XABuildPaths.TestOutputDirectory, Path.GetDirectoryName (projectOrSolution), BinLogFile))}\"");
+					}
+					if (environmentVariables != null) {
+						foreach (var kvp in environmentVariables) {
+							psi.EnvironmentVariables [kvp.Key] = kvp.Value;
 						}
 					}
 				}
 
-				if (nativeCrashDetected) {
-					Console.WriteLine ($"Native crash detected! Running the build for {projectOrSolution} again.");
-					if (attempt == 0)
-						File.Move (processLog, processLog + ".bak");
-					nativeCrashDetected = false;
-					continue;
-				} else {
-					break;
+				//NOTE: commit messages can "accidentally" cause test failures
+				// Consider if you added an error message in a commit message, then wrote a test asserting the error no longer occurs.
+				// Both Jenkins and VSTS have an environment variable containing the full commit message, which will inexplicably cause your test to fail...
+				// For a Jenkins case, see https://github.com/xamarin/xamarin-android/pull/1049#issuecomment-347625456
+				// For a VSTS case, see http://build.devdiv.io/1806783
+				psi.EnvironmentVariables ["ghprbPullLongDescription"] =
+					psi.EnvironmentVariables ["BUILD_SOURCEVERSIONMESSAGE"] = "";
+
+				psi.Arguments = args.ToString ();
+
+				psi.CreateNoWindow = true;
+				psi.UseShellExecute = false;
+				psi.RedirectStandardOutput = true;
+				psi.RedirectStandardError = true;
+				psi.StandardErrorEncoding = Encoding.UTF8;
+				psi.StandardOutputEncoding = Encoding.UTF8;
+
+				bool nativeCrashDetected = false;
+				bool result = false;
+				bool ranToCompletion = false;
+				int attempts = 1;
+				ManualResetEvent err = new ManualResetEvent (false);
+				ManualResetEvent stdout = new ManualResetEvent (false);
+				for (int attempt = 0; attempt < attempts; attempt++) {
+					if (processLog != null)
+						File.AppendAllText (processLog, psi.FileName + " " + args.ToString () + Environment.NewLine);
+					using (var p = new Process ()) {
+						p.ErrorDataReceived += (sender, e) => {
+							if (e.Data != null && !string.IsNullOrEmpty (processLog)) {
+								File.AppendAllText (processLog, e.Data + Environment.NewLine);
+								if (e.Data.StartsWith (SigSegvError, StringComparison.OrdinalIgnoreCase)) {
+									nativeCrashDetected = true;
+								}
+								if (e.Data.StartsWith (ConsoleLoggerError, StringComparison.OrdinalIgnoreCase)) {
+									nativeCrashDetected = true;
+								}
+							}
+							if (e.Data == null)
+								err.Set ();
+						};
+						p.OutputDataReceived += (sender, e) => {
+							if (e.Data != null && !string.IsNullOrEmpty (processLog)) {
+								File.AppendAllText (processLog, e.Data + Environment.NewLine);
+								if (e.Data.StartsWith (SigSegvError, StringComparison.OrdinalIgnoreCase)) {
+									nativeCrashDetected = true;
+								}
+								if (e.Data.StartsWith (ConsoleLoggerError, StringComparison.OrdinalIgnoreCase)) {
+									nativeCrashDetected = true;
+								}
+							}
+							if (e.Data == null)
+								stdout.Set ();
+						};
+						p.StartInfo = psi;
+						p.Start ();
+						p.BeginOutputReadLine ();
+						p.BeginErrorReadLine ();
+						ranToCompletion = p.WaitForExit ((int) new TimeSpan (0, 15, 0).TotalMilliseconds);
+						if (psi.RedirectStandardOutput)
+							stdout.WaitOne ();
+						if (psi.RedirectStandardError)
+							err.WaitOne ();
+						result = ranToCompletion && p.ExitCode == 0;
+					}
+
+					LastBuildTime = DateTime.UtcNow - start;
+
+					if (processLog != null && !ranToCompletion)
+						File.AppendAllText (processLog, "Build Timed Out!");
+					if (buildLogFullPath != null && File.Exists (buildLogFullPath)) {
+						foreach (var line in LastBuildOutput) {
+							if (line.StartsWith ("Time Elapsed", StringComparison.OrdinalIgnoreCase)) {
+								var match = timeElapsedRegEx.Match (line);
+								if (match.Success) {
+									LastBuildTime = TimeSpan.Parse (match.Groups ["TimeSpan"].Value);
+									Console.WriteLine ($"Found Time Elapsed {LastBuildTime}");
+								}
+							}
+						}
+					}
+
+					if (nativeCrashDetected) {
+						Console.WriteLine ($"Native crash detected! Running the build for {projectOrSolution} again.");
+						if (attempt == 0)
+							File.Move (processLog, processLog + ".bak");
+						nativeCrashDetected = false;
+						continue;
+					} else {
+						break;
+					}
 				}
-			}
 
 
-			if (buildLogFullPath != null && processLog != null) {
-				Directory.CreateDirectory (Path.GetDirectoryName (buildLogFullPath));
-				if (File.Exists (processLog))
-					File.AppendAllText (buildLogFullPath, File.ReadAllText (processLog));
-			}
-			if (!result && ThrowOnBuildFailure) {
-				string message = "Build failure: " + Path.GetFileName (projectOrSolution) + (BuildLogFile != null && File.Exists (buildLogFullPath) ? "Build log recorded at " + buildLogFullPath : null);
-				//NOTE: enormous logs will lock up IDE's UI. Build result files should be appended to the TestResult on failure.
-				throw new FailedBuildException (message);
-			}
+				if (buildLogFullPath != null && processLog != null) {
+					Directory.CreateDirectory (Path.GetDirectoryName (buildLogFullPath));
+					if (File.Exists (processLog))
+						File.AppendAllText (buildLogFullPath, File.ReadAllText (processLog));
+				}
+				if (!result && ThrowOnBuildFailure) {
+					string message = "Build failure: " + Path.GetFileName (projectOrSolution) + (BuildLogFile != null && File.Exists (buildLogFullPath) ? "Build log recorded at " + buildLogFullPath : null);
+					//NOTE: enormous logs will lock up IDE's UI. Build result files should be appended to the TestResult on failure.
+					throw new FailedBuildException (message);
+				}
 
-			return result;
+				return result;
+			} finally {
+				File.Delete (responseFile);
+			}
 		}
 
 		bool IsRunningInIDE {
