@@ -70,6 +70,75 @@ namespace Xamarin.Android.Build.Tests
 			}
 		}
 
+		[Test]
+		public void FixAbstractMethodsStep_NestedTypes ()
+		{
+			var path = Path.Combine (Path.GetFullPath (XABuildPaths.TestOutputDirectory), "temp", TestName);
+			var step = new FixAbstractMethodsStep ();
+			var pipeline = new Pipeline ();
+
+			Directory.CreateDirectory (path);
+
+			using (var context = new LinkContext (pipeline)) {
+
+				context.Resolver.AddSearchDirectory (path);
+
+				var myAssemblyPath = Path.Combine (path, "MyAssembly.dll");
+
+				using (var android = CreateFauxMonoAndroidAssembly ()) {
+					android.Write (Path.Combine (path, "Mono.Android.dll"));
+					CreateNestedInterface (myAssemblyPath, android);
+				}
+
+				using (var assm = context.Resolve (myAssemblyPath)) {
+					step.Process (context);
+
+					var impl = assm.MainModule.GetType ("MyNamespace.Nested/MyClass");
+					var method = impl.Methods.FirstOrDefault (m => m.Name == "MyImplementedMethod");
+					Assert.IsNotNull (method, "MyImplementedMethod should exist");
+					Assert.AreEqual (0, method.Body.Instructions.Count, "MyImplementedMethod should be an empty method");
+					method = impl.Methods.FirstOrDefault (m => m.Name == "MyMissingMethod");
+					Assert.IsNotNull (method, "MyMissingMethod should exist");
+					Assert.AreNotEqual (0, method.Body.Instructions.Count, "MyMissingMethod should *not* be an empty method");
+				}
+			}
+
+			Directory.Delete (path, true);
+		}
+
+		static void CreateNestedInterface (string assemblyPath, AssemblyDefinition android)
+		{
+			using (var assm = AssemblyDefinition.CreateAssembly (new AssemblyNameDefinition ("NestedIFaceTest", new Version ()), "NestedIFaceTest", ModuleKind.Dll)) {
+				var void_type = assm.MainModule.ImportReference (typeof (void));
+				var int_type = assm.MainModule.ImportReference (typeof (int));
+
+				// Create nested interface
+				var nested = new TypeDefinition ("MyNamespace", "Nested", TypeAttributes.Class);
+				var iface = new TypeDefinition (null, "IMyInterface", TypeAttributes.Interface);
+				iface.DeclaringType = nested;
+				nested.NestedTypes.Add (iface);
+
+				var impl_method = new MethodDefinition ("MyImplementedMethod", MethodAttributes.Abstract, void_type);
+				iface.Methods.Add (impl_method);
+				var missing_method = new MethodDefinition ("MyMissingMethod", MethodAttributes.Abstract, void_type);
+				iface.Methods.Add (missing_method);
+				assm.MainModule.Types.Add (nested);
+				assm.MainModule.Types.Add (iface);
+
+				// Create nested implementing class
+				var jlo = assm.MainModule.ImportReference (android.MainModule.GetType ("Java.Lang.Object"));
+				var impl = new TypeDefinition (null, "MyClass", TypeAttributes.Public, jlo);
+				impl.Interfaces.Add (new InterfaceImplementation (iface));
+				impl.DeclaringType = nested;
+				nested.NestedTypes.Add (impl);
+
+				impl.Methods.Add (new MethodDefinition (impl_method.Name, MethodAttributes.Public, void_type));
+
+				assm.MainModule.Types.Add (impl);
+				assm.Write (assemblyPath);
+			}
+		}
+
 		static AssemblyDefinition CreateFauxMonoAndroidAssembly ()
 		{
 			var assm = AssemblyDefinition.CreateAssembly (new AssemblyNameDefinition ("Mono.Android", new Version ()), "DimTest", ModuleKind.Dll);

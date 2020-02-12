@@ -158,7 +158,7 @@ namespace MonoDroid.Tuner
 			if (IsInOverrides (iMethod, tMethod))
 				return true;
 
-			if (iMethod.Name != tMethod.Name && (iMethod.DeclaringType == null || (iMethod.DeclaringType.DeclaringType == null ? (string.Format ("{0}.{1}", iface.FullName, iMethod.Name) != tMethod.Name) : (string.Format ("{0}.{1}.{2}", iMethod.DeclaringType.DeclaringType, iface.Name, iMethod.Name) != tMethod.Name))))
+			if (!HaveSameMethodName (iface, iMethod, tMethod))
 				return false;
 
 			if (!CompareTypes (iMethod.MethodReturnType.ReturnType, tMethod.MethodReturnType.ReturnType))
@@ -187,6 +187,20 @@ namespace MonoDroid.Tuner
 			}
 
 			return true;
+		}
+
+		bool HaveSameMethodName (TypeReference iface, MethodDefinition iMethod, MethodDefinition tMethod)
+		{
+			if (iMethod.Name == tMethod.Name)
+				return true;
+			if (tMethod.Name.IndexOf (".", StringComparison.Ordinal) == -1)
+				return false;
+			var declaringType = iMethod.DeclaringType?.DeclaringType;
+			if (declaringType == null) {
+				return $"{iface.FullName}.{iMethod.Name}" == tMethod.Name;
+			} else {
+				return $"{declaringType}.{iface.Name}.{iMethod.Name}" == tMethod.Name;
+			}
 		}
 
 		bool FixAbstractMethods (TypeDefinition type)
