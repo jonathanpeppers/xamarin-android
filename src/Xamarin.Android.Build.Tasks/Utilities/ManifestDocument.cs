@@ -86,6 +86,8 @@ namespace Xamarin.Android.Tasks {
 		public bool MultiDex { get; set; }
 		public bool NeedsInternet { get; set; }
 		public bool InstantRunEnabled { get; set; }
+		public bool TestOnlyApk { get; set; }
+
 		public string VersionCode {
 			get {
 				XAttribute attr = doc.Root.Attribute (androidNs + "versionCode");
@@ -364,6 +366,9 @@ namespace Xamarin.Android.Tasks {
 
 			var providerNames = AddMonoRuntimeProviders (app);
 
+			if (TestOnlyApk) {
+				manifest.SetAttributeValue (androidNs + "testOnly", "true");
+			}
 			if (Debug && !embed && InstantRunEnabled) {
 				if (int.TryParse (SdkVersion, out int apiLevel) && apiLevel >= 19)
 					app.Add (CreateMonoRuntimeProvider ("mono.android.ResourcePatcher", null, initOrder: --AppInitOrder));

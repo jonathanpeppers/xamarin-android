@@ -69,6 +69,8 @@ namespace Xamarin.Android.Tasks
 
 		public bool UseSharedRuntime { get; set; }
 
+		public bool TestOnlyApk { get; set; }
+
 		public bool ErrorOnCustomJavaObject { get; set; }
 
 		public string BundledWearApplicationName { get; set; }
@@ -264,6 +266,7 @@ namespace Xamarin.Android.Tasks
 			manifest.MultiDex = MultiDex;
 			manifest.NeedsInternet = NeedsInternet;
 			manifest.InstantRunEnabled = InstantRunEnabled;
+			manifest.TestOnlyApk = TestOnlyApk;
 
 			var additionalProviders = manifest.Merge (Log, allJavaTypes, ApplicationJavaClass, EmbedAssemblies, BundledWearApplicationName, MergedManifestDocuments);
 

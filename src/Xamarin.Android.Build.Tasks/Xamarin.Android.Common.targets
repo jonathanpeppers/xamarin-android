@@ -318,6 +318,8 @@ Copyright (C) 2011-2012 Xamarin. All rights reserved.
 	<AndroidApkSigningAlgorithm Condition=" '$(AndroidApkSigningAlgorithm)' == '' ">SHA256withRSA</AndroidApkSigningAlgorithm>
 	<AndroidApkDigestAlgorithm  Condition=" '$(AndroidApkDigestAlgorithm)' == '' ">SHA-256</AndroidApkDigestAlgorithm>
 	<AndroidManifestMerger      Condition=" '$(AndroidManifestMerger)' == '' ">legacy</AndroidManifestMerger>
+	<AndroidTestOnlyApk         Condition=" '$(AndroidTestOnlyApk)' == '' And '$(AndroidPackageFormat)' == 'apk' ">True</AndroidTestOnlyApk>
+	<AndroidTestOnlyApk         Condition=" '$(AndroidTestOnlyApk)' == '' And '$(AndroidPackageFormat)' != 'apk' ">False</AndroidTestOnlyApk>
 
 	<!-- Default Java heap size to 1GB (-Xmx1G) if not specified-->
 	<JavaMaximumHeapSize Condition=" '$(JavaMaximumHeapSize)' == '' ">1G</JavaMaximumHeapSize>
@@ -2079,6 +2081,7 @@ because xbuild doesn't support framework reference assemblies.
       MultiDex="$(AndroidEnableMultiDex)"
       NeedsInternet="$(AndroidNeedsInternetPermission)"
       InstantRunEnabled="$(_InstantRunEnabled)"
+      TestOnlyApk="$(AndroidTestOnlyApk)"
       AndroidSdkPlatform="$(_AndroidApiLevel)"
       AndroidSdkDir="$(_AndroidSdkDirectory)"
       PackageName="$(_AndroidPackage)"
@@ -2916,7 +2919,7 @@ because xbuild doesn't support framework reference assemblies.
 </Target>
 
 <Target Name="_CreateAndroidDebugSigningKey"
-		Condition="!Exists ('$(_ApkDebugKeyStore)') And '$(AndroidKeyStore)' != 'True' "
+		Condition=" '$(AndroidTestOnlyApk)' != 'True' And '$(AndroidKeyStore)' != 'True' And !Exists ('$(_ApkDebugKeyStore)') "
 		DependsOnTargets="$(_OnResolveMonoAndroidSdks)"
 	>
 	<AndroidCreateDebugKey
@@ -2933,34 +2936,20 @@ because xbuild doesn't support framework reference assemblies.
 	 />
 </Target>
 
-<Target Name="_ResolveAndroidSigningKey" DependsOnTargets="$(_OnResolveMonoAndroidSdks);_CreateAndroidDebugSigningKey">
-	<!-- would use a PropertyGroup here but xbuild doesn't support it -->
-	<CreateProperty Value="$(_ApkDebugKeyStore)" Condition="'$(AndroidKeyStore)'!='True'">
-		<Output TaskParameter="Value" PropertyName="_ApkKeyStore"/>
-	</CreateProperty>
-	<CreateProperty Value="android" Condition="'$(AndroidKeyStore)'!='True'">
-		<Output TaskParameter="Value" PropertyName="_ApkStorePass"/>
-	</CreateProperty>
-	<CreateProperty Value="androiddebugkey" Condition="'$(AndroidKeyStore)'!='True'">
-		<Output TaskParameter="Value" PropertyName="_ApkKeyAlias"/>
-	</CreateProperty>
-	<CreateProperty Value="android" Condition="'$(AndroidKeyStore)'!='True'">
-		<Output TaskParameter="Value" PropertyName="_ApkKeyPass"/>
-	</CreateProperty>
-	
-	<CreateProperty Value="$(AndroidSigningKeyStore)" Condition="'$(AndroidKeyStore)'=='True'">
-		<Output TaskParameter="Value" PropertyName="_ApkKeyStore"/>
-	</CreateProperty>
-	<CreateProperty Value="$(AndroidSigningStorePass)" Condition="'$(AndroidKeyStore)'=='True'">
-		<Output TaskParameter="Value" PropertyName="_ApkStorePass"/>
-	</CreateProperty>
-	<CreateProperty Value="$(AndroidSigningKeyAlias)" Condition="'$(AndroidKeyStore)'=='True'">
-		<Output TaskParameter="Value" PropertyName="_ApkKeyAlias"/>
-	</CreateProperty>
-	<CreateProperty Value="$(AndroidSigningKeyPass)" Condition="'$(AndroidKeyStore)'=='True'">
-		<Output TaskParameter="Value" PropertyName="_ApkKeyPass"/>
-	</CreateProperty>
-
+<Target Name="_ResolveAndroidSigningKey"
+		DependsOnTargets="$(_OnResolveMonoAndroidSdks);_CreateAndroidDebugSigningKey">
+	<PropertyGroup Condition=" '$(AndroidTestOnlyApk)' != 'True' And '$(AndroidKeyStore)' != 'True' ">
+		<_ApkKeyStore>$(_ApkDebugKeyStore)</_ApkKeyStore>
+		<_ApkStorePass>android</_ApkStorePass>
+		<_ApkKeyAlias>androiddebugkey</_ApkKeyAlias>
+		<_ApkKeyPass>android</_ApkKeyPass>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(AndroidKeyStore)' == 'True' ">
+		<_ApkKeyStore>$(AndroidSigningKeyStore)</_ApkKeyStore>
+		<_ApkStorePass>$(AndroidSigningStorePass)</_ApkStorePass>
+		<_ApkKeyAlias>$(AndroidSigningKeyAlias)</_ApkKeyAlias>
+		<_ApkKeyPass>$(AndroidSigningKeyPass)</_ApkKeyPass>
+	</PropertyGroup>
 	<Delete Files="$(_AndroidDebugKeyStoreFlag)" Condition="'$(AndroidKeyStore)'=='True'" />
 	<Touch Files="$(_AndroidDebugKeyStoreFlag)" AlwaysCreate="True" Condition="'$(AndroidKeyStore)'!='True'" />
 </Target>
@@ -3002,6 +2991,7 @@ because xbuild doesn't support framework reference assemblies.
 		<_JarSignerSuffix Condition=" '$(AndroidPackageFormat)' == 'aab' ">-Signed</_JarSignerSuffix>
 	</PropertyGroup>
 	<KeyTool
+		Condition=" '$(AndroidTestOnlyApk)' != 'True' And '$(AndroidKeyStore)' == '' "
 		KeyStore="$(_ApkKeyStore)"
 		KeyAlias="$(_ApkKeyAlias)"
 		KeyPass="$(_ApkKeyPass)"
@@ -3009,8 +2999,9 @@ because xbuild doesn't support framework reference assemblies.
 		ToolPath="$(KeytoolToolPath)"
 		ToolExe="$(KeytoolToolExe)"
 		Command="-list"
-		Condition="'$(AndroidKeyStore)'==''" />
-	<AndroidSignPackage Condition=" '$(AndroidUseApkSigner)' != 'true' "
+	/>
+	<AndroidSignPackage 
+		Condition=" '$(AndroidTestOnlyApk)' != 'True' And '$(AndroidUseApkSigner)' != 'True' "
 		UnsignedApk="%(ApkAbiFilesIntermediate.FullPath)"
 		SignedApkDirectory="$(OutDir)"
 		FileSuffix="$(_JarSignerSuffix)"
@@ -3040,7 +3031,8 @@ because xbuild doesn't support framework reference assemblies.
 		<ApkAbiFilesAligned Include="$(ApkFileSigned)" Condition="'$(AndroidUseApkSigner)' == 'true'" />
 		<ApkAbiFilesAligned Condition="'$(AndroidCreatePackagePerAbi)' == 'true' And '$(AndroidUseApkSigner)' == 'true' " Include="$(OutDir)$(_AndroidPackage)*-Signed.apk" />
 	</ItemGroup>
-	<AndroidApkSigner Condition=" '$(AndroidUseApkSigner)' == 'true' "
+	<AndroidApkSigner
+		Condition=" '$(AndroidTestOnlyApk)' != 'True' And '$(AndroidUseApkSigner)' == 'True' "
 		ApkSignerJar="$(ApkSignerJar)"
 		ApkToSign="%(ApkAbiFilesAligned.FullPath)"
 		KeyStore="$(_ApkKeyStore)"
@@ -3052,7 +3044,10 @@ because xbuild doesn't support framework reference assemblies.
 		ManifestFile="$(IntermediateOutputPath)android\AndroidManifest.xml"
 		AdditionalArguments="$(AndroidApkSignerAdditionalArguments)"
 	/>
-	<Message Text="Signed android package '%(ApkAbiFilesAligned.Identity)'" />
+	<Message
+		Condition=" '$(AndroidTestOnlyApk)' != 'True' "
+		Text="Signed android package '%(ApkAbiFilesAligned.Identity)'"
+	/>
 	<ItemGroup>
 		<ApkAbiFilesSigned Include="$(ApkFileSigned)" Condition="'$(AndroidUseApkSigner)' != 'true'" />
 		<ApkAbiFilesSigned Condition="'$(AndroidCreatePackagePerAbi)' == 'true' And '$(AndroidUseApkSigner)' != 'true'" Include="$(OutDir)$(_AndroidPackage)*-Signed.apk" />
@@ -3236,7 +3231,9 @@ because xbuild doesn't support framework reference assemblies.
 <Target Name="_DeployApk"
     Condition=" '$(AndroidPackageFormat)' != 'aab' ">
   <PropertyGroup>
-    <_DeployCommand>&quot;$(AdbToolPath)\adb&quot; $(AdbTarget) install -r &quot;$(ApkFileSigned)&quot;</_DeployCommand>
+    <_DeployFlags Condition=" '$(AndroidTestOnlyApk)' != 'True' ">-r</_DeployFlags>
+    <_DeployFlags Condition=" '$(AndroidTestOnlyApk)' == 'True' ">-t -r</_DeployFlags>
+    <_DeployCommand>&quot;$(AdbToolPath)\adb&quot; $(AdbTarget) install $(_DeployFlags) &quot;$(ApkFileSigned)&quot;</_DeployCommand>
   </PropertyGroup>
   <Exec
       ContinueOnError="True"
