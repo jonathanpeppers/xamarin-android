@@ -367,7 +367,7 @@ namespace Xamarin.Android.Tasks {
 			var providerNames = AddMonoRuntimeProviders (app);
 
 			if (TestOnlyApk) {
-				manifest.SetAttributeValue (androidNs + "testOnly", "true");
+				app.SetAttributeValue (androidNs + "testOnly", "true");
 			}
 			if (Debug && !embed && InstantRunEnabled) {
 				if (int.TryParse (SdkVersion, out int apiLevel) && apiLevel >= 19)
