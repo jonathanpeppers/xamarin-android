@@ -1157,20 +1157,13 @@ namespace UnamedProject
 			var proj = CreateMultiDexRequiredApplication ();
 			proj.UseLatestPlatformSdk = false;
 			proj.SetProperty ("AndroidEnableMultiDex", "True");
-			string intermediateDir = proj.IntermediateOutputPath;
-			if (IsWindows) {
-				proj.SetProperty ("AppendTargetFrameworkToIntermediateOutputPath", "True");
-			}
-
 			using (var b = CreateApkBuilder (Path.Combine ("temp", TestName), false, false)) {
 				proj.TargetFrameworkVersion = b.LatestTargetFrameworkVersion ();
-				if (IsWindows) {
-					intermediateDir = Path.Combine (intermediateDir, proj.TargetFrameworkAbbreviated);
-				}
 				Assert.IsTrue (b.Build (proj), "Build should have succeeded.");
-				Assert.IsTrue (File.Exists (Path.Combine (Root, b.ProjectDirectory, intermediateDir,  "android/bin/classes.dex")),
+				var intermediateDir = Path.Combine (Root, b.ProjectDirectory, proj.IntermediateOutputPath);
+				Assert.IsTrue (File.Exists (Path.Combine (intermediateDir, "android/bin/classes.dex")),
 					"multidex-ed classes.zip exists");
-				var multidexKeepPath  = Path.Combine (Root, b.ProjectDirectory, intermediateDir, "multidex.keep");
+				var multidexKeepPath  = Path.Combine (intermediateDir, "multidex.keep");
 				Assert.IsTrue (File.Exists (multidexKeepPath), "multidex.keep exists");
 				Assert.IsTrue (File.ReadAllLines (multidexKeepPath).Length > 1, "multidex.keep must contain more than one line.");
 				Assert.IsTrue (b.LastBuildOutput.ContainsText (Path.Combine (proj.TargetFrameworkVersion, "mono.android.jar")), proj.TargetFrameworkVersion + "/mono.android.jar should be used.");
@@ -2702,12 +2695,12 @@ AAMMAAABzYW1wbGUvSGVsbG8uY2xhc3NQSwUGAAAAAAMAAwC9AAAA1gEAAAAA") });
 				proj.MainActivity = proj.DefaultMainActivity.Replace ("clicks", "CLICKS");
 				proj.Touch ("MainActivity.cs");
 				Assert.IsTrue (b.Build (proj), "third build should have succeeded.");
-				Assert.IsTrue (b.Output.IsTargetSkipped ("_CleanIntermediateIfNuGetsChange"), "A build with no changes to NuGets should *not* trigger `_CleanIntermediateIfNuGetsChange`!");
+				Assert.IsTrue (b.Output.IsTargetSkipped ("_CleanIntermediateIfNeeded"), "A build with no changes to NuGets should *not* trigger `_CleanIntermediateIfNeeded`!");
 				FileAssert.Exists (build_props, "build.props should exist after third build.");
 			}
 		}
 
-		//This test validates the _CleanIntermediateIfNuGetsChange target
+		//This test validates the _CleanIntermediateIfNeeded target
 		[Test]
 		[NonParallelizable]
 		public void BuildAfterUpgradingNuget ()
@@ -2735,10 +2728,10 @@ AAMMAAABzYW1wbGUvSGVsbG8uY2xhc3NQSwUGAAAAAAMAAwC9AAAA1gEAAAAA") });
 				if (Directory.Exists (projectDir))
 					Directory.Delete (projectDir, true);
 				Assert.IsTrue (b.Build (proj), "first build should have succeeded.");
-				Assert.IsFalse (b.Output.IsTargetSkipped ("_CleanIntermediateIfNuGetsChange"), "`_CleanIntermediateIfNuGetsChange` should have run!");
+				Assert.IsFalse (b.Output.IsTargetSkipped ("_CleanIntermediateIfNeeded"), "`_CleanIntermediateIfNeeded` should have run!");
 
-				var nugetStamp = Path.Combine (Root, b.ProjectDirectory, proj.IntermediateOutputPath, "stamp", "_CleanIntermediateIfNuGetsChange.stamp");
-				FileAssert.Exists (nugetStamp, "`_CleanIntermediateIfNuGetsChange` did not create stamp file!");
+				var nugetStamp = Path.Combine (Root, b.ProjectDirectory, proj.IntermediateOutputPath, "stamp", "_CleanIntermediateIfNeeded.stamp");
+				FileAssert.Exists (nugetStamp, "`_CleanIntermediateIfNeeded` did not create stamp file!");
 				string build_props = b.Output.GetIntermediaryPath ("build.props");
 				FileAssert.Exists (build_props, "build.props should exist after first build.");
 
@@ -2747,15 +2740,15 @@ AAMMAAABzYW1wbGUvSGVsbG8uY2xhc3NQSwUGAAAAAAMAAwC9AAAA1gEAAAAA") });
 				proj.PackageReferences.Add (KnownPackages.XamarinForms_4_0_0_425677);
 				b.Save (proj, doNotCleanupOnUpdate: true);
 				Assert.IsTrue (b.Build (proj), "second build should have succeeded.");
-				Assert.IsFalse (b.Output.IsTargetSkipped ("_CleanIntermediateIfNuGetsChange"), "`_CleanIntermediateIfNuGetsChange` should have run!");
-				FileAssert.Exists (nugetStamp, "`_CleanIntermediateIfNuGetsChange` did not create stamp file!");
+				Assert.IsFalse (b.Output.IsTargetSkipped ("_CleanIntermediateIfNeeded"), "`_CleanIntermediateIfNeeded` should have run!");
+				FileAssert.Exists (nugetStamp, "`_CleanIntermediateIfNeeded` did not create stamp file!");
 				Assert.IsTrue (StringAssertEx.ContainsText (b.LastBuildOutput, "Refreshing Xamarin.Android.Support.v7.AppCompat.dll"), "`ResolveLibraryProjectImports` should not skip `Xamarin.Android.Support.v7.AppCompat.dll`!");
 				FileAssert.Exists (build_props, "build.props should exist after second build.");
 
 				proj.MainActivity = proj.MainActivity.Replace ("clicks", "CLICKS");
 				proj.Touch ("MainActivity.cs");
 				Assert.IsTrue (b.Build (proj), "third build should have succeeded.");
-				Assert.IsTrue (b.Output.IsTargetSkipped ("_CleanIntermediateIfNuGetsChange"), "A build with no changes to NuGets should *not* trigger `_CleanIntermediateIfNuGetsChange`!");
+				Assert.IsTrue (b.Output.IsTargetSkipped ("_CleanIntermediateIfNeeded"), "A build with no changes to NuGets should *not* trigger `_CleanIntermediateIfNeeded`!");
 				FileAssert.Exists (build_props, "build.props should exist after third build.");
 			}
 		}
@@ -3862,11 +3855,10 @@ AAAAAAAAAAAAPQAAAE1FVEEtSU5GL01BTklGRVNULk1GUEsBAhQAFAAICAgAJZFnS7uHtAn+AQAA
 				b.ThrowOnBuildFailure = false;
 				Assert.IsTrue (b.Build (proj), "Build should have succeeded.");
 				var targets = new [] {
-					"_CleanupOldStaticResources",
+					"_CleanIntermediateIfNeeded",
 					"_GeneratePackageManagerJava",
 					"_CompileJava",
 				};
-				Assert.IsTrue (b.Output.IsTargetSkipped (targets [0]), $"`{targets [0]}` should be skipped.");
 				var intermediate = Path.Combine (Root, b.ProjectDirectory, proj.IntermediateOutputPath);
 				var oldMonoPackageManager = Path.Combine (intermediate, "android", "src", "mono", "MonoPackageManager.java");
 				var seppuku = Path.Combine (intermediate, "android", "src", "mono", "android", "Seppuku.java");
@@ -3885,7 +3877,8 @@ public class ApplicationRegistration { }");
 				Directory.CreateDirectory (Path.GetDirectoryName (seppukuClass));
 				File.WriteAllText (oldMonoPackageManagerClass, "");
 				File.WriteAllText (seppukuClass, "");
-				Assert.IsTrue (b.Build (proj), "Build should have succeeded.");
+				// Change $(XamarinAndroidVersion) to trigger _CleanIntermediateIfNeeded
+				Assert.IsTrue (b.Build (proj, parameters: new [] { "XamarinAndroidVersion=99.99" }, doNotCleanupOnUpdate: true), "Build should have succeeded.");
 				foreach (var target in targets) {
 					Assert.IsFalse (b.Output.IsTargetSkipped (target), $"`{target}` should *not* be skipped.");
 				}

@@ -255,7 +255,6 @@
     <_MSBuildTargetsSrcFiles Include="$(MSBuildTargetsSrcDir)\Xamarin.Android.Common\ImportAfter\Microsoft.Cpp.Android.targets" />
     <_MSBuildTargetsSrcFiles Include="$(MSBuildTargetsSrcDir)\Xamarin.Android.Common.After.targets" />
     <_MSBuildTargetsSrcFiles Include="$(MSBuildTargetsSrcDir)\Xamarin.Android.Common.Before.targets" />
-    <_MSBuildTargetsSrcFiles Include="$(MSBuildTargetsSrcDir)\Xamarin.Android.DefaultOutputPaths.targets" />
   </ItemGroup>
   <ItemGroup>
     <_MSBuildFilesWin Include="$(MSBuildSrcDir)\libzip.dll" />

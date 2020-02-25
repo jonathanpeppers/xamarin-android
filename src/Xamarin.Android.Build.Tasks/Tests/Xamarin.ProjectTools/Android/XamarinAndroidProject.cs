@@ -40,15 +40,5 @@ namespace Xamarin.ProjectTools
 		public bool UseLatestPlatformSdk { get; set; }
 
 		public string TargetFrameworkVersion { get; set; }
-
-		/// <summary>
-		/// TargetFrameworkVersion=v8.1 -> 81
-		/// </summary>
-		public string TargetFrameworkAbbreviated => TargetFrameworkVersion?.TrimStart ('v').Replace (".", "");
-
-		/// <summary>
-		/// TargetFrameworkVersion=v8.1 -> MonoAndroid81
-		/// </summary>
-		public string TargetFrameworkMoniker => "MonoAndroid" + TargetFrameworkAbbreviated;
 	}
 }

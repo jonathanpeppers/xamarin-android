@@ -917,6 +917,7 @@ stages:
       inputs:
         artifactName: Test Results - Designer - macOS
         targetPath: $(Build.ArtifactStagingDirectory)/designer-binlogs
+      condition: always()
 
   # Check - "Xamarin.Android (Test Designer Windows)"
   - job: designer_integration_win
@@ -980,6 +981,7 @@ stages:
       inputs:
         artifactName: Test Results - Designer - Windows
         targetPath: $(Build.ArtifactStagingDirectory)/designer-binlogs
+      condition: always()
 
 - stage: integrated_regression_test
   displayName: Regression Tests
