@@ -5,6 +5,7 @@ using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
@@ -177,8 +178,7 @@ namespace Xamarin.Android.Tasks
 		{
 			CodeDomProvider provider = CodeDomProvider.CreateProvider (language);
 
-			string code = null;
-			using (var o = new StringWriter ()) {
+			using (var writer = MemoryStreamPool.Shared.CreateStreamWriter (Encoding.Default)) {
 				var options = new CodeGeneratorOptions () {
 					BracingStyle = "C",
 					IndentString = "\t",
@@ -202,21 +202,20 @@ namespace Xamarin.Android.Tasks
 				// Add Pragma to disable warnings about no Xml documentation
 				if (isCSharp) {
 					foreach (var alias in aliases)
-						provider.GenerateCodeFromStatement (new CodeSnippetStatement ($"extern alias {alias};"), o, options);
-					provider.GenerateCodeFromCompileUnit (new CodeSnippetCompileUnit ("#pragma warning disable 1591"), o, options);
+						provider.GenerateCodeFromStatement (new CodeSnippetStatement ($"extern alias {alias};"), writer, options);
+					provider.GenerateCodeFromCompileUnit (new CodeSnippetCompileUnit ("#pragma warning disable 1591"), writer, options);
 				}
 
-				provider.CreateGenerator (o).GenerateCodeFromCompileUnit (unit, o, options);
+				provider.CreateGenerator (writer).GenerateCodeFromCompileUnit (unit, writer, options);
 
 				// Add Pragma to re-enable warnings about no Xml documentation
 				if (isCSharp)
-					provider.GenerateCodeFromCompileUnit(new CodeSnippetCompileUnit("#pragma warning restore 1591"), o, options);
+					provider.GenerateCodeFromCompileUnit(new CodeSnippetCompileUnit("#pragma warning restore 1591"), writer, options);
 
-				code = o.ToString ();
-			}
-
-			if (MonoAndroidHelper.CopyIfStringChanged (code, file)) {
-				Log.LogDebugMessage ($"Writing to: {file}");
+				writer.Flush ();
+				if (MonoAndroidHelper.CopyIfStreamChanged (writer.BaseStream, file)) {
+					Log.LogDebugMessage ($"Writing to: {file}");
+				}
 			}
 		}
 

@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -102,9 +103,15 @@ namespace Xamarin.Android.Tools
 
 		public static bool CopyIfStringChanged (string contents, string destination)
 		{
-			//NOTE: this is not optimal since it allocates a byte[]. We can improve this down the road with Span<T> or System.Buffers.
-			var bytes = Encoding.UTF8.GetBytes (contents);
-			return CopyIfBytesChanged (bytes, destination);
+			var encoding = Encoding.UTF8;
+			var length = encoding.GetByteCount (contents);
+			var bytes = ArrayPool<byte>.Shared.Rent (length);
+			try {
+				encoding.GetBytes (contents, 0, length, bytes, 0);
+				return CopyIfBytesChanged (bytes, destination);
+			} finally {
+				ArrayPool<byte>.Shared.Return (bytes);
+			}
 		}
 
 		public static bool CopyIfBytesChanged (byte[] bytes, string destination)
