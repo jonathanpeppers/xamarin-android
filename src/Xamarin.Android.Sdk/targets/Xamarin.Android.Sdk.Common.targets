@@ -487,7 +487,8 @@ Copyright (C) 2011-2012 Xamarin. All rights reserved.
 	<AndroidCustomMetaDataForReferences Include="@(_AndroidAssemblySkipCases)" />
 </ItemGroup>
 	
-<Target Name="_AddAndroidCustomMetaData">
+<Target Name="_AddAndroidCustomMetaData"
+    DependsOnTargets="ImplicitlyExpandDesignTimeFacades">
   <AppendCustomMetadataToItemGroup
       Condition="'$(AndroidApplication)' != '' And $(AndroidApplication)"
       Inputs="@(ReferencePath)"
@@ -1636,10 +1637,10 @@ because xbuild doesn't support framework reference assemblies.
 	<ItemGroup>
 		<FilteredAssemblies Include="$(OutDir)$(TargetFileName)"
 				Condition="Exists ('$(OutDir)$(TargetFileName)')" />
-		<FilteredAssemblies Include="@(ReferenceCopyLocalPaths)"
-				Condition="'%(ReferenceCopyLocalPaths.ResolvedFrom)' != 'ImplicitlyExpandDesignTimeFacades' And '%(ReferenceCopyLocalPaths.Extension)' == '.dll' And '%(ReferenceCopyLocalPaths.RelativeDir)' == '' And Exists('%(ReferenceCopyLocalPaths.Identity)') "/>
 		<FilteredAssemblies Include="@(_ReferencePath)"
-				Condition="'%(ReferencePath.ResolvedFrom)' != 'ImplicitlyExpandDesignTimeFacades' And Exists('%(_ReferencePath.Identity)') "/>
+				Condition="Exists('%(_ReferencePath.Identity)') "/>
+		<FilteredAssemblies Include="@(_ReferenceDependencyPaths)"
+				Condition="Exists('%(_ReferenceDependencyPaths.Identity)')"/>
 	</ItemGroup>
 	<!-- Find all the assemblies this app requires -->
 	<ResolveAssemblies2

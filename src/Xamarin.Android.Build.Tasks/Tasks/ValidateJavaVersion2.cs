@@ -36,6 +36,7 @@ namespace Xamarin.Android.Tasks
 			if (!ValidateJava ())
 				return false;
 
+			MinimumRequiredJdkVersion = "1.7.0"; //TODO: this is hardcoded
 			Log.LogDebugMessage ($"{nameof (ValidateJavaVersion2)} Outputs:");
 			Log.LogDebugMessage ($"  {nameof (JdkVersion)}: {JdkVersion}");
 			Log.LogDebugMessage ($"  {nameof (MinimumRequiredJdkVersion)}: {MinimumRequiredJdkVersion}");

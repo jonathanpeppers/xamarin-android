@@ -263,9 +263,11 @@ namespace Xamarin.Android.Tasks
 					}
 					string message = $"Can not resolve reference: `{missingAssembly}`, referenced by {references}.";
 					if (MonoAndroidHelper.IsFrameworkAssembly (ex.FileName)) {
-						LogCodedError ("XA2002", $"{message} Perhaps it doesn't exist in the Mono for Android profile?");
+						//TODO: this was an error
+						LogCodedWarning ("XA2002", $"{message} Perhaps it doesn't exist in the Mono for Android profile?");
 					} else {
-						LogCodedError ("XA2002", $"{message} Please add a NuGet package or assembly reference for `{missingAssembly}`, or remove the reference to `{resolutionPath [0]}`.");
+						//TODO: this was an error
+						LogCodedWarning ("XA2002", $"{message} Please add a NuGet package or assembly reference for `{missingAssembly}`, or remove the reference to `{resolutionPath [0]}`.");
 					}
 					return;
 				}
