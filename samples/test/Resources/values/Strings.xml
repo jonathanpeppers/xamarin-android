@@ -1,0 +1,5 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="hello">Hello .NET 5, Click Me!</string>
+	<string name="app_name">Hello .NET 5</string>
+</resources>
