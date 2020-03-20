@@ -1,0 +1,5 @@
+<Project Sdk="Xamarin.Android.Sdk/0.0.1">
+  <PropertyGroup>
+    <TargetFramework>netcoreapp5.0</TargetFramework>
+  </PropertyGroup>
+</Project>
