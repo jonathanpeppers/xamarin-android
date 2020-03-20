@@ -1099,7 +1099,7 @@ namespace UnamedProject
 				FileAssert.Exists (dexFile);
 				var classes = new [] {
 					"Lmono/MonoRuntimeProvider;",
-					"Landroid/runtime/UncaughtExceptionHandler;",
+					"Landroid/runtime/JavaProxyThrowable;",
 					"Landroid/support/v7/widget/Toolbar;"
 				};
 				foreach (var className in classes) {
@@ -2331,6 +2331,9 @@ Mono.Unix.UnixFileInfo fileInfo = null;");
 			var proj = new XamarinAndroidApplicationProject () {
 				OtherBuildItems = {
 					aar,
+					new AndroidItem.AndroidAarLibrary ("fragment-1.2.2.aar") {
+						WebContent = "https://maven.google.com/androidx/fragment/fragment/1.2.2/fragment-1.2.2.aar"
+					}
 				},
 			};
 			proj.SetProperty ("AndroidUseAapt2", useAapt2.ToString ());
@@ -2344,8 +2347,8 @@ Mono.Unix.UnixFileInfo fileInfo = null;");
 				foreach (var s in File.ReadLines (assemblyMap)) {
 					assemblyIdentityMap.Add (s);
 				}
-				FileAssert.Exists (Path.Combine (Root, builder.ProjectDirectory, proj.IntermediateOutputPath, "lp",
-					assemblyIdentityMap.IndexOf ("android-crop-1.0.1").ToString (), "jl", "classes.jar"),
+				var libraryProjects = Path.Combine (Root, builder.ProjectDirectory, proj.IntermediateOutputPath, "lp");
+				FileAssert.Exists (Path.Combine (libraryProjects, assemblyIdentityMap.IndexOf ("android-crop-1.0.1").ToString (), "jl", "classes.jar"),
 					"classes.jar was not extracted from the aar.");
 				Assert.IsTrue (builder.Build (proj), "Build should have succeeded");
 				Assert.IsTrue (builder.Output.IsTargetSkipped ("_ResolveLibraryProjectImports"),
@@ -2365,13 +2368,15 @@ Mono.Unix.UnixFileInfo fileInfo = null;");
 
 				//NOTE: the designer requires the paths to be full paths
 				foreach (var paths in doc.Elements ("Paths")) {
-					foreach (var element in paths.Elements ()) {
+					foreach (var element in paths.Elements ("Path")) {
 						var path = element.Value;
 						if (!string.IsNullOrEmpty (path)) {
 							Assert.IsTrue (path == Path.GetFullPath (path), $"`{path}` is not a full path!");
 						}
 					}
 				}
+				Assert.IsFalse (Directory.EnumerateFiles (libraryProjects, "lint.jar", SearchOption.AllDirectories).Any (),
+					"`lint.jar` should not be extracted!");
 			}
 		}
 
@@ -3161,7 +3166,7 @@ AAMMAAABzYW1wbGUvSGVsbG8uY2xhc3NQSwUGAAAAAAMAAwC9AAAA1gEAAAAA") });
 					$"_AndroidApiLevel=27",
 				}), "Build should have failed");
 				Assert.IsTrue (builder.LastBuildOutput.ContainsText ("error XA5207:"), "XA5207 should have been raised.");
-				Assert.IsTrue (builder.LastBuildOutput.ContainsText ("Could not find android.jar for API Level 27"), "XA5207 should have had a good error message.");
+				Assert.IsTrue (builder.LastBuildOutput.ContainsText ("Could not find android.jar for API level 27"), "XA5207 should have had a good error message.");
 			}
 			Directory.Delete (AndroidSdkDirectory, recursive: true);
 		}
@@ -4148,6 +4153,28 @@ namespace UnnamedProject
 						Assert.IsTrue (zip.ContainsEntry (expected, caseSensitive: true), $"{expected} should exist in {archive}");
 					}
 				}
+			}
+		}
+
+		[Test]
+		public void XA4310 ([Values ("apk", "aab")] string packageFormat)
+		{
+			var proj = new XamarinAndroidApplicationProject ();
+			proj.SetProperty ("AndroidKeyStore", "true");
+			proj.SetProperty ("AndroidSigningKeyStore", "DoesNotExist");
+			proj.SetProperty ("AndroidSigningStorePass", "android");
+			proj.SetProperty ("AndroidSigningKeyAlias", "mykey");
+			proj.SetProperty ("AndroidSigningKeyPass", "android");
+			proj.SetProperty ("AndroidPackageFormat", packageFormat);
+			using (var builder = CreateApkBuilder ()) {
+				builder.ThrowOnBuildFailure = false;
+				builder.Target = "SignAndroidPackage";
+				Assert.IsFalse (builder.Build (proj), "Build should have failed with XA4310.");
+
+				StringAssertEx.Contains ("error XA4310", builder.LastBuildOutput, "Error should be XA4310");
+				StringAssertEx.Contains ("`DoesNotExist`", builder.LastBuildOutput, "Error should include the name of the nonexistent file");
+				StringAssertEx.Contains ("0 Warning(s)", builder.LastBuildOutput, "Should have no MSBuild warnings.");
+
 			}
 		}
 	}

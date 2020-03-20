@@ -14,7 +14,8 @@
     <OutputPath>$(XAInstallPrefix)xbuild\Xamarin\Android\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <DefineConstants>$(DefineConstants);TRACE;HAVE_CECIL;MSBUILD;ANDROID_24</DefineConstants>
-    <AndroidGeneratedClassDirectory Condition=" '$(AndroidGeneratedClassDirectory)' == '' ">..\..\src\Mono.Android\obj\$(Configuration)\android-$(AndroidLatestStableApiLevel)\mcw</AndroidGeneratedClassDirectory>
+    <AndroidGeneratedClassDirectory Condition=" '$(AndroidGeneratedClassDirectory)' == '' ">..\..\src\Mono.Android\obj\$(Configuration)\monoandroid10\android-$(AndroidLatestStableApiLevel)\mcw</AndroidGeneratedClassDirectory>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -170,6 +171,21 @@
     </Compile>
     <Compile Include="$(LinkerSourceFullPath)\linker\Linker.Steps\PreserveDependencyLookupStep.cs">
       <Link>Linker\Linker.Steps\PreserveDependencyLookupStep.cs</Link>
+    </Compile>
+    <Compile Include="$(LinkerSourceFullPath)\linker\Linker.Steps\BodySubstituterStep.cs">
+      <Link>Linker\Linker.Steps\BodySubstituterStep.cs</Link>
+    </Compile>
+    <Compile Include="$(LinkerSourceFullPath)\linker\Linker\IDependencyRecorder.cs">
+      <Link>Linker\Linker\IDependencyRecorder.cs</Link>
+    </Compile>
+    <Compile Include="$(LinkerSourceFullPath)\linker\Linker\IReflectionPatternRecorder.cs">
+      <Link>Linker\Linker\IReflectionPatternRecorder.cs</Link>
+    </Compile>
+    <Compile Include="$(LinkerSourceFullPath)\linker\Linker\LoggingReflectionPatternRecorder.cs">
+      <Link>Linker\Linker\LoggingReflectionPatternRecorder.cs</Link>
+    </Compile>
+    <Compile Include="$(LinkerSourceFullPath)\linker\Linker\XmlDependencyRecorder.cs">
+      <Link>Linker\Linker\XmlDependencyRecorder.cs</Link>
     </Compile>
     <Compile Include="$(LinkerSourceFullPath)\linker\Linker\LoadException.cs">
       <Link>Linker\Linker\LoadException.cs</Link>
@@ -398,9 +414,7 @@
       Mono.Android.csproj needs to be built first because this project
       references files *generated* and contained within the Mono.Android project.
       -->
-    <ProjectReference Include="..\..\src\Mono.Android\Mono.Android.csproj">
-      <ReferenceOutputAssembly>False</ReferenceOutputAssembly>
-    </ProjectReference>
+    <ProjectReference Include="..\..\src\Mono.Android\Mono.Android.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" />
     <!--
       Xamarin.Android.Tools.BootstrapTasks needs to be built first because
       Xamarin.Android.Build.Tasks.targets uses several tasks located in

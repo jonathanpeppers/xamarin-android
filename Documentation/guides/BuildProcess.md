@@ -685,6 +685,21 @@ when packaging Release applications.
 
   [manifest-merger]: https://developer.android.com/studio/build/manifest-merge
 
+- **AndroidManifestPlaceholders** &ndash; A semicolon-separated list of
+  key-value replacement pairs for *AndroidManifest.xml*, where each pair
+  has the format `key=value`.
+
+  For example, a property value of `assemblyName=$(AssemblyName)`
+  defines an `${assemblyName}` placeholder that can then appear in
+  *AndroidManifest.xml*:
+
+  ```xml
+  <application android:label="${assemblyName}"
+  ```
+
+  This provides a way to insert variables from the build process into
+  the *AndroidManifest.xml* file.
+
 - **AndroidMultiDexClassListExtraArgs** &ndash; A string property
   which allows developers to pass additional arguments to the
   `com.android.multidex.MainDexListBuilder` when generating the
@@ -1146,18 +1161,8 @@ resources.
 
   Added in Xamarin.Android 9.1.
 
-- **AndroidExplicitCrunch** &ndash; If you are building an app with a
-  very large number of local drawables, an initial build (or rebuild)
-  can take minutes to complete. To speed up the build process, try
-  including this property and setting it to `True`. When this
-  property is set, the build process pre-crunches the .png files.
-
-  Note: This option is not compatible with the `$(AndroidUseAapt2)`
-  option. If `$(AndroidUseAapt2)` is enabled, this functionality
-  will be disabled. If you wish to continue to use this feature
-  please set `$(AndroidUseAapt2)` to `False`.
-
-  **Experimental**. Added in Xamarin.Android 7.0.
+- **AndroidExplicitCrunch** &ndash; No longer supported in
+  Xamarin.Android 10.4.
 
 - **AndroidResgenExtraArgs** &ndash; Specifies additional
   command-line options to pass to the **aapt** command when

@@ -314,7 +314,6 @@ namespace Xamarin.Android.Tasks {
 
 						IEnumerable <MethodDefinition> constructors = t.Methods.Where (m => m.IsConstructor).Cast<MethodDefinition> ();
 						if (!constructors.Any (c => !c.HasParameters && c.IsPublic)) {
-							string message = $"The type '{t.FullName}' must provide a public default constructor";
 							SequencePoint sourceLocation = FindSource (constructors);
 
 							if (sourceLocation != null && sourceLocation.Document?.Url != null) {
@@ -327,9 +326,10 @@ namespace Xamarin.Android.Tasks {
 									columnNumber:     sourceLocation.StartColumn,
 									endLineNumber:    sourceLocation.EndLine,
 									endColumnNumber:  sourceLocation.EndColumn,
-									message:          message);
+									message:          Properties.Resources.XA4213,
+									t.FullName);
 							} else
-								log.LogCodedError ("XA4213", message);
+								log.LogCodedError ("XA4213", Properties.Resources.XA4213, t.FullName);
 							continue;
 						}
 						app.Add (fromCode);
@@ -411,7 +411,7 @@ namespace Xamarin.Android.Tasks {
 					try {
 						MergeLibraryManifest (mergedManifest);
 					} catch (Exception ex) {
-						log.LogCodedWarning ("XA4302", "Unhandled exception merging `AndroidManifest.xml`: {0}", ex);
+						log.LogCodedWarning ("XA4302", Properties.Resources.XA4302, ex);
 					}
 				}
 			}
@@ -893,24 +893,24 @@ namespace Xamarin.Android.Tasks {
 		}
 
 		public void Save (TaskLoggingHelper log, string filename) =>
-			Save (m => log.LogWarning (m), filename);
+			Save ((c, m) => log.LogCodedWarning (c, m), filename);
 
-		public void Save (Action<string> logWarning, string filename)
+		public void Save (Action<string, string> logCodedWarning, string filename)
 		{
 			using (var file = new StreamWriter (filename, append: false, encoding: MonoAndroidHelper.UTF8withoutBOM))
-				Save (logWarning, file);
+				Save (logCodedWarning, file);
 		}
 
 		public void Save (TaskLoggingHelper log, Stream stream) =>
-			Save (m => log.LogWarning (m), stream);
+			Save ((c, m) => log.LogCodedWarning (c, m), stream);
 
-		public void Save (Action<string> logWarning, Stream stream)
+		public void Save (Action<string, string> logCodedWarning, Stream stream)
 		{
 			using (var file = new StreamWriter (stream, MonoAndroidHelper.UTF8withoutBOM, bufferSize: 1024, leaveOpen: true))
-				Save (logWarning, file);
+				Save (logCodedWarning, file);
 		}
 
-		public void Save (Action<string> logWarning, TextWriter stream)
+		public void Save (Action<string, string> logCodedWarning, TextWriter stream)
 		{
 			RemoveDuplicateElements ();
 			string s;
@@ -930,7 +930,7 @@ namespace Xamarin.Android.Tasks {
 					if (entry.Length == 2)
 						s = s.Replace ("${" + entry [0] + "}", entry [1]);
 					else
-						logWarning ("Invalid application placeholders (AndroidApplicationPlaceholders) value. Use 'key1=value1;key2=value2, ...' format. The specified value was: " + Placeholders);
+						logCodedWarning ("XA1010", string.Format (Properties.Resources.XA1010, string.Join (";", Placeholders)));
 				}
 			stream.Write (s);
 		}
@@ -983,12 +983,12 @@ namespace Xamarin.Android.Tasks {
 			int code;
 			error = errorCode = string.Empty;
 			if (!int.TryParse (VersionCode, out code)) {
-				error = $"VersionCode {VersionCode} is invalid. It must be an integer value.";
+				error = string.Format (Properties.Resources.XA0003, VersionCode);
 				errorCode = "XA0003";
 				return false;
 			}
 			if (code > maxVersionCode || code < 0) {
-				error = $"VersionCode {code} is outside 0, {maxVersionCode} interval";
+				error = string.Format (Properties.Resources.XA0004, code, maxVersionCode);
 				errorCode = "XA0004";
 				return false;
 			}

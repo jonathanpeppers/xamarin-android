@@ -39,19 +39,19 @@ ms.date: 01/24/2020
 + [XA0000](xa0000.md): Could not determine $(AndroidApiLevel) or $(TargetFrameworkVersion).
 + [XA0001](xa0001.md): Invalid or unsupported `$(TargetFrameworkVersion)` value.
 + [XA0002](xa0002.md): Could not find mono.android.jar
-+ [XA0003](xa0003.md): Invalid `android:versionCode` value. It must be an integer value.
-+ [XA0004](xa0004.md): VersionCode {code} is outside 0, {maxVersionCode} interval.
-+ [XA0030](xa0030.md): Building with JDK Version `{versionNumber}` is not supported.
-+ [XA0031](xa0031.md): Java SDK {requiredJavaForFrameworkVersion} or above is required when targeting FrameworkVersion {targetFrameworkVersion}.
-+ [XA0032](xa0032.md): Java SDK {requiredJavaForBuildTools} or above is required when using build-tools {buildToolsVersion}.
-+ [XA0033](xa0033.md): Failed to get the Java SDK version as it does not appear to contain a valid version number.
++ [XA0003](xa0003.md): Invalid \`android:versionCode\` value \`{code}\` in \`AndroidManifest.xml\`. It must be an integer value.
++ [XA0004](xa0004.md): Invalid \`android:versionCode\` value \`{code}\` in \`AndroidManifest.xml\`. The value must be in the range of 0 to {maxVersionCode}.
++ [XA0030](xa0030.md): Building with JDK version `{versionNumber}` is not supported.
++ [XA0031](xa0031.md): Java SDK {requiredJavaForFrameworkVersion} or above is required when when using $(TargetFrameworkVersion) {targetFrameworkVersion}.
++ [XA0032](xa0032.md): Java SDK {requiredJavaForBuildTools} or above is required when using Android SDK Build-Tools {buildToolsVersion}.
++ [XA0033](xa0033.md): Failed to get the Java SDK version because the returned value does not appear to contain a valid version number.
 + [XA0034](xa0034.md): Failed to get the Java SDK version.
 + XA0100: EmbeddedNativeLibrary is invalid in Android Application projects. Please use AndroidNativeLibrary instead.
 + [XA0101](xa0101.md): warning XA0101: @(Content) build action is not supported.
 + [XA0102](xa0102.md): Generic `lint` Warning.
 + [XA0103](xa0103.md): Generic `lint` Error.
 + XA0104: Invalid value for \`$(AndroidSequencePointsMode)\`
-+ [XA0105](xa0105.md): The $(TargetFrameworkVersion) for a dll is greater than the $(TargetFrameworkVersion) for your project.
++ [XA0105](xa0105.md): The $(TargetFrameworkVersion) for a library is greater than the $(TargetFrameworkVersion) for the application project.
 + [XA0107](xa0107.md): `{Assmebly}` is a Reference Assembly.
 + [XA0108](xa0108.md): Could not get version from `lint`.
 + [XA0109](xa0109.md): Unsupported or invalid `$(TargetFrameworkVersion)` value of 'v4.5'.
@@ -65,11 +65,13 @@ ms.date: 01/24/2020
 + [XA0117](xa0117.md): The TargetFrameworkVersion {TargetFrameworkVersion} is deprecated. Please update it to be v4.4 or higher.
 + [XA0118](xa0118.md): Could not parse '{TargetMoniker}'
 + [XA0119](xa0119.md): A non-ideal configuration was found in the project.
++ [XA0120](xa0120.md): Failed to use SHA1 hash algorithm
 + [XA0121](xa0121.md): Assembly '{assembly}' is using '[assembly: Java.Interop.JavaLibraryReferenceAttribute]', which is no longer supported. Use a newer version of this NuGet package or notify the library author.
++ [XA0122](xa0122.md): Assembly '{assembly}' is using a deprecated attribute '[assembly: Java.Interop.DoNotPackageAttribute]'. Use a newer version of this NuGet package or notify the library author.
 
 ## XA1xxx: Project related
 
-+ [XA1000](xa1000.md): There was an problem parsing {file}. This is likely due to incomplete or invalid xml.
++ [XA1000](xa1000.md): There was a problem parsing {file}. This is likely due to incomplete or invalid XML.
 + [XA1001](xa1001.md): AndroidResgen: Warning while updating Resource XML '{filename}': {Message}
 + [XA1002](xa1002.md): The closest match found for '{customViewName}' is '{customViewLookupName}', but the capitalization does not match. Please correct the capitalization.
 + [XA1003](xa1003.md): '{zip}' does not exist. Please rebuild the project.
@@ -79,9 +81,13 @@ ms.date: 01/24/2020
 + [XA1007](xa1007.md): The minSdkVersion ({minSdk}) is greater than targetSdkVersion. Please change the value such that minSdkVersion is less than or equal to targetSdkVersion ({targetSdk}).
 + [XA1008](xa1008.md): The TargetFrameworkVersion (Android API level {compileSdk}) is lower than the targetSdkVersion ({targetSdk}).
 + [XA1009](xa1009.md): The {assembly} is Obsolete. Please upgrade to {assembly} {version}
++ [XA1010](xa1010.md): Invalid \`$(AndroidManifestPlaceholders)\` value for Android manifest placeholders. Please use \`key1=value1;key2=value2\` format. The specified value was: `{placeholders}`
 
 ## XA2xxx: Linker
 
++ [XA2000](xa2000.md): Use of AppDomain.CreateDomain() detected in assembly: {assembly}. .NET 5 will only support a single AppDomain, so this API will no longer be available in Xamarin.Android once .NET 5 is released.
++ [XA2001](xa2001.md): Source file '{filename}' could not be found.
++ [XA2002](xa2002.md): Can not resolve reference: \`{missing}\`, referenced by {assembly}. Perhaps it doesn't exist in the Mono for Android profile?
 + XA2006: Could not resolve reference to '{member}' (defined in assembly '{assembly}') with scope '{scope}'. When the scope is different from the defining assembly, it usually means that the type is forwarded.
 
 ## XA3xxx: Unmanaged code compilation
@@ -99,13 +105,15 @@ ms.date: 01/24/2020
 + XA4209: Failed to generate Java type for class: {managedType} due to {exception}
 + XA4210: Please add a reference to Mono.Android.Export.dll when using ExportAttribute or ExportFieldAttribute.
 + XA4211: AndroidManifest.xml //uses-sdk/@android:targetSdkVersion '{targetSdk}' is less than $(TargetFrameworkVersion) '{targetFramework}'. Using API-{targetFrameworkApi} for ACW compilation.
++ XA4213: The type '{type}' must provide a public default constructor
 + [XA4214](xa4214.md): The managed type \`Library1.Class1\` exists in multiple assemblies: Library1, Library2. Please refactor the managed type names in these assemblies so that they are not identical.
 + [XA4215](xa4215.md): The Java type \`com.contoso.library1.Class1\` is generated by more than one managed type. Please change the \[Register\] attribute so that the same Java type is not emitted.
 + [XA4216](xa4216.md): AndroidManifest.xml //uses-sdk/@android:minSdkVersion '{min_sdk?.Value}' is less than API-{XABuildConfig.NDKMinimumApiAvailable}, this configuration is not supported.
++ XA4217: Cannot override Kotlin-generated method '{method}' because it is not a valid Java method name. This method can only be overridden from Kotlin.
 + [XA4218](xa4218.md): Unable to find //manifest/application/uses-library at path: {path}
 + XA4300: Native library '{library}' will not be bundled because it has an unsupported ABI.
 + [XA4301](xa4301.md): Apk already contains the item `xxx`.
-+ [XA4302](xa4302.md): Unhandled exception merging \`AndroidManifest.xml]`: {ex}
++ [XA4302](xa4302.md): Unhandled exception merging \`AndroidManifest.xml\`: {ex}
 + [XA4303](xa4303.md): Error extracting resources from "{assemblyPath}": {ex}
 + [XA4304](xa4304.md): ProGuard configuration file '{file}' was not found.
 + [XA4305](xa4305.md): Multidex is enabled, but \`$(\_AndroidMainDexListFile)\` is empty.
@@ -113,6 +121,7 @@ ms.date: 01/24/2020
 + [XA4307](xa4307.md): Invalid ProGuard configuration file.
 + [XA4308](xa4308.md): Failed to generate type maps
 + [XA4309](xa4309.md): 'MultiDexMainDexList' file '{file}' does not exist.
++ [XA4310](xa4310.md): \`$(AndroidSigningKeyStore)\` file \`{keystore}\` could not be found.
 
 ## XA5xxx: GCC and toolchain
 
@@ -123,7 +132,8 @@ ms.date: 01/24/2020
 + XA5105: Toolchain utility '{utility}' for target {arch} was not found. Tried in path: "{path}"
 + XA5201: NDK linker exited with an error. Exit code {0}
 + [XA5205](xa5205.md): Cannot find `{ToolName}` in the Android SDK.
-+ [XA5207](xa5207.md): Could not find android.jar for API Level `{compileSdk}`.
++ [XA5207](xa5207.md): Could not find android.jar for API level `{compileSdk}`.
++ XA5211: Embedded Wear app package name differs from handheld app package name ({wearPackageName} != {handheldPackageName}).
 + XA5213: java.lang.OutOfMemoryError. Consider increasing the value of $(JavaMaximumHeapSize). Java ran out of memory while executing '{tool} {arguments}'
 + [XA5300](xa5300.md): The Android/Java SDK Directory could not be found.
 + [XA5301](xa5301.md): Failed to generate Java type for class: {managedType} due to MAX_PATH: {exception}
@@ -224,7 +234,6 @@ and `NNN` is a 3 digit number indicating the type of the unhandled `Exception`.
 * `LWF` - `LogWarningsForFiles`
 * `MBN` - `MakeBundleNativeCodeExternal`
 * `MDC` - `MDoc`
-* `MER` - `MergeResources`
 * `PAI` - `PrepareAbiItems`
 * `PAW` - `ParseAndroidWearProjectAndManifest`
 * `PRO` - `Proguard`

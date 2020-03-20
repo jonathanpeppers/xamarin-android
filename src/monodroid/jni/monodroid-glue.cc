@@ -933,6 +933,7 @@ MonodroidRuntime::init_android_runtime (MonoDomain *domain, JNIEnv *env, jclass 
 	init.brokenExceptionTransitions = application_config.broken_exception_transitions ? 1 : 0;
 	init.packageNamingPolicy    = static_cast<int>(application_config.package_naming_policy);
 	init.boundExceptionType     = application_config.bound_exception_type;
+	init.jniAddNativeMethodRegistrationAttributePresent = application_config.jni_add_native_method_registration_attribute_present ? 1 : 0;
 
 	// GC threshold is 90% of the max GREF count
 	init.grefGcThreshold        = static_cast<int>(androidSystem.get_gref_gc_threshold ());
@@ -1647,11 +1648,21 @@ MonodroidRuntime::Java_mono_android_Runtime_register (JNIEnv *env, jstring manag
 {
 	timing_period total_time;
 
+	char *type = nullptr;
+
 	if (XA_UNLIKELY (utils.should_log (LOG_TIMING)))
 		total_time.mark_start ();
 
 	int managedType_len = env->GetStringLength (managedType);
 	const jchar *managedType_ptr = env->GetStringChars (managedType, nullptr);
+
+	if (XA_UNLIKELY (utils.should_log (LOG_TIMING))) {
+		const char *mt_ptr = env->GetStringUTFChars (managedType, nullptr);
+		type = utils.strdup_new (mt_ptr);
+		env->ReleaseStringUTFChars (managedType, mt_ptr);
+
+		log_info_nocheck (LOG_TIMING, "Runtime.register: registering type `%s`", type);
+	}
 
 	int methods_len = env->GetStringLength (methods);
 	const jchar *methods_ptr = env->GetStringChars (methods, nullptr);
@@ -1682,11 +1693,6 @@ MonodroidRuntime::Java_mono_android_Runtime_register (JNIEnv *env, jstring manag
 	if (XA_UNLIKELY (utils.should_log (LOG_TIMING))) {
 		total_time.mark_end ();
 
-		const char *mt_ptr = env->GetStringUTFChars (managedType, nullptr);
-		char *type = utils.strdup_new (mt_ptr);
-		env->ReleaseStringUTFChars (managedType, mt_ptr);
-
-		log_info_nocheck (LOG_TIMING, "Runtime.register: registered type '%s'", type);
 		Timing::info (total_time, "Runtime.register: end time");
 
 		dump_counters ("## Runtime.register: type=%s\n", type);

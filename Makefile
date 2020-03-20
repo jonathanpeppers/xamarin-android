@@ -1,6 +1,8 @@
+-include bin/configuration.mk
+
 V             ?= 0
 prefix         = /usr/local
-CONFIGURATION  = Debug
+CONFIGURATION ?= Debug
 RUNTIME       := $(shell which mono64 2> /dev/null && echo mono64 || echo mono) --debug=casts
 SOLUTION       = Xamarin.Android.sln
 TEST_TARGETS   = build-tools/scripts/RunTests.targets
@@ -208,7 +210,9 @@ prepare-help: prepare-build
 
 .PHONY: prepare-update-mono
 prepare-update-mono: prepare-build
+	pgrep -lfi VBCSCompiler.exe
 	mono --debug $(PREPARE_EXE) $(_PREPARE_ARGS) -s:UpdateMono
+	pgrep -lfi VBCSCompiler.exe
 
 prepare-external-git-dependencies: prepare-build
 	mono --debug $(PREPARE_EXE) $(_PREPARE_ARGS) -s:PrepareExternalGitDependencies

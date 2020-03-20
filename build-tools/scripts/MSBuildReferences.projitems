@@ -16,10 +16,6 @@
       <SpecificVersion>True</SpecificVersion>
       <HintPath>$(MSBuildToolsPath)\Microsoft.Build.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Build.Engine, Version=$(MSBuildReferenceVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" Condition=" '$(OS)' != 'Windows_NT' ">
-      <SpecificVersion>True</SpecificVersion>
-      <HintPath>$(MSBuildToolsPath)\Microsoft.Build.Engine.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.Build.Framework, Version=$(MSBuildReferenceVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" Condition=" '$(OS)' != 'Windows_NT' ">
       <SpecificVersion>True</SpecificVersion>
       <HintPath>$(MSBuildToolsPath)\Microsoft.Build.Framework.dll</HintPath>
@@ -36,6 +32,7 @@
   <ItemGroup>
     <PackageReference Include="Xamarin.Build.AsyncTask" Version="0.3.4" GeneratePathProperty="true" />
     <PackageReference Include="Xamarin.LibZipSharp" Version="$(LibZipSharpVersion)" GeneratePathProperty="true" />
+    <PackageReference Include="System.Buffers" Version="4.5.0" />
   </ItemGroup>
   <ItemGroup>
     <!-- Copy system Microsoft.Build*.dll and dependencies for tests to run against. We can remove this
@@ -43,7 +40,9 @@
     <None Include="$(MSBuildToolsPath)\Microsoft.Build*.dll" Condition=" '$(OS)' == 'Windows_NT' " >
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="$(MSBuildToolsPath)\System.*.dll" Condition=" '$(OS)' == 'Windows_NT' " >
+    <None Include="$(MSBuildToolsPath)\System.*.dll"
+        Exclude="$(MSBuildToolsPath)\System.Buffers.dll"
+        Condition=" '$(OS)' == 'Windows_NT' " >
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
