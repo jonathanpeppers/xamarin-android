@@ -167,8 +167,8 @@ In this message, the phrase "should not be reached" means that this error messag
     <comment>The abbreviation "JDK" should not be translated.</comment>
   </data>
   <data name="XA0031" xml:space="preserve">
-    <value>Java SDK {0} or above is required when using $(TargetFrameworkVersion) {1}.</value>
-    <comment>The following are literal names and should not be translated: $(TargetFrameworkVersion)
+    <value>Java SDK {0} or above is required when using {1}.</value>
+    <comment>The following are literal names and should not be translated:
 {0} - The Java SDK version number
 {1} - The target framework version number</comment>
   </data>
