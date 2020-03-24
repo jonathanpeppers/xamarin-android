@@ -59,6 +59,7 @@ namespace Xamarin.Android.Build.Tests
 				IsRelease = isRelease,
 				Deterministic = deterministic,
 			};
+			proj.MainActivity = proj.DefaultMainActivity;
 			if (isRelease || !CommercialBuildAvailable) {
 				var abis = new string [] { "armeabi-v7a", "x86" };
 				proj.SetProperty (KnownProperties.AndroidSupportedAbis, string.Join (";", abis));
@@ -80,6 +81,7 @@ namespace Xamarin.Android.Build.Tests
 					Path.Combine (Root, b.ProjectDirectory, "logcat.log"), 30), "Activity should have started.");
 
 				// Make a C# change
+				proj.MainActivity = proj.MainActivity.Replace ("namespace", "public class A : Java.Lang.Object { }" + Environment.NewLine + "namespace");
 				proj.Touch ("MainActivity.cs");
 				Assert.True (b.Install (proj, doNotCleanupOnUpdate: true), "Project should have installed.");
 				ClearAdbLogcat ();
