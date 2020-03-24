@@ -30,9 +30,25 @@ namespace Xamarin.Android.Build.Tests
 </manifest>";
 		}
 
+		public static object [] ApplicationRunsWithoutDebuggerSource = new object [] {
+			new object [] {
+				/*deterministic*/ true,
+				/*isRelease*/ false,
+			},
+			new object [] {
+				/*deterministic*/ false,
+				/*isRelease*/ false,
+			},
+			new object [] {
+				/*deterministic*/ true,
+				/*isRelease*/ true,
+			},
+		};
+
 		[Test]
+		[TestCaseSource (nameof (ApplicationRunsWithoutDebuggerSource))]
 		[Retry (1)]
-		public void ApplicationRunsWithoutDebugger ([Values (false, true)] bool isRelease)
+		public void ApplicationRunsWithoutDebugger (bool deterministic, bool isRelease)
 		{
 			if (!HasDevices) {
 				Assert.Ignore ("Test needs a device attached.");
@@ -41,6 +57,7 @@ namespace Xamarin.Android.Build.Tests
 
 			var proj = new XamarinFormsAndroidApplicationProject () {
 				IsRelease = isRelease,
+				Deterministic = deterministic,
 			};
 			if (isRelease || !CommercialBuildAvailable) {
 				var abis = new string [] { "armeabi-v7a", "x86" };
@@ -52,15 +69,27 @@ namespace Xamarin.Android.Build.Tests
 				b.Save (proj, saveProject: true);
 				proj.NuGetRestore (Path.Combine (Root, b.ProjectDirectory), b.PackagesDirectory);
 				Assert.True (b.Build (proj), "Project should have built.");
+
 				Assert.True (b.Install (proj), "Project should have installed.");
 				ClearAdbLogcat ();
 				if (CommercialBuildAvailable)
 					Assert.True (b.RunTarget (proj, "_Run"), "Project should have run.");
 				else
 					AdbStartActivity ($"{proj.PackageName}/{proj.JavaPackageName}.MainActivity");
-
 				Assert.True (WaitForActivityToStart (proj.PackageName, "MainActivity",
 					Path.Combine (Root, b.ProjectDirectory, "logcat.log"), 30), "Activity should have started.");
+
+				// Make a C# change
+				proj.Touch ("MainActivity.cs");
+				Assert.True (b.Install (proj, doNotCleanupOnUpdate: true), "Project should have installed.");
+				ClearAdbLogcat ();
+				if (CommercialBuildAvailable)
+					Assert.True (b.RunTarget (proj, "_Run"), "Project should have run.");
+				else
+					AdbStartActivity ($"{proj.PackageName}/{proj.JavaPackageName}.MainActivity");
+				Assert.True (WaitForActivityToStart (proj.PackageName, "MainActivity",
+					Path.Combine (Root, b.ProjectDirectory, "logcat.log"), 30), "Activity should have started.");
+
 				Assert.True (b.Uninstall (proj), "Project should have uninstalled.");
 			}
 		}
