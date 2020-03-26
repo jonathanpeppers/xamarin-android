@@ -1,0 +1,104 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup Condition=" '$(AndroidApplication)' == 'True' ">
+    <BuildDependsOn>
+      _ValidateLinkMode;
+      _CheckNonIdealConfigurations;
+      _SetupDesignTimeBuildForBuild;
+      _CreatePropertiesCache;
+      _CleanIntermediateIfNeeded;
+      _CheckProjectItems;
+      _CheckForContent;
+      _ValidateAndroidPackageProperties;
+      $(BuildDependsOn);
+    </BuildDependsOn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(AndroidApplication)' != 'True' ">
+    <BuildDependsOn>
+      _ValidateLinkMode;
+      _CheckNonIdealConfigurations;
+      _SetupDesignTimeBuildForBuild;
+      _CreatePropertiesCache;
+      _CleanIntermediateIfNeeded;
+      _AddAndroidDefines;
+      _CreateNativeLibraryArchive;
+      _AddAndroidEnvironmentToCompile;
+      _CheckForContent;
+      _ValidateAndroidPackageProperties;
+      $(BuildDependsOn);
+    </BuildDependsOn>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <CompileDependsOn>
+      _SetupDesignTimeBuildForCompile;
+      _AddAndroidDefines;
+      _IncludeLayoutBindingSources;
+      $(CompileDependsOn);
+    </CompileDependsOn>
+    <CoreCompileDependsOn>
+      UpdateGeneratedFiles;
+      $(CoreCompileDependsOn)
+    </CoreCompileDependsOn>
+    <CoreResolveReferencesDependsOn>
+      _SeparateAppExtensionReferences;
+      _PrepareWearApplication;
+      $(ResolveReferencesDependsOn);
+      _AddAndroidCustomMetaData;
+    </CoreResolveReferencesDependsOn>
+    <ResolveReferencesDependsOn>
+      $(CoreResolveReferencesDependsOn);
+      UpdateAndroidInterfaceProxies;
+      UpdateAndroidResources;
+      $(ApplicationResolveReferencesDependsOn);
+    </ResolveReferencesDependsOn>
+    <DeferredBuildDependsOn>
+      $(DeferredBuildDependsOn);
+      UpdateAndroidResources;
+    </DeferredBuildDependsOn>
+    <PrepareForRunDependsOn>
+      $(PrepareForRunDependsOn);
+      _CollectMonoAndroidOutputs;
+    </PrepareForRunDependsOn>
+    <CleanDependsOn>
+      $(CleanDependsOn);
+      _CleanMonoAndroidIntermediateDir;
+      _CleanAndroidBuildPropertiesCache;
+    </CleanDependsOn>
+  </PropertyGroup>
+
+  <!--net5-specific publish steps-->
+  <PropertyGroup>
+    <_CorePublishTargets>
+      $(_CorePublishTargets);
+      _CompileDex;
+      $(_AfterCompileDex);
+      Package;
+      _Sign;
+    </_CorePublishTargets>
+  </PropertyGroup>
+
+  <Target Name="_ResolveAssemblies">
+
+    <!--TODO: hack to just fill the item group. Should also be in a new file?-->
+    <ItemGroup>
+      <ResolvedAssemblies Include="@(ResolvedFileToPublish)" Condition="'%(ResolvedFileToPublish.Extension)' == 'dll'" />
+      <ResolvedUserAssemblies Include="@(ResolvedAssemblies)" />
+    </ItemGroup>
+
+    <Hash ItemsToHash="@(ResolvedAssemblies)">
+      <Output TaskParameter="HashResult" PropertyName="_ResolvedUserAssembliesHash" />
+    </Hash>
+    <WriteLinesToFile
+        File="$(_ResolvedUserAssembliesHashFile)"
+        Lines="$(_ResolvedUserAssembliesHash)"
+        Overwrite="true"
+        WriteOnlyWhenDifferent="true"
+    />
+    <ItemGroup>
+      <FileWrites Include="$(_ResolvedUserAssembliesHashFile)" />
+    </ItemGroup>
+  </Target>
+
+</Project>
