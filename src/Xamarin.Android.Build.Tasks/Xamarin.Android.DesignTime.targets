@@ -1,0 +1,37 @@
+<!--
+***********************************************************************************************
+Xamarin.Android.DesignTime.targets
+
+This file contains MSBuild targets related to design-time builds.
+
+***********************************************************************************************
+-->
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <Target Name="_SetupDesignTimeBuildForBuild">
+    <PropertyGroup>
+      <DesignTimeBuild Condition=" '$(DesignTimeBuild)' == '' ">false</DesignTimeBuild>
+    </PropertyGroup>
+  </Target>
+  
+  <Target Name="_SetupDesignTimeBuildForCompile">
+    <PropertyGroup>
+      <DesignTimeBuild Condition=" '$(DesignTimeBuild)' == '' ">true</DesignTimeBuild>
+      <ManagedDesignTimeBuild Condition=" '$(AndroidUseManagedDesignTimeResourceGenerator)' == 'true' And '$(DesignTimeBuild)' == 'true' And '$(BuildingInsideVisualStudio)' == 'true' ">true</ManagedDesignTimeBuild>
+      <ManagedDesignTimeBuild Condition=" '$(ManagedDesignTimeBuild)' == '' ">False</ManagedDesignTimeBuild>
+      <_AndroidLibraryImportsCache Condition=" '$(DesignTimeBuild)' == 'true' And !Exists ('$(_AndroidLibraryImportsCache)') ">$(_AndroidLibraryImportsDesignTimeCache)</_AndroidLibraryImportsCache>
+      <_AndroidLibraryProjectImportsCache Condition=" '$(DesignTimeBuild)' == 'true' And !Exists ('$(_AndroidLibraryProjectImportsCache)') ">$(_AndroidLibraryProjectImportsDesignTimeCache)</_AndroidLibraryProjectImportsCache>
+      <_AndroidBuildPropertiesCache Condition=" '$(DesignTimeBuild)' == 'true' ">$(_AndroidDesignTimeBuildPropertiesCache)</_AndroidBuildPropertiesCache>
+    </PropertyGroup>
+    <MakeDir
+        Condition=" '$(_AndroidStampDirectory)' != '' And !Exists('$(_AndroidStampDirectory)') "
+        Directories="$(_AndroidStampDirectory)"
+    />
+    <MakeDir
+        Condition=" '$(_AndroidIntermediateDesignTimeBuildDirectory)' != '' And !Exists ('$(_AndroidIntermediateDesignTimeBuildDirectory)') "
+        Directories="$(_AndroidIntermediateDesignTimeBuildDirectory)"
+    />
+  </Target>
+
+</Project>

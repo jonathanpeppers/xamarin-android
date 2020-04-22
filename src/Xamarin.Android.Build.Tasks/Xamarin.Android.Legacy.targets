@@ -132,7 +132,6 @@ projects. .NET 5 projects will not import this file.
       AddEmbeddedJarsAsResources;
       AddEmbeddedReferenceJarsAsResources;
       AddLibraryProjectsToCompile;
-      _AddNativeLibraryArchiveToCompile
     </ResolveReferencesDependsOn>
 
     <CleanDependsOn>

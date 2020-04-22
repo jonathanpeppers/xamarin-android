@@ -1,0 +1,101 @@
+<!--
+***********************************************************************************************
+Xamarin.Android.LibraryProjects.targets
+
+This file contains MSBuild targets related to the creation or extraction
+of `__AndroidLibraryProjects__.zip` or `__AndroidNativeLibraries__.zip`.
+
+***********************************************************************************************
+-->
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <UsingTask TaskName="Xamarin.Android.Tasks.CreateNativeLibraryArchive"     AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
+  <UsingTask TaskName="Xamarin.Android.Tasks.GetImportedLibraries"           AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
+  <UsingTask TaskName="Xamarin.Android.Tasks.ReadImportedLibrariesCache"     AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
+  <UsingTask TaskName="Xamarin.Android.Tasks.ReadLibraryProjectImportsCache" AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
+  <UsingTask TaskName="Xamarin.Android.Tasks.ResolveLibraryProjectImports"   AssemblyFile="Xamarin.Android.Build.Tasks.dll" />
+
+  <Target Name="_ResolveLibraryProjectImports"
+      DependsOnTargets="$(CoreResolveReferencesDependsOn)"
+      Inputs="$(ProjectAssetsFile);$(MSBuildProjectFullPath);@(_MonoAndroidReferencePath);@(_MonoAndroidReferenceDependencyPaths);@(AndroidAarLibrary);$(_AndroidBuildPropertiesCache)"
+      Outputs="$(_AndroidStampDirectory)_ResolveLibraryProjectImports.stamp">
+    <ResolveLibraryProjectImports
+      ContinueOnError="$(DesignTimeBuild)"
+      CacheFile="$(_AndroidLibraryProjectImportsCache)"
+      DesignTimeBuild="$(DesignTimeBuild)"
+      Assemblies="@(_MonoAndroidReferencePath);@(_MonoAndroidReferenceDependencyPaths)"
+      AarLibraries="@(AndroidAarLibrary)"
+      ImportsDirectory="$(_LibraryProjectImportsDirectoryName)"
+      NativeImportsDirectory="$(_NativeLibraryImportsDirectoryName)"
+      UseShortFileNames="$(UseShortFileNames)"
+      OutputDirectory="$(IntermediateOutputPath)"
+      AssemblyIdentityMapFile="$(_AndroidLibrayProjectAssemblyMapFile)"
+      OutputImportDirectory="$(_AndroidLibrayProjectIntermediatePath)"
+    />
+    <Touch Files="$(_AndroidStampDirectory)_ResolveLibraryProjectImports.stamp" AlwaysCreate="true" />
+  </Target>
+
+  <Target Name="_ExtractLibraryProjectImports" DependsOnTargets="_ResolveLibraryProjectImports">
+    <ReadLibraryProjectImportsCache
+        CacheFile="$(_AndroidLibraryProjectImportsCache)">
+      <Output TaskParameter="ResolvedResourceDirectories" ItemName="LibraryResourceDirectories" />
+      <Output TaskParameter="ResolvedAssetDirectories" ItemName="LibraryAssetDirectories" />
+      <Output TaskParameter="ResolvedEnvironmentFiles" ItemName="LibraryEnvironments" />
+      <Output TaskParameter="ResolvedResourceDirectoryStamps" ItemName="_LibraryResourceDirectoryStamps" />
+    </ReadLibraryProjectImportsCache>
+  </Target>
+
+  <Target Name="_BuildLibraryImportsCache"
+      Inputs="$(_AndroidLibraryProjectImportsCache)"
+      Outputs="$(_AndroidStampDirectory)_BuildLibraryImportsCache.stamp">
+    <GetImportedLibraries
+        TargetDirectory="$(_AndroidLibrayProjectIntermediatePath)"
+        CacheFile="$(_AndroidLibraryImportsCache)"
+    />
+    <Touch Files="$(_AndroidStampDirectory)_BuildLibraryImportsCache.stamp" AlwaysCreate="true" />
+    <ItemGroup>
+      <FileWrites Include="$(_AndroidStampDirectory)_BuildLibraryImportsCache.stamp" />
+    </ItemGroup>
+  </Target>
+
+  <PropertyGroup>
+    <_GetLibraryImportsDependsOnTargets Condition=" '$(_AndroidIsBindingProject)' == 'true' ">
+      _ExtractLibraryProjectImports;
+      _BuildLibraryImportsCache;
+    </_GetLibraryImportsDependsOnTargets>
+    <_GetLibraryImportsDependsOnTargets Condition=" '$(_AndroidIsBindingProject)' != 'true' ">
+      _ExtractLibraryProjectImports;
+      _AddMultiDexDependencyJars;
+      _BuildLibraryImportsCache;
+    </_GetLibraryImportsDependsOnTargets>
+  </PropertyGroup>
+
+  <Target Name="_GetLibraryImports" DependsOnTargets="$(_GetLibraryImportsDependsOnTargets)">
+    <ReadImportedLibrariesCache CacheFile="$(_AndroidLibraryImportsCache)">
+      <Output TaskParameter="Jars"              ItemName="ExtractedJarImports" />
+      <Output TaskParameter="NativeLibraries"   ItemName="ExtractedNativeLibraryImports" />
+      <Output TaskParameter="NativeLibraries"   ItemName="AndroidNativeLibrary" />
+      <Output TaskParameter="ManifestDocuments" ItemName="ExtractedManifestDocuments" />
+    </ReadImportedLibrariesCache>
+  </Target>
+    
+  <Target Name="_CreateNativeLibraryArchive"
+      Condition=" '$(AndroidApplication)' != 'true' And '@(EmbeddedNativeLibrary)' != '' " 
+      DependsOnTargets="ResolveReferences"
+      Inputs="@(EmbeddedNativeLibrary)"
+      Outputs="$(IntermediateOutputPath)__AndroidNativeLibraries__.zip">
+    <CreateNativeLibraryArchive
+        OutputDirectory="$(IntermediateOutputPath)$(_NativeLibraryImportsDirectoryName)"
+        EmbeddedNativeLibraries="@(EmbeddedNativeLibrary)"
+    />
+    <Touch Files="$(IntermediateOutputPath)__AndroidNativeLibraries__.zip" />
+    <ItemGroup>
+      <FileWrites Include="$(IntermediateOutputPath)__AndroidNativeLibraries__.zip" />
+      <EmbeddedResource Include="$(IntermediateOutputPath)__AndroidNativeLibraries__.zip">
+        <LogicalName>__AndroidNativeLibraries__.zip</LogicalName>
+      </EmbeddedResource>
+    </ItemGroup>
+  </Target>
+
+</Project>

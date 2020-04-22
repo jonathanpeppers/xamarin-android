@@ -42,9 +42,7 @@ namespace Xamarin.Android.Build.Tests
 			var proj = new MSBuildSdkExtrasProject {
 				IsBindingProject = true,
 			};
-			proj.OtherBuildItems.Add (new AndroidItem.EmbeddedJar ("Jars\\svg-android.jar") {
-				WebContent = "https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/svg-android/svg-android.jar"
-			});
+			proj.OtherBuildItems.Add (KnownJavaPackages.SvgAndroid);
 			using (var b = CreateDllBuilder (Path.Combine ("temp", TestName))) {
 				Assert.IsTrue (b.Build (proj), "Build should have succeeded.");
 				var output = Path.Combine (Root, b.ProjectDirectory, proj.OutputPath, proj.ProjectName + ".dll");

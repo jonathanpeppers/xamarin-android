@@ -37,9 +37,7 @@ namespace Xamarin.Android.Build.Tests
 			var proj = new XamarinAndroidBindingProject () {
 				IsRelease = true,
 			};
-			proj.Jars.Add (new AndroidItem.EmbeddedJar ("Jars\\svg-android.jar") {
-				WebContent = "https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/svg-android/svg-android.jar"
-			});
+			proj.Jars.Add (KnownJavaPackages.SvgAndroid);
 			proj.AndroidClassParser = classParser;
 			using (var b = CreateDllBuilder (Path.Combine ("temp", TestName))) {
 				Assert.IsTrue (b.Build (proj), "Build should have succeeded.");
@@ -69,9 +67,7 @@ namespace Xamarin.Android.Build.Tests
 			var proj = new XamarinAndroidBindingProject () {
 				IsRelease = true,
 			};
-			proj.Jars.Add (new AndroidItem.EmbeddedJar ("Jars\\svg-android.jar") {
-				WebContent = "https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/svg-android/svg-android.jar"
-			});
+			proj.Jars.Add (KnownJavaPackages.SvgAndroid);
 			proj.AndroidClassParser = classParser;
 			using (var b = CreateDllBuilder (Path.Combine ("temp", TestName))) {
 				Assert.IsTrue (b.Build (proj), "Build should have succeeded.");
@@ -200,9 +196,7 @@ namespace Com.Ipaulpro.Afilechooser {
 				IsRelease = true,
 				AndroidClassParser = "class-parse",
 			};
-			proj.Jars.Add (new AndroidItem.EmbeddedJar ("Jars\\svg-android.jar") {
-				WebContentFileNameFromAzure = "javaBindingIssue.jar"
-			});
+			proj.Jars.Add (KnownJavaPackages.JavaBindingIssue);
 			using (var b = CreateDllBuilder ("temp/BindByteArrayInMethodParameter")) {
 				Assert.IsTrue (b.Build (proj), "Build should have succeeded.");
 			}
@@ -308,9 +302,7 @@ namespace Com.Ipaulpro.Afilechooser {
 			binding.Jars.Add (new AndroidItem.LibraryProjectZip ("Jars\\mylibrary.aar") {
 				WebContentFileNameFromAzure = "mylibrary.aar"
 			});
-			binding.Jars.Add (new AndroidItem.EmbeddedJar ("Jars\\svg-android.jar") {
-				WebContentFileNameFromAzure = "javaBindingIssue.jar"
-			});
+			binding.Jars.Add (KnownJavaPackages.JavaBindingIssue);
 			var path = Path.Combine ("temp", TestContext.CurrentContext.Test.Name);
 			binding.SetProperty (binding.ActiveConfigurationProperties, "UseShortFileNames", useShortFileNames);
 			using (var bindingBuilder = CreateDllBuilder (Path.Combine (path, "Binding"))) {
@@ -359,11 +351,7 @@ namespace Com.Ipaulpro.Afilechooser {
 		{
 			var binding = new XamarinAndroidBindingProject () {
 				IsRelease = true,
-				Jars = {
-					new AndroidItem.EmbeddedJar ("Jars\\svg-android.jar") {
-						WebContentFileNameFromAzure = "javaBindingIssue.jar"
-					}
-				},
+				Jars = { KnownJavaPackages.JavaBindingIssue },
 				AssemblyInfo = @"
 using Java.Interop;
 [assembly:DoNotPackage(""svg-android.jar"")]

@@ -54,6 +54,24 @@ namespace Xamarin.Android.Build.Tests
 			}
 		}
 
+		[Test]
+		[Category ("SmokeTests")]
+		public void DotNetBuildBinding ()
+		{
+			var proj = new XASdkProject (SdkVersion, outputType: "Library");
+			proj.OtherBuildItems.Add (KnownJavaPackages.SvgAndroid);
+			var dotnet = CreateDotNetBuilder (proj);
+			Assert.IsTrue (dotnet.Build (), "`dotnet build` should succeed");
+
+			var assemblyPath = Path.Combine (Root, dotnet.ProjectDirectory, proj.OutputPath, "UnnamedProject.dll");
+			FileAssert.Exists (assemblyPath);
+			using (var assembly = AssemblyDefinition.ReadAssembly (assemblyPath)) {
+				var typeName = "Com.Larvalabs.Svgandroid.SVG";
+				var type = assembly.MainModule.GetType (typeName);
+				Assert.IsNotNull (type, $"{assemblyPath} should contain {typeName}");
+			}
+		}
+
 		static readonly object [] DotNetPublishSource = new object [] {
 			new object [] {
 				/* runtimeIdentifier */  "android.21-arm",

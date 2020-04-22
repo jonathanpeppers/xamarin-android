@@ -895,11 +895,7 @@ namespace UnamedProject
 			if (bindingProject) {
 				proj = new XamarinAndroidBindingProject {
 					AndroidClassParser = "class-parse",
-					Jars = {
-						new AndroidItem.EmbeddedJar ("Jars\\svg-android.jar") {
-							WebContentFileNameFromAzure = "javaBindingIssue.jar"
-						}
-					}
+					Jars = { KnownJavaPackages.JavaBindingIssue }
 				};
 			} else {
 				proj = new XamarinAndroidApplicationProject ();
