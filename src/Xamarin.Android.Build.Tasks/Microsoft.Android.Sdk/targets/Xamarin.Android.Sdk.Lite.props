@@ -10,6 +10,9 @@
   <PropertyGroup>
     <!-- Ensure $(UsingAndroidNETSdk) is not set to retain legacy behavior -->
     <UsingAndroidNETSdk />
+    <AndroidManifest Condition=" '$(AndroidManifest)' == '' ">Properties\AndroidManifest.xml</AndroidManifest>
+    <AndroidApplication Condition=" '$(AndroidApplication)' == '' And Exists('$(AndroidManifest)') ">true</AndroidApplication>
+    <AndroidApplication Condition=" '$(AndroidApplication)' == '' ">false</AndroidApplication>
   </PropertyGroup>
 
   <!-- Default References -->
