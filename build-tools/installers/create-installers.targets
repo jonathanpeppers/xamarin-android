@@ -114,7 +114,6 @@
     <_FrameworkFilesWin Include="$(FrameworkSrcDir)\$(BclFrameworkVersion)\Xamarin.Android.NUnitLite.xml" />
   </ItemGroup>
   <ItemGroup>
-    <_MSBuildFiles Include="$(MSBuildSrcDir)\android-support-multidex.jar" />
     <_MSBuildFiles Include="$(MSBuildSrcDir)\aprofutil.exe" />
     <_MSBuildFiles Include="$(MSBuildSrcDir)\aprofutil.pdb" />
     <_MSBuildFiles Include="$(MSBuildSrcDir)\cil-strip.exe" />
@@ -192,7 +191,6 @@
     <_MSBuildFiles Include="$(MSBuildSrcDir)\Mono.Terminal.dll" />
     <_MSBuildFiles Include="$(MSBuildSrcDir)\monodoc.dll" />
     <_MSBuildFiles Include="$(MSBuildSrcDir)\monodoc.pdb" />
-    <_MSBuildFiles Include="$(MSBuildSrcDir)\MULTIDEX_JAR_LICENSE" />
     <_MSBuildFiles Include="$(MSBuildSrcDir)\pdb2mdb.exe" />
     <_MSBuildFiles Include="$(MSBuildSrcDir)\pdb2mdb.pdb" />
     <_MSBuildFiles Include="$(MSBuildSrcDir)\proguard\lib\proguard.jar"/>

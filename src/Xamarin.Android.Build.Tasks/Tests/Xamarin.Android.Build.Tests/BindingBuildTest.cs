@@ -257,27 +257,6 @@ namespace Com.Ipaulpro.Afilechooser {
 		}
 
 		[Test]
-		public void BindingCustomJavaApplicationClass ()
-		{
-			var binding = new XamarinAndroidBindingProject () {
-				IsRelease = true,
-			};
-			binding.AndroidClassParser = "class-parse";
-
-			using (var bindingBuilder = CreateDllBuilder ("temp/BindingCustomJavaApplicationClass/MultiDexBinding")) {
-				string multidexJar = Path.Combine (bindingBuilder.AndroidMSBuildDirectory, "android-support-multidex.jar");
-				binding.Jars.Add (new AndroidItem.EmbeddedJar (() => multidexJar));
-				bindingBuilder.Build (binding);
-				var proj = new XamarinAndroidApplicationProject ();
-				proj.OtherBuildItems.Add (new BuildItem ("ProjectReference", "..\\MultiDexBinding\\UnnamedProject.csproj"));
-				using (var b = CreateApkBuilder ("temp/BindingCustomJavaApplicationClass/App")) {
-					b.Verbosity = Microsoft.Build.Framework.LoggerVerbosity.Diagnostic;
-					Assert.IsTrue (b.Build (proj), "Build should have succeeded.");
-				}
-			}
-		}
-
-		[Test]
 		public void BindngFilterUnsupportedNativeAbiLibraries ()
 		{
 			var binding = new XamarinAndroidBindingProject () {

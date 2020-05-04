@@ -1259,21 +1259,13 @@ namespace UnamedProject
 		}
 
 		[Test]
-		public void MultiDexCustomMainDexFileList ([Values ("dx", "d8")] string dexTool, [Values ("19", "21")] string minSdkVersion)
+		public void MultiDexCustomMainDexFileList ([Values ("dx", "d8")] string dexTool)
 		{
 			var expected = new [] {
-				"android/support/multidex/ZipUtil$CentralDirectory.class",
-				"android/support/multidex/MultiDexApplication.class",
-				"android/support/multidex/MultiDex$V19.class",
-				"android/support/multidex/ZipUtil.class",
-				"android/support/multidex/MultiDexExtractor$1.class",
-				"android/support/multidex/MultiDexExtractor.class",
-				"android/support/multidex/MultiDex.class",
 				"MyTest.class",
 			};
 			var proj = CreateMultiDexRequiredApplication ();
 			proj.DexTool = dexTool;
-			proj.AndroidManifest = proj.AndroidManifest.Replace ("<uses-sdk />", $"<uses-sdk android:minSdkVersion=\"{minSdkVersion}\" />");
 			proj.SetProperty ("AndroidEnableMultiDex", "True");
 			proj.OtherBuildItems.Add (new BuildItem ("MultiDexMainDexList", "mymultidex.keep") { TextContent = () => "MyTest.class", Encoding = Encoding.ASCII });
 			proj.OtherBuildItems.Add (new BuildItem ("AndroidJavaSource", "MyTest.java") { TextContent = () => "public class MyTest {}", Encoding = Encoding.ASCII });
@@ -1283,11 +1275,10 @@ namespace UnamedProject
 				Assert.IsTrue (b.Build (proj), "Build should have succeeded.");
 				FileAssert.Exists (Path.Combine (androidBinDir, "classes.dex"));
 				FileAssert.Exists (Path.Combine (androidBinDir, "classes2.dex"));
-				if (dexTool == "d8" && minSdkVersion == "21") {
+				if (dexTool == "d8") {
 					//NOTE: d8/r8 does not support custom dex list files in this case
 					return;
 				}
-				//NOTE: d8 has the list in a different order, so we should do an unordered comparison
 				var actual = File.ReadAllLines (Path.Combine (Root, b.ProjectDirectory, proj.IntermediateOutputPath, "multidex.keep"));
 				foreach (var item in expected) {
 					Assert.IsTrue (actual.Contains (item), $"multidex.keep did not contain `{item}`");
@@ -2269,16 +2260,16 @@ Mono.Unix.UnixFileInfo fileInfo = null;");
 				AndroidClassParser = "class-parse",
 			};
 			using (var bbuilder = CreateDllBuilder (Path.Combine (path, "BuildWithExternalJavaLibraryBinding"))) {
-				string multidex_path = TestEnvironment.IsRunningOnCI ? TestEnvironment.MonoAndroidToolsDirectory : @"$(MonoDroidInstallDirectory)\lib\xamarin.android\xbuild\Xamarin\Android";
-				string multidex_jar = $@"{multidex_path}\android-support-multidex.jar";
-				binding.Jars.Add (new AndroidItem.InputJar (() => multidex_jar));
+				var cache = new DownloadedCache ();
+				var jar = cache.GetAsFile ("https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/svg-android/svg-android.jar");
+				binding.Jars.Add (new AndroidItem.InputJar (jar));
 
 				Assert.IsTrue (bbuilder.Build (binding));
 				var proj = new XamarinAndroidApplicationProject () {
 					References = { new BuildItem ("ProjectReference", "..\\BuildWithExternalJavaLibraryBinding\\BuildWithExternalJavaLibraryBinding.csproj"), },
-					OtherBuildItems = { new BuildItem ("AndroidExternalJavaLibrary", multidex_jar) },
+					OtherBuildItems = { new BuildItem ("AndroidExternalJavaLibrary", jar) },
 					Sources = { new BuildItem ("Compile", "Foo.cs") {
-							TextContent = () => "public class Foo { public void X () { new Android.Support.Multidex.MultiDexApplication (); } }"
+							TextContent = () => "public class Foo { public void X () { Com.Larvalabs.Svgandroid.SVG svg; } }"
 						} },
 				};
 				using (var builder = CreateApkBuilder (Path.Combine (path, "BuildWithExternalJavaLibrary"))) {
