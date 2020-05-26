@@ -1,4 +1,4 @@
-using System;
+using System.Linq;
 using Microsoft.Build.Framework;
 
 namespace Xamarin.Android.Tasks
@@ -12,15 +12,15 @@ namespace Xamarin.Android.Tasks
 	{
 		public override string TaskPrefix => "RIAB";
 
-		public string RuntimeIdentifier { get; set; }
+		public string [] RuntimeIdentifiers { get; set; }
 
 		[Output]
 		public string SupportedAbis { get; set; }
 
 		public override bool RunTask ()
 		{
-			if (!string.IsNullOrEmpty (RuntimeIdentifier)) {
-				SupportedAbis = MonoAndroidHelper.RuntimeIdentifierToAbi (RuntimeIdentifier);
+			if (RuntimeIdentifiers != null && RuntimeIdentifiers.Length > 0) {
+				SupportedAbis = string.Join (";", RuntimeIdentifiers.Select (MonoAndroidHelper.RuntimeIdentifierToAbi));
 			}
 			if (string.IsNullOrEmpty (SupportedAbis)) {
 				// Default to a single, default ABI if blank

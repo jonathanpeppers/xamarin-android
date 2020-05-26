@@ -56,7 +56,7 @@ called for "legacy" projects in Xamarin.Android.Legacy.targets.
     </ResolveAndroidTooling>
     <RuntimeIdentifierToAbi
         Condition=" '$(AndroidApplication)' == 'true' "
-        RuntimeIdentifier="$(RuntimeIdentifier)"
+        RuntimeIdentifiers="$(RuntimeIdentifiers)"
         SupportedAbis="$(AndroidSupportedAbis)">
       <Output TaskParameter="SupportedAbis" PropertyName="AndroidSupportedAbis" />
     </RuntimeIdentifierToAbi>

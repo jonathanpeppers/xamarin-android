@@ -11,6 +11,8 @@
     <SelfContained Condition=" '$(SelfContained)' == '' And '$(AndroidApplication)' == 'true' ">true</SelfContained>
     <RuntimeIdentifier Condition=" '$(RuntimeIdentifier)' == '' And '$(AndroidApplication)' == 'true' ">android.21-x86</RuntimeIdentifier>
     <AndroidManifest Condition=" '$(AndroidManifest)' == '' And '$(AndroidApplication)' == 'true' ">Properties\AndroidManifest.xml</AndroidManifest>
+    <!-- TODO: I don't know how to make this work yet-->
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
     <!-- We don't ever need a `static void Main` method, so switch to Library here-->
     <OutputType Condition=" '$(OutputType)' == 'Exe' ">Library</OutputType>
   </PropertyGroup>

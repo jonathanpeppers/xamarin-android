@@ -10,40 +10,44 @@ _ResolveAssemblies MSBuild target.
 
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-  <Target Name="_ResolveAssemblies" DependsOnTargets="ComputeFilesToPublish">
+  <UsingTask TaskName="Xamarin.Android.Tasks.DistinctAssemblies" AssemblyFile="$(_XamarinAndroidBuildTasksAssembly)" />
 
-    <!--
-        TODO: not yet complete.
+  <!--This target runs as a nested <MSBuild/> call-->
+  <Target Name="_ComputeFilesToPublishForRuntimeIdentifiers"
+      DependsOnTargets="ResolveReferences;ComputeFilesToPublish"
+      Returns="@(ResolvedFileToPublish)">
+  </Target>
 
-        Two things here are placeholders for later:
-
-        * %(HasMonoAndroidReference) is always True to disable
-          performance improvements around $(TargetFrameworkVersion)
-          detection.
-
-        * Is there better metadata to use other than %(NuGetPackageId)
-          to determine which runtime components are coming from our
-          known @(FrameworkReference)s?
-    -->
+  <Target Name="_ResolveAssemblies">
+    <ItemGroup>
+      <_RIDs Include="$(RuntimeIdentifiers)" />
+    </ItemGroup>
+    <MSBuild
+        Projects="$(MSBuildProjectFile)"
+        Targets="_ComputeFilesToPublishForRuntimeIdentifiers"
+        Properties="RuntimeIdentifier=%(_RIDs.Identity)">
+      <Output TaskParameter="TargetOutputs" ItemName="ResolvedFileToPublish" />
+    </MSBuild>
+    <ItemGroup>
+      <_ResolvedAssemblyFiles Include="@(ResolvedFileToPublish)" Condition=" '%(ResolvedFileToPublish.Extension)' == '.dll' " />
+    </ItemGroup>
+    <DistinctAssemblies InputAssemblies="@(_ResolvedAssemblyFiles)">
+      <Output TaskParameter="OutputAssemblies" ItemName="ResolvedAssemblies" />
+    </DistinctAssemblies>
 
     <ItemGroup>
       <ResolvedFrameworkAssemblies
-          Include="@(ResolvedFileToPublish)"
-          Condition=" '%(ResolvedFileToPublish.Extension)' == '.dll' and '%(ResolvedFileToPublish.NuGetPackageId)' == 'Microsoft.Android.Runtime.$(RuntimeIdentifier)' "
-          HasMonoAndroidReference="True"
-      />
-      <ResolvedFrameworkAssemblies
-          Include="@(ResolvedFileToPublish)"
-          Condition=" '%(ResolvedFileToPublish.Extension)' == '.dll' and '%(ResolvedFileToPublish.NuGetPackageId)' == 'Microsoft.NETCore.App.Runtime.$(RuntimeIdentifier)' "
-          HasMonoAndroidReference="True"
+          Include="@(ResolvedAssemblies)"
+          Condition=" '%(ResolvedAssemblies.FrameworkAssembly)' == 'true' "
       />
       <ResolvedUserAssemblies
-          Include="@(ResolvedFileToPublish)"
-          Exclude="@(ResolvedFrameworkAssemblies)"
-          Condition=" '%(ResolvedFileToPublish.Extension)' == '.dll' "
-          HasMonoAndroidReference="True"
+          Include="@(ResolvedAssemblies)"
+          Condition=" '%(ResolvedAssemblies.FrameworkAssembly)' != 'true' "
       />
-      <ResolvedAssemblies Include="@(ResolvedFrameworkAssemblies);@(ResolvedUserAssemblies)" />
+      <!--HACK: don't use _RemoveRegisterAttribute yet-->
+      <_ShrunkAssemblies          Include="@(ResolvedAssemblies)" />
+      <_ShrunkUserAssemblies      Include="@(ResolvedUserAssemblies)" />
+      <_ShrunkFrameworkAssemblies Include="@(ResolvedFrameworkAssemblies)" />
     </ItemGroup>
 
     <Hash ItemsToHash="@(ResolvedAssemblies)">

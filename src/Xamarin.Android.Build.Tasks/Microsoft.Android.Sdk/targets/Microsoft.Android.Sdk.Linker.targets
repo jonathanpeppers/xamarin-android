@@ -9,6 +9,11 @@ This file contains the .NET 5-specific targets to customize ILLink
 
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
+  <PropertyGroup>
+    <_LinkSemaphore Condition=" '$(RuntimeIdentifier)' != '' ">$(IntermediateOutputPath)Link-$(RuntimeIdentifier).semaphore</_LinkSemaphore>
+    <IntermediateLinkDir>$(IntermediateOutputPath)$(RuntimeIdentifier)\linked\</IntermediateLinkDir>
+  </PropertyGroup>
+
   <Target Name="_PrepareLinking"
       AfterTargets="ComputeResolvedFilesToPublishList"
       DependsOnTargets="GetReferenceAssemblyPaths">
@@ -22,9 +27,7 @@ This file contains the .NET 5-specific targets to customize ILLink
     </ItemGroup>
     <PropertyGroup>
       <!-- make the output verbose to see what the linker is doing. FIXME: make dependent upon verbosity level -->
-      <_ExtraTrimmerArgs>$(_ExtraTrimmerArgs) --verbose --custom-data XATargetFrameworkDirectories="$(_XATargetFrameworkDirectories)"</_ExtraTrimmerArgs>
-
-      <IntermediateLinkDir>$(MonoAndroidIntermediateAssemblyDir)</IntermediateLinkDir>
+      <_ExtraTrimmerArgs>$(_ExtraTrimmerArgs) --verbose --deterministic --custom-data XATargetFrameworkDirectories="$(_XATargetFrameworkDirectories)"</_ExtraTrimmerArgs>
 
       <!-- we don't want to ignore stuff we can't find -->
       <_ExtraTrimmerArgs>$(_ExtraTrimmerArgs) --skip-unresolved false</_ExtraTrimmerArgs>

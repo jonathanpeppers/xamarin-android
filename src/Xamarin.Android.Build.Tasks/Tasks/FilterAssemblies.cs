@@ -104,7 +104,7 @@ namespace Xamarin.Android.Tasks
 			return targetFrameworkIdentifier;
 		}
 
-		bool HasReference (MetadataReader reader)
+		protected bool HasReference (MetadataReader reader)
 		{
 			foreach (var handle in reader.AssemblyReferences) {
 				var reference = reader.GetAssemblyReference (handle);
