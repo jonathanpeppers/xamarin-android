@@ -1538,41 +1538,41 @@ because xbuild doesn't support framework reference assemblies.
   <!-- Update our assembly lists to the copies for linking.  We also need to verify
        they still exist cause linking will delete them if they aren't used -->
   <GetFilesThatExist
-    Condition="'$(AndroidLinkMode)' != 'None'"
+    Condition="'$(AndroidLinkMode)' != 'None' and '$(UsingAndroidNETSdk)' != 'true'"
     Files="@(ResolvedAssemblies->'$(MonoAndroidIntermediateAssemblyDir)%(Filename)%(Extension)')">
     <Output TaskParameter="FilesThatExist" ItemName="_ResolvedAssemblies" />
   </GetFilesThatExist>
 
   <GetFilesThatExist
-    Condition="'$(AndroidLinkMode)' != 'None'"
+    Condition="'$(AndroidLinkMode)' != 'None' and '$(UsingAndroidNETSdk)' != 'true'"
     Files="@(ResolvedSymbols->'$(MonoAndroidIntermediateAssemblyDir)%(Filename)%(Extension)')">
     <Output TaskParameter="FilesThatExist" ItemName="_ResolvedSymbols" />
   </GetFilesThatExist>
 
   <GetFilesThatExist
-    Condition="'$(AndroidLinkMode)' != 'None'"
+    Condition="'$(AndroidLinkMode)' != 'None' and '$(UsingAndroidNETSdk)' != 'true'"
     Files="@(ResolvedUserAssemblies->'$(MonoAndroidIntermediateAssemblyDir)%(Filename)%(Extension)')">
     <Output TaskParameter="FilesThatExist" ItemName="_ResolvedUserAssemblies" />
   </GetFilesThatExist>
 
   <GetFilesThatExist
-    Condition="'$(AndroidLinkMode)' != 'None'"
+    Condition="'$(AndroidLinkMode)' != 'None' and '$(UsingAndroidNETSdk)' != 'true'"
     Files="@(ResolvedFrameworkAssemblies->'$(MonoAndroidIntermediateAssemblyDir)%(Filename)%(Extension)')">
     <Output TaskParameter="FilesThatExist" ItemName="_ResolvedFrameworkAssemblies" />
   </GetFilesThatExist>
 
-  <ItemGroup Condition=" '$(AndroidLinkMode)' == 'None' ">
+  <ItemGroup Condition=" '$(AndroidLinkMode)' == 'None' and '$(UsingAndroidNETSdk)' != 'true' ">
     <_ResolvedAssemblies          Include="@(ResolvedAssemblies->'$(MonoAndroidIntermediateAssemblyDir)%(Filename)%(Extension)')" />
     <_ResolvedSymbols             Include="@(ResolvedSymbols->'$(MonoAndroidIntermediateAssemblyDir)%(Filename)%(Extension)')" />
     <_ResolvedUserAssemblies      Include="@(ResolvedUserAssemblies->'$(MonoAndroidIntermediateAssemblyDir)%(Filename)%(Extension)')" />
     <_ResolvedFrameworkAssemblies Include="@(ResolvedFrameworkAssemblies)" />
   </ItemGroup>
-  <ItemGroup Condition=" '$(AndroidLinkMode)' == 'None' Or '$(AndroidUseSharedRuntime)' == 'True' ">
+  <ItemGroup Condition=" ('$(AndroidLinkMode)' == 'None' Or '$(AndroidUseSharedRuntime)' == 'True') and '$(UsingAndroidNETSdk)' != 'true' ">
     <_ShrunkAssemblies          Include="@(_ResolvedAssemblies)" />
     <_ShrunkUserAssemblies      Include="@(_ResolvedUserAssemblies)" />
     <_ShrunkFrameworkAssemblies Include="@(_ResolvedFrameworkAssemblies)" />
   </ItemGroup>
-  <ItemGroup Condition=" '$(AndroidLinkMode)' != 'None' And '$(AndroidUseSharedRuntime)' != 'True' ">
+  <ItemGroup Condition=" '$(AndroidLinkMode)' != 'None' And '$(AndroidUseSharedRuntime)' != 'True' and '$(UsingAndroidNETSdk)' != 'true' ">
     <_ShrunkAssemblies          Include="@(_ResolvedAssemblies->'$(MonoAndroidIntermediateAssemblyDir)shrunk\%(Filename)%(Extension)')" />
     <_ShrunkUserAssemblies      Include="@(_ResolvedUserAssemblies->'$(MonoAndroidIntermediateAssemblyDir)shrunk\%(Filename)%(Extension)')" />
     <_ShrunkFrameworkAssemblies Include="@(_ResolvedFrameworkAssemblies->'$(MonoAndroidIntermediateAssemblyDir)shrunk\%(Filename)%(Extension)')" />
