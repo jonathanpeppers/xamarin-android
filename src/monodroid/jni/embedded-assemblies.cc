@@ -163,6 +163,10 @@ EmbeddedAssemblies::open_from_bundles (MonoAssemblyName* aname, bool ref_only)
 
 	log_info (LOG_ASSEMBLY, "open_from_bundles: looking for bundled name: '%s'", name);
 
+	char *abi_name = strdup (BasicAndroidSystem::get_running_on_abi_name ());
+	strcat (abi_name, "/");
+	strcat (abi_name, name);
+
 	for (p = bundled_assemblies; p != nullptr && *p; ++p) {
 		MonoImage *image = nullptr;
 		MonoImageOpenStatus status;
@@ -171,7 +175,11 @@ EmbeddedAssemblies::open_from_bundles (MonoAssemblyName* aname, bool ref_only)
 		uint32_t assembly_data_size;
 
 		if (strcmp (e->name, name) != 0) {
-			continue;
+			if (strcmp (e->name, abi_name) != 0) {
+				continue;
+			} else {
+				log_info (LOG_ASSEMBLY, "open_from_bundles: found architecture-specific: '%s'", abi_name);
+			}
 		}
 
 		get_assembly_data (e, assembly_data, assembly_data_size);
@@ -183,6 +191,7 @@ EmbeddedAssemblies::open_from_bundles (MonoAssemblyName* aname, bool ref_only)
 		}
 	}
 	delete[] name;
+	delete[] abi_name;
 
 	if (a && utils.should_log (LOG_ASSEMBLY)) {
 		log_info_nocheck (LOG_ASSEMBLY, "open_from_bundles: loaded assembly: %p\n", a);

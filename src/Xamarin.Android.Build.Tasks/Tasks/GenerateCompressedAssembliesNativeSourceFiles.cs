@@ -53,7 +53,12 @@ namespace Xamarin.Android.Tasks
 					continue;
 				}
 
-				assemblies.Add (Path.GetFileName (assembly.ItemSpec), new CompressedAssemblyInfo (checked((uint)fi.Length)));
+				var key = Path.GetFileName (assembly.ItemSpec);
+				var abiDirectory = assembly.GetMetadata ("AbiDirectory");
+				if (!string.IsNullOrEmpty (abiDirectory)) {
+					key = abiDirectory + "/" + key;
+				}
+				assemblies.Add (key, new CompressedAssemblyInfo (checked((uint)fi.Length)));
 			}
 
 			uint index = 0;
