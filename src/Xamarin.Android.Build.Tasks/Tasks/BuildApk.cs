@@ -400,7 +400,13 @@ namespace Xamarin.Android.Tasks
 					return assembly.ItemSpec;
 				}
 
-				if (compressedAssembliesInfo.TryGetValue (Path.GetFileName (assembly.ItemSpec), out CompressedAssemblyInfo info) && info != null) {
+				var key = Path.GetFileName (assembly.ItemSpec);
+				var abiDirectory = assembly.GetMetadata ("AbiDirectory");
+				if (!string.IsNullOrEmpty (abiDirectory)) {
+					key = abiDirectory + "/" + key;
+				}
+
+				if (compressedAssembliesInfo.TryGetValue (key, out CompressedAssemblyInfo info) && info != null) {
 					EnsureCompressedAssemblyData (assembly.ItemSpec, info.DescriptorIndex);
 					AssemblyCompression.CompressionResult result = AssemblyCompression.Compress (compressedAssembly);
 					if (result != AssemblyCompression.CompressionResult.Success) {
@@ -420,6 +426,8 @@ namespace Xamarin.Android.Tasks
 						return assembly.ItemSpec;
 					}
 					return compressedAssembly.DestinationPath;
+				} else {
+					Log.LogDebugMessage ($"Assembly missing from {CompressedAssemblyInfo.CompressedAssembliesInfoKey}: {key}");
 				}
 
 				return assembly.ItemSpec;
