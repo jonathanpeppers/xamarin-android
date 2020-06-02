@@ -343,8 +343,8 @@ namespace Xamarin.Android.Tasks
 				var assemblyDefinition = reader.GetAssemblyDefinition ();
 				foreach (var handle in assemblyDefinition.GetCustomAttributes ()) {
 					var attribute = reader.GetCustomAttribute (handle);
-					var attributeName = reader.GetCustomAttributeFullName (attribute);
-					if (attributeName == "System.Runtime.CompilerServices.ReferenceAssemblyAttribute")
+					var (attributeNamespace, attributeName) = reader.GetCustomAttributeName (attribute);
+					if (attributeNamespace == "System.Runtime.CompilerServices" && attributeName == "ReferenceAssemblyAttribute")
 						return true;
 				}
 				return false;

@@ -285,47 +285,40 @@ namespace Xamarin.Android.Tasks
 
 			foreach (var handle in assembly.GetCustomAttributes ()) {
 				var attribute = reader.GetCustomAttribute (handle);
-				var attributeFullName = reader.GetCustomAttributeFullName (attribute);
-				switch (attributeFullName) {
-					case "Java.Interop.DoNotPackageAttribute": {
-							LogCodedWarning ("XA0122", Properties.Resources.XA0122, assemblyName, attributeFullName);
-							var arguments = attribute.GetCustomAttributeArguments ();
-							if (arguments.FixedArguments.Length > 0) {
-								string file = arguments.FixedArguments [0].Value?.ToString ();
-								if (string.IsNullOrWhiteSpace (file))
-									LogCodedError ("XA2008", Properties.Resources.XA2008, assembly.GetAssemblyName ().FullName);
-								do_not_package_atts.Add (Path.GetFileName (file));
-							}
-						}
-						break;
-					case "System.Runtime.Versioning.TargetFrameworkAttribute": {
-							var arguments = attribute.GetCustomAttributeArguments ();
-							foreach (var p in arguments.FixedArguments) {
-								// Of the form "MonoAndroid,Version=v8.1"
-								var value = p.Value?.ToString ();
-								if (!string.IsNullOrEmpty (value)) {
-									int commaIndex = value.IndexOf (",", StringComparison.Ordinal);
-									if (commaIndex != -1) {
-										targetFrameworkIdentifier = value.Substring (0, commaIndex);
-										if (targetFrameworkIdentifier == "MonoAndroid") {
-											const string match = "Version=";
-											var versionIndex = value.IndexOf (match, commaIndex, StringComparison.Ordinal);
-											if (versionIndex != -1) {
-												versionIndex += match.Length;
-												string version = value.Substring (versionIndex, value.Length - versionIndex);
-												var apiLevel = MonoAndroidHelper.SupportedVersions.GetApiLevelFromFrameworkVersion (version);
-												if (apiLevel != null) {
-													api_levels [assemblyName] = apiLevel.Value;
-												}
-											}
+				var (attributeNamespace, attributeName) = reader.GetCustomAttributeName (attribute);
+				if (attributeNamespace == "Java.Interop" && attributeName == "DoNotPackageAttribute") {
+					LogCodedWarning ("XA0122", Properties.Resources.XA0122, assemblyName, attributeNamespace + "." + attributeName);
+					var arguments = attribute.GetCustomAttributeArguments ();
+					if (arguments.FixedArguments.Length > 0) {
+						string file = arguments.FixedArguments [0].Value?.ToString ();
+						if (string.IsNullOrWhiteSpace (file))
+							LogCodedError ("XA2008", Properties.Resources.XA2008, assembly.GetAssemblyName ().FullName);
+						do_not_package_atts.Add (Path.GetFileName (file));
+					}
+				} else if (attributeNamespace == "System.Runtime.Versioning" && attributeName == "TargetFrameworkAttribute") {
+					var arguments = attribute.GetCustomAttributeArguments ();
+					foreach (var p in arguments.FixedArguments) {
+						// Of the form "MonoAndroid,Version=v8.1"
+						var value = p.Value?.ToString ();
+						if (!string.IsNullOrEmpty (value)) {
+							int commaIndex = value.IndexOf (",", StringComparison.Ordinal);
+							if (commaIndex != -1) {
+								targetFrameworkIdentifier = value.Substring (0, commaIndex);
+								if (targetFrameworkIdentifier == "MonoAndroid") {
+									const string match = "Version=";
+									var versionIndex = value.IndexOf (match, commaIndex, StringComparison.Ordinal);
+									if (versionIndex != -1) {
+										versionIndex += match.Length;
+										string version = value.Substring (versionIndex, value.Length - versionIndex);
+										var apiLevel = MonoAndroidHelper.SupportedVersions.GetApiLevelFromFrameworkVersion (version);
+										if (apiLevel != null) {
+											api_levels [assemblyName] = apiLevel.Value;
 										}
 									}
 								}
 							}
 						}
-						break;
-					default:
-						break;
+					}
 				}
 			}
 		}

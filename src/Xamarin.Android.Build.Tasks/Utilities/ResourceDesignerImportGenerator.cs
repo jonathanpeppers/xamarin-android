@@ -83,8 +83,8 @@ namespace Xamarin.Android.Tasks
 			var assembly = reader.GetAssemblyDefinition ();
 			foreach (var handle in assembly.GetCustomAttributes ()) {
 				var attribute = reader.GetCustomAttribute (handle);
-				var fullName = reader.GetCustomAttributeFullName (attribute);
-				if (fullName == "Android.Runtime.ResourceDesignerAttribute") {
+				var (attributeNamespace, attributeName) = reader.GetCustomAttributeName (attribute);
+				if (attributeNamespace == "Android.Runtime" && attributeName == "ResourceDesignerAttribute") {
 					var values = attribute.GetCustomAttributeArguments ();
 					foreach (var arg in values.NamedArguments) {
 						// application resource IDs are constants, cannot merge.

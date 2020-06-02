@@ -1,4 +1,4 @@
-﻿using Microsoft.Build.Framework;
+using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using System;
 using System.Collections.Generic;
@@ -76,29 +76,26 @@ namespace Xamarin.Android.Tasks
 			string targetFrameworkIdentifier = null;
 			foreach (var handle in assembly.GetCustomAttributes ()) {
 				var attribute = reader.GetCustomAttribute (handle);
-				var name = reader.GetCustomAttributeFullName (attribute);
-				switch (name) {
-					case "System.Runtime.Versioning.TargetFrameworkAttribute":
-						var arguments = attribute.GetCustomAttributeArguments ();
-						foreach (var p in arguments.FixedArguments) {
-							// Of the form "MonoAndroid,Version=v8.1"
-							var value = p.Value?.ToString ();
-							if (!string.IsNullOrEmpty (value)) {
-								int commaIndex = value.IndexOf (",", StringComparison.Ordinal);
-								if (commaIndex != -1) {
-									targetFrameworkIdentifier = value.Substring (0, commaIndex);
-									break;
-								}
+				var (attributeNamespace, attributeName) = reader.GetCustomAttributeName (attribute);
+				if (attributeNamespace == "System.Runtime.Versioning" && attributeName == "TargetFrameworkAttribute") {
+					var arguments = attribute.GetCustomAttributeArguments ();
+					foreach (var p in arguments.FixedArguments) {
+						// Of the form "MonoAndroid,Version=v8.1"
+						var value = p.Value?.ToString ();
+						if (!string.IsNullOrEmpty (value)) {
+							int commaIndex = value.IndexOf (",", StringComparison.Ordinal);
+							if (commaIndex != -1) {
+								targetFrameworkIdentifier = value.Substring (0, commaIndex);
+								break;
 							}
 						}
-						break;
-					case "Android.IncludeAndroidResourcesFromAttribute":
-					case "Android.NativeLibraryReferenceAttribute":
-					case "Java.Interop.JavaLibraryReferenceAttribute":
-						Log.LogCodedError ("XA0121", Properties.Resources.XA0121, reader.GetString (assembly.Name), name);
-						break;
-					default:
-						break;
+					}
+				} else if (attributeName == "IncludeAndroidResourcesFromAttribute" ||
+					attributeName == "NativeLibraryReferenceAttribute" ||
+					attributeName == "JavaLibraryReferenceAttribute") {
+					if (attributeNamespace == "Android" || attributeNamespace == "Java.Interop") {
+						Log.LogCodedError ("XA0121", Properties.Resources.XA0121, reader.GetString (assembly.Name), attributeNamespace + "." + attributeName);
+					}
 				}
 			}
 			return targetFrameworkIdentifier;
