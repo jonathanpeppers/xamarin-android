@@ -1,4 +1,4 @@
-﻿﻿﻿﻿using System;
+﻿﻿using System;
 using System.Linq;
 using NUnit.Framework;
 using Xamarin.ProjectTools;
@@ -584,6 +584,7 @@ namespace Bug12935
 		}
 
 		[Test]
+		[Category ("LibraryProjectZip")]
 		public void MergeLibraryManifest ()
 		{
 			byte [] classesJar;

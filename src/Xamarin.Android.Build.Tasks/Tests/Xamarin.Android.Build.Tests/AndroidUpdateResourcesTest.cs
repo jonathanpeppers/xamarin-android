@@ -17,17 +17,6 @@ namespace Xamarin.Android.Build.Tests
 	[Parallelizable (ParallelScope.Children)]
 	public class AndroidUpdateResourcesTest : BaseTest
 	{
-		string GetResourceDesignerPath (ProjectBuilder builder, XamarinAndroidProject project)
-		{
-			string path;
-			if (Builder.UseDotNet) {
-				path = Path.Combine (Root, builder.ProjectDirectory, project.IntermediateOutputPath);
-			} else {
-				path = Path.Combine (Root, builder.ProjectDirectory, "Resources");
-			}
-			return Path.Combine (path, "Resource.designer" + project.Language.DefaultDesignerExtension);
-		}
-
 		[Test]
 		[Category ("dotnet")]
 		public void CheckMultipleLibraryProjectReferenceAlias ([Values (true, false)] bool withGlobal)
@@ -292,6 +281,7 @@ namespace Xamarin.Android.Build.Tests
 
 		[Test]
 		[NonParallelizable]
+		[Category ("DotNetIgnore")] // <ProcessGoogleServicesJson/> task is built for net45
 		public void Check9PatchFilesAreProcessed ()
 		{
 			var projectPath = Path.Combine ("temp", "Check9PatchFilesAreProcessed");
@@ -599,7 +589,7 @@ namespace UnnamedProject
 			};
 			using (var b = CreateApkBuilder (Path.Combine ("temp", TestName))) {
 				Assert.IsTrue (b.Build (proj), "Build should have succeeded.");
-				var designerPath = Path.Combine (Root, b.ProjectDirectory, "Resources", "Resource.designer" + proj.Language.DefaultDesignerExtension);
+				var designerPath = GetResourceDesignerPath (b, proj);
 				var attr = File.GetAttributes (designerPath);
 				File.SetAttributes (designerPath, FileAttributes.ReadOnly);
 				Assert.IsTrue ((File.GetAttributes (designerPath) & FileAttributes.ReadOnly) == FileAttributes.ReadOnly,
@@ -1100,6 +1090,7 @@ namespace Lib1 {
 		}
 
 		[Test]
+		[Category ("DotNetIgnore")] // n/a in .NET 5, not possible to use $(TFV) of v8.0
 		public void CheckMaxResWarningIsEmittedAsAWarning([Values (false, true)] bool useAapt2)
 		{
 			var path = Path.Combine ("temp", TestName);
@@ -1299,6 +1290,7 @@ namespace UnnamedProject
 		// https://github.com/xamarin/xamarin-android/issues/2205
 		[Test]
 		[NonParallelizable]
+		[Category ("DotNetIgnore")] // <ProcessGoogleServicesJson/> task is built for net45
 		public void Issue2205 ([Values (false, true)] bool useAapt2)
 		{
 			var proj = new XamarinAndroidApplicationProject ();

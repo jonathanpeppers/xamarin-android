@@ -259,16 +259,15 @@ namespace Xamarin.Android.Tasks {
 
 			// If no <uses-sdk> is specified, add it with both minSdkVersion and
 			// targetSdkVersion set to TargetFrameworkVersion
-			if (!manifest.Elements ("uses-sdk").Any ()) {
+			var uses = manifest.Element ("uses-sdk");
+			if (uses == null) {
 				manifest.AddFirst (
-						new XElement ("uses-sdk",
+						uses = new XElement ("uses-sdk",
 							new XAttribute (androidNs + "minSdkVersion", SdkVersionName),
 							new XAttribute (androidNs + "targetSdkVersion", SdkVersionName)));
 			}
 
 			// If no minSdkVersion is specified, set it to TargetFrameworkVersion
-			var uses = manifest.Element ("uses-sdk");
-
 			if (uses.Attribute (androidNs + "minSdkVersion") == null) {
 				int minSdkVersion;
 				if (!int.TryParse (SdkVersionName, out minSdkVersion))
@@ -282,7 +281,7 @@ namespace Xamarin.Android.Tasks {
 			if (tsv != null)
 				targetSdkVersion = tsv.Value;
 			else {
-				targetSdkVersion = SdkVersionName;
+				uses.SetAttributeValue (androidNs + "targetSdkVersion", targetSdkVersion = SdkVersionName);
 				uses.AddBeforeSelf (new XComment ("suppress UsesMinSdkAttributes"));
 			}
 
