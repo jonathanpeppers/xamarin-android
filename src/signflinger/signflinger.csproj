@@ -1,0 +1,46 @@
+<Project>
+
+  <PropertyGroup>
+    <Configuration Condition="'$(Configuration)'==''">Debug</Configuration>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <Import Project="Sdk.props"   Sdk="Microsoft.Build.NoTargets" Version="1.0.88" />
+  <Import Project="..\..\Configuration.props" />
+  <Import Project="Sdk.targets" Sdk="Microsoft.Build.NoTargets" Version="1.0.88" />
+
+  <PropertyGroup>
+    <BuildDependsOn>$(BuildDependsOn);_BuildGradle</BuildDependsOn>
+    <CleanDependsOn>$(CleanDependsOn);_CleanGradle</CleanDependsOn>
+    <_Destination>$(XAInstallPrefix)xbuild\Xamarin\Android\signflinger.jar</_Destination>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <_JavaSource Include="src\**\*.java" />
+  </ItemGroup>
+
+  <Target Name="_BuildGradle"
+      Inputs="$(MSBuildThisFile);build.gradle;@(_JavaSource)"
+      Outputs="$(_Destination)">
+    <Exec
+        Command="&quot;$(GradleWPath)&quot; jar $(GradleArgs) -PjavaSourceVer=$(JavacSourceVersion) -PjavaTargetVer=$(JavacTargetVersion)"
+        EnvironmentVariables="JAVA_HOME=$(JavaSdkDirectory);APP_HOME=$(GradleHome)"
+        WorkingDirectory="$(MSBuildThisFileDirectory)"
+    />
+    <Copy
+        SourceFiles="build\libs\signflinger.jar"
+        DestinationFiles="$(_Destination)"
+    />
+    <Touch Files="$(_Destination)" />
+  </Target>
+
+  <Target Name="_CleanGradle">
+    <Delete Files="$(_Destination)" />
+    <Exec
+        Command="&quot;$(GradleWPath)&quot; clean $(GradleArgs)"
+        EnvironmentVariables="JAVA_HOME=$(JavaSdkDirectory);APP_HOME=$(GradleHome)"
+        WorkingDirectory="$(MSBuildThisFileDirectory)"
+    />
+  </Target>
+</Project>
+

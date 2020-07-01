@@ -1,0 +1,38 @@
+apply plugin: 'java'
+apply plugin: 'idea'
+
+java {
+    ext.javaSourceVer = project.hasProperty('javaSourceVer') ? JavaVersion.toVersion(project.getProperty('javaSourceVer')) : JavaVersion.VERSION_1_8
+    ext.javaTargetVer = project.hasProperty('javaTargetVer') ? JavaVersion.toVersion(project.getProperty('javaTargetVer')) : JavaVersion.VERSION_1_8
+
+    sourceCompatibility = ext.javaSourceVer
+    targetCompatibility = ext.javaTargetVer
+}
+
+repositories {
+    google()
+    mavenCentral()
+}
+
+dependencies {
+    compile group: 'com.android', name: 'signflinger', version: '4.0.0'
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ["src"]
+        }
+    }
+}
+
+jar {
+    duplicatesStrategy = 'exclude'
+    manifest {
+        attributes 'Main-Class': 'com.xamarin.signflinger.Main'
+    }
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    archiveName 'signflinger.jar'
+}
