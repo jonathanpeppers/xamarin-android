@@ -21,7 +21,8 @@ public class Main {
             byte[] keyBytes = Files.readAllBytes(new File ("rsa-1024.pk8").toPath());
 
             SignedApkOptions options = new SignedApkOptions.Builder()
-                .setV1Enabled(true)
+                .setV4Enabled(true)
+                .setV4Output(new File ("com.companyname.signflinger.apk.idsig"))
                 .setCertificates(SignedApkOptions.bytesToCertificateChain(certBytes))
                 .setPrivateKey(SignedApkOptions.bytesToPrivateKey("rsa", keyBytes))
                 .setMinSdkVersion(24)

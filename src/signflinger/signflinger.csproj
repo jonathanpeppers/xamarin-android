@@ -53,11 +53,11 @@
     <Exec Command="$(_Java) -jar .\bin\Debug\lib\xamarin.android\xbuild\Xamarin\Android\signflinger.jar" WorkingDirectory="..\.." />
     <!-- <Delete Files="..\..\com.companyname.signflinger-Aligned.apk" /> -->
     <!-- <Exec Command="$(_ZipAlign) -p 4 com.companyname.signflinger.apk com.companyname.signflinger-Aligned.apk" WorkingDirectory="..\.." /> -->
-    <Exec Command="$(_Adb) install com.companyname.signflinger.apk" WorkingDirectory="..\.." />
+    <Exec Command="$(_Adb) install --incremental com.companyname.signflinger.apk" WorkingDirectory="..\.." />
     <Exec Command="$(_Java) -jar .\bin\Debug\lib\xamarin.android\xbuild\Xamarin\Android\signflinger.jar SignFlinger.dll" WorkingDirectory="..\.." />
     <!-- <Delete Files="..\..\com.companyname.signflinger-Aligned.apk" /> -->
     <!-- <Exec Command="$(_ZipAlign) -p 4 com.companyname.signflinger.apk com.companyname.signflinger-Aligned.apk" WorkingDirectory="..\.." /> -->
-    <Exec Command="$(_Adb) install com.companyname.signflinger.apk" WorkingDirectory="..\.." />
+    <Exec Command="$(_Adb) install --incremental com.companyname.signflinger.apk" WorkingDirectory="..\.." />
   </Target>
 
 </Project>
