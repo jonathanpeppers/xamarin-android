@@ -15,12 +15,13 @@ public class Main {
     public static void main(String[] args) {
         try {
             File apkFile = new File("com.companyname.signflinger.apk");
-            long apkLastWrite = apkFile.lastModified();
+            //long apkLastWrite = apkFile.lastModified();
 
             byte[] certBytes = Files.readAllBytes(new File ("rsa-1024.x509.pem").toPath());
             byte[] keyBytes = Files.readAllBytes(new File ("rsa-1024.pk8").toPath());
 
             SignedApkOptions options = new SignedApkOptions.Builder()
+                .setV1Enabled(true)
                 .setCertificates(SignedApkOptions.bytesToCertificateChain(certBytes))
                 .setPrivateKey(SignedApkOptions.bytesToPrivateKey("rsa", keyBytes))
                 .setMinSdkVersion(24)
@@ -31,15 +32,13 @@ public class Main {
             ArrayList<File> files = new ArrayList<File>();
             for (String path : args) {
                 File file = new File(path);
-                if (entries == null || !entries.containsKey(path)) {
+                if (entries == null || !entries.containsKey("assemblies/" + path)) {
                     System.out.println("New File: " + path);
                     files.add(file);
-                } else if (apkLastWrite < file.lastModified()) {
-                    System.out.println("Deleting: " + path);
-                    archive.delete(path);
-                    files.add(file);
                 } else {
-                    System.out.println("Skipping: " + path);
+                    System.out.println("Deleting: " + path);
+                    archive.delete("assemblies/" + path);
+                    files.add(file);
                 }
             }
             for (File file : files) {

@@ -42,5 +42,23 @@
         WorkingDirectory="$(MSBuildThisFileDirectory)"
     />
   </Target>
+
+  <Target Name="Test">
+    <PropertyGroup>
+      <_Java>C:\Users\jopepper\android-toolchain\jdk-1.8\bin\java.exe</_Java>
+      <_ZipAlign>C:\Users\jopepper\android-toolchain\sdk\build-tools\28.0.3\zipalign.exe</_ZipAlign>
+      <_Adb>C:\Users\jopepper\android-toolchain\sdk\platform-tools\adb.exe</_Adb>
+    </PropertyGroup>
+    <Exec Command="$(_Adb) uninstall com.companyname.signflinger" IgnoreExitCode="true" />
+    <Exec Command="$(_Java) -jar .\bin\Debug\lib\xamarin.android\xbuild\Xamarin\Android\signflinger.jar" WorkingDirectory="..\.." />
+    <!-- <Delete Files="..\..\com.companyname.signflinger-Aligned.apk" /> -->
+    <!-- <Exec Command="$(_ZipAlign) -p 4 com.companyname.signflinger.apk com.companyname.signflinger-Aligned.apk" WorkingDirectory="..\.." /> -->
+    <Exec Command="$(_Adb) install com.companyname.signflinger.apk" WorkingDirectory="..\.." />
+    <Exec Command="$(_Java) -jar .\bin\Debug\lib\xamarin.android\xbuild\Xamarin\Android\signflinger.jar SignFlinger.dll" WorkingDirectory="..\.." />
+    <!-- <Delete Files="..\..\com.companyname.signflinger-Aligned.apk" /> -->
+    <!-- <Exec Command="$(_ZipAlign) -p 4 com.companyname.signflinger.apk com.companyname.signflinger-Aligned.apk" WorkingDirectory="..\.." /> -->
+    <Exec Command="$(_Adb) install com.companyname.signflinger.apk" WorkingDirectory="..\.." />
+  </Target>
+
 </Project>
 
