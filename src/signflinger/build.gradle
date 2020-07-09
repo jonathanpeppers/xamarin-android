@@ -15,7 +15,7 @@ repositories {
 }
 
 dependencies {
-    compile group: 'com.android', name: 'signflinger', version: '4.0.0'
+    compile group: 'com.android', name: 'signflinger', version: '4.1.0-beta03'
 }
 
 sourceSets {
