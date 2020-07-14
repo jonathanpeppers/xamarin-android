@@ -258,6 +258,8 @@ namespace Xamarin.ProjectTools
 		{
 		}
 
+		public event Action<Process> ProcessStarted;
+
 		Regex timeElapsedRegEx = new Regex (
 			@"^Time Elapsed([\s])(?<TimeSpan>(\d+):(\d\d):(\d\d)\.(\d+))$",
 			RegexOptions.Multiline | RegexOptions.Compiled
@@ -384,6 +386,7 @@ namespace Xamarin.ProjectTools
 					p.Start ();
 					p.BeginOutputReadLine ();
 					p.BeginErrorReadLine ();
+					ProcessStarted?.Invoke (p);
 					ranToCompletion = p.WaitForExit ((int)new TimeSpan (0, 15, 0).TotalMilliseconds);
 					if (psi.RedirectStandardOutput)
 						stdout.WaitOne ();

@@ -31,7 +31,11 @@ namespace Xamarin.Android.Build.Tests
 				IsRelease = isRelease,
 			};
 			using (var b = CreateApkBuilder ()) {
-				Assert.IsTrue (b.Build (proj), "Build should have succeeded.");
+				//NOTE: you have to be on Windows and elevated to run this test
+				uint min = 1 * 1024 * 1024, max = 2 * 1024 * 1024;
+				b.ProcessStarted += p => Win32.SetLimitWorkingSetSize (p, min, max);
+
+				Assert.IsTrue (b.DesignTimeBuild (proj), "Build should have succeeded.");
 			}
 		}
 
