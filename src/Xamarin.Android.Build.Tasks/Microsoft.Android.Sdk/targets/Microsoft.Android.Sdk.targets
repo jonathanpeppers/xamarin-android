@@ -20,6 +20,13 @@
 
   <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
 
+  <!-- Properties that depend on Sdk.targets being imported -->
+  <PropertyGroup>
+    <!--- This is not compatible with Xamarin.Android.FSharp.ResourceProvider, so disable it for all F# projects. -->
+    <AndroidUseIntermediateDesignerFile Condition=" '$(Language)' == 'F#' ">false</AndroidUseIntermediateDesignerFile>
+    <AndroidUseIntermediateDesignerFile Condition=" '$(AndroidUseIntermediateDesignerFile)' == '' ">true</AndroidUseIntermediateDesignerFile>
+  </PropertyGroup>
+
   <!-- Default item includes (globs and implicit references) -->
   <Import Project="Microsoft.Android.Sdk.DefaultItems.targets" />
   <!-- Build ordering, should be imported before Xamarin.Android.Common.targets -->
