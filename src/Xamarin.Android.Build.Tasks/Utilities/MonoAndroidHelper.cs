@@ -9,6 +9,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Xamarin.Android.Tools;
 using Xamarin.Tools.Zip;
+using Mono.Posix;
 
 #if MSBUILD
 using Microsoft.Build.Framework;
@@ -76,18 +77,24 @@ namespace Xamarin.Android.Tasks
 			return null;
 		}
 
-		// Path which contains OS-specific binaries; formerly known as $prefix/bin
-		internal static string GetOSBinPath ()
-		{
-			var toolsDir = Path.GetFullPath (Path.GetDirectoryName (typeof (MonoAndroidHelper).Assembly.Location));
-			return Path.Combine (toolsDir, uname.Value);
-		}
+		static readonly Lazy<string> toolsPath = new Lazy<string> (() => {
+			return Path.GetFullPath (Path.GetDirectoryName (typeof (MonoAndroidHelper).Assembly.Location));
+		});
 
-		internal static string GetOSLibPath ()
-		{
-			var toolsDir = Path.GetFullPath (Path.GetDirectoryName (typeof (MonoAndroidHelper).Assembly.Location));
-			return Path.Combine (toolsDir, "lib", $"host-{uname.Value}");
-		}
+		/// <summary>
+		/// Full path to directory containing `typeof (MonoAndroidHelper).Assembly.Location`
+		/// </summary>
+		internal static string GetToolsPath () => toolsPath.Value;
+
+		/// <summary>
+		/// Path which contains OS-specific binaries; formerly known as $prefix/bin
+		/// </summary>
+		internal static string GetOSBinPath () => Path.Combine (GetToolsPath (), uname.Value);
+
+		/// <summary>
+		/// Path which contains OS-specific libraries
+		/// </summary>
+		internal static string GetOSLibPath () => Path.Combine (GetToolsPath (), "lib", $"host-{uname.Value}");
 
 #if MSBUILD
 		static TaskLoggingHelper androidSdkLogger;

@@ -29,6 +29,7 @@
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -74,16 +75,23 @@ namespace Xamarin.Android.Tasks
 			// OS X:    $prefix/lib/xamarin.android/xbuild/Xamarin/Android
 			// Windows: %ProgramFiles(x86)%\MSBuild\Xamarin\Android
 			if (string.IsNullOrEmpty (MonoAndroidToolsPath)) {
-				MonoAndroidToolsPath  = Path.GetDirectoryName (typeof (ResolveSdks).Assembly.Location);
+				MonoAndroidToolsPath = MonoAndroidHelper.GetToolsPath ();
 			}
 			MonoAndroidBinPath  = MonoAndroidHelper.GetOSBinPath () + Path.DirectorySeparatorChar;
 			MonoAndroidLibPath  = MonoAndroidHelper.GetOSLibPath () + Path.DirectorySeparatorChar;
 			AndroidBinUtilsPath = MonoAndroidBinPath + "ndk" + Path.DirectorySeparatorChar;
 
+			var watch = new Stopwatch ();
+			watch.Start ();
 			MonoAndroidHelper.RefreshSupportedVersions (ReferenceAssemblyPaths);
+			watch.Stop ();
+			Log.LogDebugMessage ($"RefreshSupportedVersions: {watch.ElapsedMilliseconds:f3}");
 
 			try {
+				watch.Restart ();
 				MonoAndroidHelper.RefreshAndroidSdk (AndroidSdkPath, AndroidNdkPath, JavaSdkPath, Log);
+				watch.Stop ();
+				Log.LogDebugMessage ($"RefreshAndroidSdk: {watch.ElapsedMilliseconds:f3}");
 			}
 			catch (InvalidOperationException e) {
 				if (e.Message.Contains (" Android ")) {
