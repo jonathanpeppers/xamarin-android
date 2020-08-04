@@ -431,15 +431,19 @@ Copyright (C) 2011-2012 Xamarin. All rights reserved.
         Condition="'$(AndroidApplication)' == '' Or !$(AndroidApplication)"/>
   </ItemGroup>
   <FilterAssemblies
-      DesignTimeBuild="$(DesignTimeBuild)"
+      CacheFile="$(IntermediateOutputPath)_MonoAndroidReferencePath.cache"
       InputAssemblies="@(_ReferencePath)">
     <Output TaskParameter="OutputAssemblies" ItemName="_MonoAndroidReferencePath" />
   </FilterAssemblies>
   <FilterAssemblies
-      DesignTimeBuild="$(DesignTimeBuild)"
+      CacheFile="$(IntermediateOutputPath)_MonoAndroidReferenceDependencyPaths.cache"
       InputAssemblies="@(_ReferenceDependencyPaths)">
     <Output TaskParameter="OutputAssemblies" ItemName="_MonoAndroidReferenceDependencyPaths" />
   </FilterAssemblies>
+  <ItemGroup>
+    <FileWrites Include="$(IntermediateOutputPath)_MonoAndroidReferencePath.cache" />
+    <FileWrites Include="$(IntermediateOutputPath)_MonoAndroidReferenceDependencyPaths.cache" />
+  </ItemGroup>
 </Target>
 
 <Target Name="_CheckNonIdealConfigurations">

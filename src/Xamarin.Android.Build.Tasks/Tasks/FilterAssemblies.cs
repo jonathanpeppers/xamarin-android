@@ -1,4 +1,4 @@
-﻿using Microsoft.Build.Framework;
+using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using System;
 using System.Collections.Generic;
@@ -21,9 +21,9 @@ namespace Xamarin.Android.Tasks
 
 		const string TargetFrameworkIdentifier = "MonoAndroid";
 
-		public bool DesignTimeBuild { get; set; }
-
 		public ITaskItem [] InputAssemblies { get; set; }
+
+		public string CacheFile { get; set; }
 
 		[Output]
 		public ITaskItem [] OutputAssemblies { get; set; }
@@ -33,8 +33,23 @@ namespace Xamarin.Android.Tasks
 			if (InputAssemblies == null)
 				return true;
 
+			var cache = new HashSet<string> (StringComparer.Ordinal);
+			if (!string.IsNullOrEmpty (CacheFile) && File.Exists (CacheFile)) {
+				using (var reader = File.OpenText (CacheFile)) {
+					while (!reader.EndOfStream) {
+						cache.Add (reader.ReadLine ());
+					}
+				}
+			}
+
 			var output = new List<ITaskItem> (InputAssemblies.Length);
 			foreach (var assemblyItem in InputAssemblies) {
+				//TODO: this cache doesn't even check timestamps!
+				if (cache.Contains (assemblyItem.ItemSpec)) {
+					Log.LogDebugMessage ($"Assembly cached: {assemblyItem.ItemSpec}");
+					output.Add (assemblyItem);
+					continue;
+				}
 				if (!File.Exists (assemblyItem.ItemSpec)) {
 					Log.LogDebugMessage ($"Skipping non-existent dependency '{assemblyItem.ItemSpec}'.");
 					continue;
@@ -47,9 +62,6 @@ namespace Xamarin.Android.Tasks
 						output.Add (assemblyItem);
 						continue;
 					}
-
-					// In the rare case, [assembly: TargetFramework("MonoAndroid,Version=v9.0")] may not match
-					Log.LogDebugMessage ($"{nameof (TargetFrameworkIdentifier)} did not match: {assemblyItem.ItemSpec}");
 
 					// Fallback to looking for a Mono.Android reference
 					if (MonoAndroidHelper.HasMonoAndroidReference (reader)) {
@@ -65,6 +77,15 @@ namespace Xamarin.Android.Tasks
 					}
 				}
 			}
+
+			if (!string.IsNullOrEmpty (CacheFile)) {
+				using (var writer = File.CreateText (CacheFile)) {
+					foreach (var assembly in output) {
+						writer.WriteLine (assembly.ItemSpec);
+					}
+				}
+			}
+
 			OutputAssemblies = output.ToArray ();
 
 			return !Log.HasLoggedErrors;
