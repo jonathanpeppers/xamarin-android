@@ -36,6 +36,7 @@ namespace Xamarin.Android.Build.Tests
 		[OneTimeSetUp]
 		public void OneTimeSetUp ()
 		{
+			var abis = new [] { "armeabi-v7a", "arm64-v8a", "x86" };
 			var path = Path.Combine ("temp", TestName);
 			lib = new XamarinAndroidLibraryProject {
 				ProjectName = "Localization",
@@ -63,13 +64,18 @@ namespace Xamarin.Android.Build.Tests
 			app.OtherBuildItems.Add (new BuildItem ("None", "buildConfig.json") {
 				TextContent = () => BuildConfig,
 			});
+			foreach (var abi in abis) {
+				app.OtherBuildItems.Add (new AndroidItem.AndroidNativeLibrary ($"lib\\{abi}\\gdbserver") {
+					BinaryContent = () => bytes,
+				});
+			}
 			app.SetProperty ("AndroidStoreUncompressedFileExtensions", ".bar");
 			app.References.Add (new BuildItem.ProjectReference ($"..\\{lib.ProjectName}\\{lib.ProjectName}.csproj", lib.ProjectName, lib.ProjectGuid));
 
 			//NOTE: this is here to enable adb shell run-as
 			app.AndroidManifest = app.AndroidManifest.Replace ("<application ", "<application android:debuggable=\"true\" ");
 			app.SetProperty (app.ReleaseProperties, "AndroidPackageFormat", "aab");
-			app.SetAndroidSupportedAbis ("armeabi-v7a", "arm64-v8a", "x86");
+			app.SetAndroidSupportedAbis (abis);
 			app.SetProperty ("AndroidBundleConfigurationFile", "buildConfig.json");
 
 			libBuilder = CreateDllBuilder (Path.Combine (path, lib.ProjectName), cleanupOnDispose: true);

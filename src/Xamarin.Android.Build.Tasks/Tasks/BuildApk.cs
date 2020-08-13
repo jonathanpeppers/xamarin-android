@@ -502,6 +502,11 @@ namespace Xamarin.Android.Tasks
 			return assembliesPath;
 		}
 
+		/// <summary>
+		/// Returns the in-archive path for a native library
+		/// </summary>
+		protected virtual string GetNativeLibraryPath (string abi, string fileName) => $"lib/{abi}/{fileName}";
+
 		class LibInfo
 		{
 			public string Path;
@@ -595,7 +600,7 @@ namespace Xamarin.Android.Tasks
 		void AddNativeLibrary (ArchiveFileList files, string path, string abi, string archiveFileName)
 		{
 			string fileName = string.IsNullOrEmpty (archiveFileName) ? Path.GetFileName (path) : archiveFileName;
-			var item = (filePath: path, archivePath: $"lib/{abi}/{fileName}");
+			var item = (filePath: path, archivePath: GetNativeLibraryPath (abi, fileName));
 			if (files.Any (x => x.archivePath == item.archivePath)) {
 				Log.LogCodedWarning ("XA4301", path, 0, Properties.Resources.XA4301, item.archivePath);
 				return;

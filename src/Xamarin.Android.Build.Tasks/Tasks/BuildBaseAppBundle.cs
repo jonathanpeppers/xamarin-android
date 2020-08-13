@@ -41,5 +41,15 @@ namespace Xamarin.Android.Tasks
 				zip.Flush ();
 			}
 		}
+
+		protected override string GetNativeLibraryPath (string abi, string fileName)
+		{
+			if (fileName.EndsWith (".so", StringComparison.OrdinalIgnoreCase))
+				return base.GetNativeLibraryPath (abi, fileName);
+
+			// If the extension is not .so, we need to use a different location to solve:
+			// [BT Files under lib/ must have .so extension, found 'lib/arm64-v8a/gdbserver'.
+			return $"{RootPath}lib/{abi}/{fileName}";
+		}
 	}
 }
