@@ -3,9 +3,8 @@
 	<Import Project="$(MSBuildThisFileDirectory)\Xamarin.Android.Tools.Versions.props" />
 	<PropertyGroup>
 		<XamarinAndroidVersion Condition=" '$(UsingAndroidNETSdk)' != 'true' ">@PACKAGE_VERSION@-@PACKAGE_VERSION_BUILD@</XamarinAndroidVersion>
-		<_JavaInteropReferences>Java.Interop;System.Runtime</_JavaInteropReferences>
+		<_JavaInteropReferences>Java.Interop;System.Drawing.Common</_JavaInteropReferences>
 		<Debugger Condition=" '$(Debugger)' == '' ">Xamarin</Debugger>
-		<DependsOnSystemRuntime Condition=" '$(DependsOnSystemRuntime)' == '' ">true</DependsOnSystemRuntime>
 		<ImplicitlyExpandNETStandardFacades>false</ImplicitlyExpandNETStandardFacades>
 		<CopyNuGetImplementations Condition=" '$(CopyNuGetImplementations)' == ''">true</CopyNuGetImplementations>
 		<YieldDuringToolExecution Condition="'$(YieldDuringToolExecution)' == ''">true</YieldDuringToolExecution>
