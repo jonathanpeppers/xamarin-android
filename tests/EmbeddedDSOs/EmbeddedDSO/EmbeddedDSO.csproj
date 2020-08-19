@@ -18,30 +18,14 @@
     <AppendTargetFrameworkToIntermediateOutputPath>false</AppendTargetFrameworkToIntermediateOutputPath>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(UnitTestsMode)' == 'true' ">
-    <RelativeRootPath>..\..\..\..\..\..\..</RelativeRootPath>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(UnitTestsMode)' != 'true' ">
-    <RelativeRootPath>..\..\..</RelativeRootPath>
-  </PropertyGroup>
-
-  <Import Project="$(RelativeRootPath)\Configuration.props" />
+  <Import Project="EmbeddedDSO.targets" />
   <PropertyGroup>
     <TargetFrameworkVersion>$(AndroidFrameworkVersion)</TargetFrameworkVersion>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <!-- We have to limit the supported abis to the currently enabled set, since the PR builders don't build all architectures but,
-         eventually, we have to build for all the ABIs unconditionally here -->
-    <AndroidSupportedAbis>$(AndroidSupportedTargetJitAbisSplit)</AndroidSupportedAbis>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <Optimize>false</Optimize>
-    <OutputPath Condition=" '$(UnitTestsMode)' != 'true' ">$(RelativeRootPath)\bin\TestDebug</OutputPath>
-    <OutputPath Condition=" '$(UnitTestsMode)' == 'true' ">bin\Debug</OutputPath>
     <DefineConstants>DEBUG;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -51,8 +35,6 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <Optimize>true</Optimize>
-    <OutputPath Condition=" '$(UnitTestsMode)' != 'true' ">$(RelativeRootPath)\bin\TestRelease</OutputPath>
-    <OutputPath Condition=" '$(UnitTestsMode)' == 'true' ">bin\Release</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AndroidManagedSymbols>true</AndroidManagedSymbols>
@@ -103,17 +85,4 @@
   </ItemGroup>
 
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
-  <Import Project="EmbeddedDSO.projitems" />
-  <Import Project="$(RelativeRootPath)\build-tools\scripts\TestApks.targets" />
-
-  <Target Name="_GrantPermissions">
-    <Exec Command="&quot;$(AdbToolPath)adb&quot; $(AdbTarget) shell pm grant %(TestApkPermission.Package) android.permission.%(TestApkPermission.Identity)" />
-  </Target>
-
-  <PropertyGroup>
-    <InstallDependsOnTargets>
-       $(InstallDependsOnTargets);
-       _GrantPermissions
-    </InstallDependsOnTargets>
-  </PropertyGroup>
 </Project>

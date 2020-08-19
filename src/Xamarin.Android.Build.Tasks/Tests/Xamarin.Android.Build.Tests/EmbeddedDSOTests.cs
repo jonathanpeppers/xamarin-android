@@ -18,7 +18,6 @@ using Xamarin.Tools.Zip;
 namespace Xamarin.Android.Build.Tests
 {
 	[Category ("Node-2")]
-	[Category ("StaticProject")] // TODO: enable for .NET 5
 	[Parallelizable (ParallelScope.Children)]
 	public class EmbeddedDSOTests : BaseTest
 	{
@@ -70,8 +69,12 @@ namespace Xamarin.Android.Build.Tests
 		[OneTimeSetUp]
 		public void BuildProject ()
 		{
-			testProjectPath = PrepareProject (ProjectName);
-			string projectPath = Path.Combine (testProjectPath, $"{ProjectName}.csproj");
+			var projectName = ProjectName;
+			if (Builder.UseDotNet) {
+				projectName += "DotNet";
+			}
+			testProjectPath = PrepareProject (projectName);
+			string projectPath = Path.Combine (testProjectPath, $"{projectName}.csproj");
 			LocalBuilder builder = GetBuilder ("EmbeddedDSO", testProjectPath);
 			string targetAbis = Xamarin.Android.Tools.XABuildConfig.SupportedABIs.Replace (";", ":");
 			bool success = builder.Build (projectPath, "SignAndroidPackage", new [] {
@@ -245,6 +248,10 @@ namespace Xamarin.Android.Build.Tests
 			};
 
 			CopyRecursively (TestProjectRootDirectory, temporaryProjectPath, ignore);
+			if (Builder.UseDotNet) {
+				XASdkProject.SaveNuGetConfig (tempRoot);
+				XASdkProject.SaveGlobalJson (tempRoot);
+			}
 			return temporaryProjectPath;
 		}
 

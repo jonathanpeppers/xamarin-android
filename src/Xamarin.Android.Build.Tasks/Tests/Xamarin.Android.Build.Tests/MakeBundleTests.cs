@@ -16,7 +16,7 @@ using Xamarin.Tools.Zip;
 
 namespace Xamarin.Android.Build.Tests
 {
-	[Category ("Node-2"), Category ("MkBundle"), Category ("StaticProject")]
+	[Category ("Node-2"), Category ("MkBundle")]
 	[Parallelizable (ParallelScope.Children)]
 	public class MakeBundleTests
 	{

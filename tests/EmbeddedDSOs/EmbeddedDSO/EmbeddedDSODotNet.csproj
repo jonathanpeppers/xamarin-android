@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.Android.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <RootNamespace>EmbeddedDSO</RootNamespace>
+    <AssemblyName>Xamarin.Android.EmbeddedDSO_Test</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AndroidUseSharedRuntime>false</AndroidUseSharedRuntime>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <AppendTargetFrameworkToIntermediateOutputPath>false</AppendTargetFrameworkToIntermediateOutputPath>
+  </PropertyGroup>
+  <Import Project="EmbeddedDSO.targets" />
+  <ItemGroup>
+    <Reference Include="Xamarin.Android.NUnitLite" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidEnvironment Include="Environment.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(RelativeRootPath)\tests\TestRunner.Core\TestRunner.Core.csproj" />
+    <ProjectReference Include="$(RelativeRootPath)\tests\TestRunner.NUnit\TestRunner.NUnit.csproj" />
+  </ItemGroup>
+</Project>
