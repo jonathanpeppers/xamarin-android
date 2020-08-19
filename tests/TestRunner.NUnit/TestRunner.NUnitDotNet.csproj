@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.Android.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <RootNamespace>Xamarin.Android.UnitTests.NUnit</RootNamespace>
+    <AssemblyName>TestRunner.NUnit</AssemblyName>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\TestRunner.Core\TestRunner.CoreDotNet.csproj" />
+    <ProjectReference Include="..\..\src\Xamarin.Android.NUnitLite\Microsoft.Android.NUnitLite.csproj" />
+  </ItemGroup>
+</Project>

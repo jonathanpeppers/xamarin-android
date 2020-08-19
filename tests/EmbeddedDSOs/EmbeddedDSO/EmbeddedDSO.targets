@@ -7,6 +7,7 @@
     <RelativeRootPath>..\..\..</RelativeRootPath>
   </PropertyGroup>
   <Import Project="$(RelativeRootPath)\Configuration.props" />
+  <Import Project="$(RelativeRootPath)\Directory.Build.props" Condition=" '$(UnitTestsMode)' == 'true' " />
 
   <PropertyGroup>
     <!-- We have to limit the supported abis to the currently enabled set, since the PR builders don't build all architectures but,

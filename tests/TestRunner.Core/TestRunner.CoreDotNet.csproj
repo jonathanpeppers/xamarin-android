@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.Android.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <RootNamespace>Xamarin.Android.UnitTests</RootNamespace>
+    <AssemblyName>TestRunner.Core</AssemblyName>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+</Project>

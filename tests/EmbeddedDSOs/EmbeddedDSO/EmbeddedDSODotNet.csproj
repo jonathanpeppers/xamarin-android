@@ -10,6 +10,7 @@
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
     <AppendTargetFrameworkToIntermediateOutputPath>false</AppendTargetFrameworkToIntermediateOutputPath>
   </PropertyGroup>
+  <Import Sdk="Microsoft.Android.Sdk" Project="Sdk.props" />
   <Import Project="EmbeddedDSO.targets" />
   <ItemGroup>
     <Reference Include="Xamarin.Android.NUnitLite" />
@@ -18,7 +19,7 @@
     <AndroidEnvironment Include="Environment.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="$(RelativeRootPath)\tests\TestRunner.Core\TestRunner.Core.csproj" />
-    <ProjectReference Include="$(RelativeRootPath)\tests\TestRunner.NUnit\TestRunner.NUnit.csproj" />
+    <ProjectReference Include="$(RelativeRootPath)\tests\TestRunner.Core\TestRunner.CoreDotNet.csproj" />
+    <ProjectReference Include="$(RelativeRootPath)\tests\TestRunner.NUnit\TestRunner.NUnitDotNet.csproj" />
   </ItemGroup>
 </Project>
