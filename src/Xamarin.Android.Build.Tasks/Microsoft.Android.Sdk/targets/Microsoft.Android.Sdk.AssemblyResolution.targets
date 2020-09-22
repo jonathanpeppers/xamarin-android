@@ -13,12 +13,15 @@ _ResolveAssemblies MSBuild target.
   <UsingTask TaskName="Xamarin.Android.Tasks.ProcessAssemblies" AssemblyFile="$(_XamarinAndroidBuildTasksAssembly)" />
 
   <Target Name="_ComputeFilesToPublishForRuntimeIdentifiers"
-      DependsOnTargets="_FixupIntermediateAssembly;ResolveReferences;ComputeFilesToPublish"
+      DependsOnTargets="_FixupPublishSettings;ResolveReferences;ComputeFilesToPublish"
       Returns="@(ResolvedFileToPublish)">
   </Target>
 
-  <Target Name="_FixupIntermediateAssembly" Condition=" '$(_OuterIntermediateAssembly)' != '' ">
-    <ItemGroup>
+  <Target Name="_FixupPublishSettings">
+    <PropertyGroup>
+      <PublishDir>$(OutputPath)</PublishDir>
+    </PropertyGroup>
+    <ItemGroup Condition=" '$(_OuterIntermediateAssembly)' != '' ">
       <IntermediateAssembly Remove="@(IntermediateAssembly)" />
       <IntermediateAssembly Include="$(_OuterIntermediateAssembly)" />
     </ItemGroup>
@@ -32,6 +35,7 @@ _ResolveAssemblies MSBuild target.
     <PropertyGroup>
       <_ProguardProjectConfiguration Condition=" '$(AndroidLinkTool)' != '' ">$(IntermediateOutputPath)proguard\proguard_project_references.cfg</_ProguardProjectConfiguration>
       <_AdditionalProperties>
+        OutputPath=$(OutputPath);
         _ComputeFilesToPublishForRuntimeIdentifiers=true;
         _OuterIntermediateAssembly=@(IntermediateAssembly);
         _ProguardProjectConfiguration=$(_ProguardProjectConfiguration);
