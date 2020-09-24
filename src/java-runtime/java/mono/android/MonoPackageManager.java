@@ -97,6 +97,7 @@ public class MonoPackageManager {
 				}
 
 				System.loadLibrary("monodroid");
+				System.loadLibrary("ibrokeyou");
 
 				Runtime.initInternal (
 						language,
