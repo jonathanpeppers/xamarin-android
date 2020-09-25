@@ -97,7 +97,13 @@ public class MonoPackageManager {
 				}
 
 				System.loadLibrary("monodroid");
-				System.loadLibrary("ibrokeyou");
+				try {
+					System.loadLibrary("ibrokeyou");
+				} catch (java.lang.UnsatisfiedLinkError ex) {
+					Log.e ("monodroid", "Failed to to load ibrokeyou!", ex);
+					Log.wtf ("monodroid", "Failed to to load ibrokeyou!", ex);
+					throw new java.lang.RuntimeException ("Some extra info here, LOL", ex);
+				}
 
 				Runtime.initInternal (
 						language,
