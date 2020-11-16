@@ -15,6 +15,8 @@ namespace Xamarin.Android.Tasks
 		/// </summary>
 		protected override string RootPath => "root/";
 
+		protected override string AssembliesPath => "lib/";
+
 		/// <summary>
 		/// `.dex` files should be in `dex/`
 		/// </summary>
