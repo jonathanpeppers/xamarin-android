@@ -70,6 +70,10 @@ This item group populates the Build Action drop-down in IDEs.
       <!-- NOTE: .aar items should skip %(AndroidSkipResourceProcessing) by default -->
       <AndroidSkipResourceProcessing>true</AndroidSkipResourceProcessing>
     </AndroidAarLibrary>
+    <!-- Imaginary item group -->
+    <Foo>
+      <Pack>true</Pack>
+    </Foo>
   </ItemDefinitionGroup>
 
   <!-- Convert @(AndroidLibrary) to the legacy item group names -->

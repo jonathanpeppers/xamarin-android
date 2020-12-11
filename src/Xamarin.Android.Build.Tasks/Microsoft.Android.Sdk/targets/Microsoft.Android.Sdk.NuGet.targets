@@ -12,6 +12,17 @@ This file contains *temporary* workarounds for NuGet in .NET 5.
   <UsingTask TaskName="Xamarin.Android.Tasks.FixupNuGetReferences" AssemblyFile="$(_XamarinAndroidBuildTasksAssembly)" />
 
   <PropertyGroup>
+    <GenerateNuspecDependsOn>$(GenerateNuspecDependsOn);_PackFoos</GenerateNuspecDependsOn>
+  </PropertyGroup>
+  <Target Name="_PackFoos">
+    <ItemGroup>
+      <_PackageFiles Include="@(Foo)" Condition=" %(Foo.Pack) == 'true' ">
+        <BuildAction Condition="'%(Foo.BuildAction)' == ''">Foo</BuildAction>
+      </_PackageFiles>
+    </ItemGroup>
+  </Target>
+
+  <PropertyGroup>
     <!-- Clear $(AssetTargetFallback), so only $(PackageTargetFallback) is used. -->
     <AssetTargetFallback></AssetTargetFallback>
     <!--
