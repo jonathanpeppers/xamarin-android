@@ -343,6 +343,10 @@ namespace Xamarin.Android.Build.Tests
 				/* isRelease */          true,
 			},
 			new object [] {
+				/* runtimeIdentifiers */ "android-arm64",
+				/* isRelease */          true,
+			},
+			new object [] {
 				/* runtimeIdentifiers */ "android-arm;android-arm64;android-x86;android-x64",
 				/* isRelease */          false,
 			},
@@ -392,6 +396,11 @@ namespace Xamarin.Android.Build.Tests
 				}
 			};
 			proj.MainActivity = proj.DefaultMainActivity.Replace (": Activity", ": AndroidX.AppCompat.App.AppCompatActivity");
+			//TODO: take this out and either make new tests or enable the AOT category
+			if (isRelease) {
+				proj.SetProperty ("AotAssemblies", "true");
+				proj.SetProperty ("RunAOTCompilation", "true");
+			}
 			proj.OtherBuildItems.Add (new AndroidItem.InputJar ("javaclasses.jar") {
 				BinaryContent = () => ResourceData.JavaSourceJarTestJar,
 			});
