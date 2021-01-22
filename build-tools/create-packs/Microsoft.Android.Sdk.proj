@@ -102,6 +102,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   <PropertyGroup>
     <AndroidNETSdkVersion>$(AndroidPackVersionLong)</AndroidNETSdkVersion>
     <XamarinAndroidVersion>$(AndroidPackVersionLong)</XamarinAndroidVersion>
+    <MonoAOTCompilerVersion>$(MonoAOTCompilerVersion)</MonoAOTCompilerVersion>
   </PropertyGroup>
   <ItemGroup>
     <KnownFrameworkReference

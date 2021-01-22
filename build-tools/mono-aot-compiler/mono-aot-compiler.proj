@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.Build.NoTargets">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+  </PropertyGroup>
+
+  <Import Project="..\..\Configuration.props" />
+
+  <ItemGroup>
+    <!--
+      @(PackageDownload) with an exact version such as [6.0.0-preview.1.21072.5] is the only way to consume these packages:
+      error NU1213: The package Microsoft.NETCore.App.Runtime.AOT.osx-x64.Cross.android-* has a package type DotnetPlatform that is incompatible with this project.
+    -->
+    <!-- TODO: We only have osx-x64 packs-->
+    <PackageDownload Include="Microsoft.NetCore.App.Runtime.AOT.osx-x64.Cross.android-arm"   Version="[$(MonoAOTCompilerVersion)]" />
+    <PackageDownload Include="Microsoft.NetCore.App.Runtime.AOT.osx-x64.Cross.android-arm64" Version="[$(MonoAOTCompilerVersion)]" />
+    <PackageDownload Include="Microsoft.NetCore.App.Runtime.AOT.osx-x64.Cross.android-x64"   Version="[$(MonoAOTCompilerVersion)]" />
+    <PackageDownload Include="Microsoft.NetCore.App.Runtime.AOT.osx-x64.Cross.android-x86"   Version="[$(MonoAOTCompilerVersion)]" />
+    <PackageDownload Include="Microsoft.NET.Runtime.MonoAOTCompiler.Task"                    Version="[$(MonoAOTCompilerVersion)]" />
+  </ItemGroup>
+</Project>

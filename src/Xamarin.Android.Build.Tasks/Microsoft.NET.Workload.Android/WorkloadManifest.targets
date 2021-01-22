@@ -3,4 +3,6 @@
       Condition=" '$(TargetPlatformIdentifier)' == 'android' " />
   <Import Project="Sdk.targets" Sdk="Microsoft.Android.Sdk.BundleTool"
       Condition=" '$(AndroidPackageFormat)' == 'aab' " />
+  <Import Project="..\build\Microsoft.NET.Runtime.MonoAOTCompiler.Task.props" Sdk="Microsoft.NET.Runtime.MonoAOTCompiler.Task"
+      Condition=" '$(AotAssemblies)' == 'true' " />
 </Project>

@@ -7,7 +7,12 @@
         "Microsoft.Android.Sdk",
         "Microsoft.Android.Sdk.BundleTool",
         "Microsoft.Android.Ref",
-        "Microsoft.Android.Templates"
+        "Microsoft.Android.Templates",
+        "Microsoft.NET.Runtime.MonoAOTCompiler.Task",
+        "Microsoft.NetCore.App.Runtime.AOT.osx-x64.Cross.android-arm",
+        "Microsoft.NetCore.App.Runtime.AOT.osx-x64.Cross.android-arm64",
+        "Microsoft.NetCore.App.Runtime.AOT.osx-x64.Cross.android-x64",
+        "Microsoft.NetCore.App.Runtime.AOT.osx-x64.Cross.android-x86"
       ]
     }
   },
@@ -23,6 +28,26 @@
     "Microsoft.Android.Sdk.BundleTool": {
       "kind": "sdk",
       "version": "@SDK_PACK_VERSION@"
+    },
+    "Microsoft.NET.Runtime.MonoAOTCompiler.Task": {
+      "kind": "sdk",
+      "version": "@MONO_AOT_VERSION@"
+    },
+    "Microsoft.NetCore.App.Runtime.AOT.osx-x64.Cross.android-arm": {
+      "kind": "sdk",
+      "version": "@MONO_AOT_VERSION@"
+    },
+    "Microsoft.NetCore.App.Runtime.AOT.osx-x64.Cross.android-arm64": {
+      "kind": "sdk",
+      "version": "@MONO_AOT_VERSION@"
+    },
+    "Microsoft.NetCore.App.Runtime.AOT.osx-x64.Cross.android-x64": {
+      "kind": "sdk",
+      "version": "@MONO_AOT_VERSION@"
+    },
+    "Microsoft.NetCore.App.Runtime.AOT.osx-x64.Cross.android-x86": {
+      "kind": "sdk",
+      "version": "@MONO_AOT_VERSION@"
     },
     "Microsoft.Android.Ref": {
       "kind": "framework",
