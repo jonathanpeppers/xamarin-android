@@ -23,6 +23,8 @@ namespace Xamarin.Android.Tasks
 
 		public bool PublishTrimmed { get; set; }
 
+		public string [] RuntimeIdentifiers { get; set; }
+
 		public ITaskItem [] InputAssemblies { get; set; }
 
 		[Output]
@@ -45,6 +47,51 @@ namespace Xamarin.Android.Tasks
 				}
 			}
 
+			if (RuntimeIdentifiers?.Length > 1) {
+				RemoveDuplicateAssemblies (output, symbols);
+			} else {
+				// The "fast path" of a single $(RuntimeIdentifer) doesn't need to check for duplicates
+				// Only needs to set item metadata:
+				// * %(FrameworkAssembly)
+				// * %(MonoAndroidReference)
+				// * %(DestinationSubPath)
+				foreach (var assembly in InputAssemblies) {
+					output.Add (assembly);
+
+					var frameworkAssembly = IsFrameworkAssembly (assembly);
+					assembly.SetMetadata ("FrameworkAssembly", frameworkAssembly.ToString ());
+
+					// Framework assemblies can skip checking for %(HasMonoAndroidReference)
+					if (!frameworkAssembly) {
+						var hasMonoAndroidReference = MonoAndroidHelper.HasMonoAndroidReference (assembly.ItemSpec);
+						assembly.SetMetadata ("HasMonoAndroidReference", hasMonoAndroidReference.ToString ());
+					}
+					assembly.SetDestinationSubPath ();
+				}
+				foreach (var symbol in symbols.Values) {
+					symbol.SetDestinationSubPath ();
+				}
+			}
+
+			OutputAssemblies = output.ToArray ();
+			ResolvedSymbols = symbols.Values.ToArray ();
+
+			// Set ShrunkAssemblies for _RemoveRegisterAttribute and <BuildApk/>
+			if (PublishTrimmed) {
+				ShrunkAssemblies = OutputAssemblies.Select (a => {
+					var dir = Path.GetDirectoryName (a.ItemSpec);
+					var file = Path.GetFileName (a.ItemSpec);
+					return new TaskItem (a) {
+						ItemSpec = Path.Combine (dir, "shrunk", file),
+					};
+				}).ToArray ();
+			}
+
+			return !Log.HasLoggedErrors;
+		}
+
+		void RemoveDuplicateAssemblies (List<ITaskItem> output, Dictionary<string, ITaskItem> symbols)
+		{
 			// Group by assembly file name
 			foreach (var group in InputAssemblies.Where (Filter).GroupBy (a => Path.GetFileName (a.ItemSpec))) {
 				// Get the unique list of MVIDs
@@ -59,9 +106,7 @@ namespace Xamarin.Android.Tasks
 
 						// Calculate %(FrameworkAssembly) and %(HasMonoAndroidReference) for the first
 						if (frameworkAssembly == null) {
-							string packageId = assembly.GetMetadata ("NuGetPackageId") ?? "";
-							frameworkAssembly = packageId.StartsWith ("Microsoft.NETCore.App.Runtime.") ||
-								packageId.StartsWith ("Microsoft.Android.Runtime.");
+							frameworkAssembly = IsFrameworkAssembly (assembly);
 						}
 						if (hasMonoAndroidReference == null) {
 							hasMonoAndroidReference = MonoAndroidHelper.HasMonoAndroidReference (reader);
@@ -95,22 +140,13 @@ namespace Xamarin.Android.Tasks
 					}
 				}
 			}
+		}
 
-			OutputAssemblies = output.ToArray ();
-			ResolvedSymbols = symbols.Values.ToArray ();
-
-			// Set ShrunkAssemblies for _RemoveRegisterAttribute and <BuildApk/>
-			if (PublishTrimmed) {
-				ShrunkAssemblies = OutputAssemblies.Select (a => {
-					var dir = Path.GetDirectoryName (a.ItemSpec);
-					var file = Path.GetFileName (a.ItemSpec);
-					return new TaskItem (a) {
-						ItemSpec = Path.Combine (dir, "shrunk", file),
-					};
-				}).ToArray ();
-			}
-
-			return !Log.HasLoggedErrors;
+		static bool IsFrameworkAssembly (ITaskItem assembly)
+		{
+			string packageId = assembly.GetMetadata ("NuGetPackageId") ?? "";
+			return packageId.StartsWith ("Microsoft.NETCore.App.Runtime.") ||
+				packageId.StartsWith ("Microsoft.Android.Runtime.");
 		}
 
 		bool Filter (ITaskItem assembly)

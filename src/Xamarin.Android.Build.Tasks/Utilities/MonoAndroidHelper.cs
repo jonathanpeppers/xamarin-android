@@ -323,6 +323,14 @@ namespace Xamarin.Android.Tasks
 			return bool.TryParse (hasReference, out bool value) && value;
 		}
 
+		public static bool HasMonoAndroidReference (string path)
+		{
+			using var stream = File.OpenRead (path);
+			using var pe = new PEReader (stream);
+			var reader = pe.GetMetadataReader ();
+			return HasMonoAndroidReference (reader);
+		}
+
 		public static bool HasMonoAndroidReference (MetadataReader reader)
 		{
 			foreach (var handle in reader.AssemblyReferences) {
