@@ -18,6 +18,7 @@ For <MonoAOTCompiler/> usage, see:
       TaskName="MonoAOTCompiler"
       AssemblyFile="$(MonoAOTCompilerTaskAssemblyPath)"
   />
+  <UsingTask TaskName="Xamarin.Android.Tasks.GetAotArguments" AssemblyFile="$(_XamarinAndroidBuildTasksAssembly)" />
 
   <Target Name="_AndroidAot"
       Condition=" '$(AotAssemblies)' == 'true' "
@@ -30,15 +31,30 @@ For <MonoAOTCompiler/> usage, see:
       * Hardcoded microsoft.netcore.app.runtime.aot.osx-x64.cross
       * Hardcoded '.21' to be replaced with ''
     -->
+    <GetAotArguments
+        AndroidAotMode="$(AndroidAotMode)"
+        AndroidNdkDirectory="$(_AndroidNdkDirectory)"
+        AndroidBinUtilsDirectory="$(AndroidBinUtilsDirectory)"
+        AndroidApiLevel="$(_AndroidApiLevel)"
+        ManifestFile="$(IntermediateOutputPath)android\AndroidManifest.xml"
+        AndroidSequencePointsMode="$(_SequencePointsMode)"
+        AotAdditionalArguments="$(AndroidAotAdditionalArguments)"
+        AotOutputDirectory="$(_AndroidAotBinDirectory)"
+        RuntimeIdentifier="$(RuntimeIdentifier)"
+        EnableLLVM="$(EnableLLVM)"
+        Profiles="@(_AotProfiles)">
+      <Output PropertyName="_AotArguments" TaskParameter="Arguments" />
+    </GetAotArguments>
     <ItemGroup>
       <_AotRuntimeIdentifiers Include="$([System.String]::Copy('%(_RIDs.Identity)').Replace('.21', ''))" />
       <_AotCompilerPaths Include="$(MSBuildThisFileDirectory)..\..\..\microsoft.netcore.app.runtime.aot.osx-x64.cross.%(_AotRuntimeIdentifiers.Identity)\$(MonoAOTCompilerVersion)\tools\mono-aot-cross" />
+      <_AotAssemblies Include="@(_ShrunkAssemblies->'%(FullPath)')" AotArguments="$(_AotArguments)" />
     </ItemGroup>
     <MonoAOTCompiler
         AotModulesTableLanguage="$(_AotModulesTableLanguage)"
         AotModulesTablePath="$(_AotModulesTablePath)"
         AotProfilePath="$(_AotProfilePath)"
-        Assemblies="@(_ShrunkAssemblies->'%(FullPath)')"
+        Assemblies="@(_AotAssemblies)"
         CompilerBinaryPath="%(_AotCompilerPaths.FullPath)"
         DisableParallelAot="$(_DisableParallelAot)"
         LLVMPath="$(_LLVMPath)"
