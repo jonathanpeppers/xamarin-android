@@ -37,17 +37,6 @@ namespace Xamarin.ProjectTools
 			}
 		}
 
-		/// <summary>
-		/// Save a NuGet.config file to a directory, with sources to support a local build of Microsoft.Android.Sdk
-		/// </summary>
-		public static void SaveNuGetConfig (string directory)
-		{
-			var doc = XDocument.Load (Path.Combine (XABuildPaths.TopDirectory, "NuGet.config"));
-			var project = new XASdkProject ();
-			project.AddNuGetConfigSources (doc);
-			doc.Save (Path.Combine (directory, "NuGet.config"));
-		}
-
 		public string PackageName { get; set; }
 		public string JavaPackageName { get; set; }
 

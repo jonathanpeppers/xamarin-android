@@ -537,7 +537,6 @@ namespace Xamarin.Android.Build.Tests
 				FullProjectDirectory = Path.Combine (Root, relativeProjectDir);
 			var files = project.Save ();
 			project.Populate (relativeProjectDir, files);
-			project.CopyNuGetConfig (relativeProjectDir);
 			return new DotNetCLI (project, Path.Combine (FullProjectDirectory, project.ProjectFilePath));
 		}
 	}

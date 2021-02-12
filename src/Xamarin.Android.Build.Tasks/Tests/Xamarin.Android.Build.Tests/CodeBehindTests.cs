@@ -653,9 +653,6 @@ namespace Xamarin.Android.Build.Tests
 
 			CopyRecursively (TestProjectRootDirectory, temporaryProjectPath, ignore);
 			CopyRecursively (CommonSampleLibraryRootDirectory, Path.Combine (tempRoot, CommonSampleLibraryName), ignore);
-			if (Builder.UseDotNet) {
-				XASdkProject.SaveNuGetConfig (tempRoot);
-			}
 			return temporaryProjectPath;
 		}
 

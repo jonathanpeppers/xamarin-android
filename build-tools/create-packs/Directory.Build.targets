@@ -74,8 +74,17 @@
     <Exec Command="$(DotNetPreviewTool) build -p:Configuration=$(Configuration) &quot;$(XamarinAndroidSourcePath)src\Microsoft.Android.Sdk.ILLink\Microsoft.Android.Sdk.ILLink.csproj&quot;" />
   </Target>
 
+  <Target Name="GetDotNetRuntimePacks">
+    <!-- Use $NUGET_PACKAGES to extract directly to the dotnet/packs directory -->
+    <Exec
+        Command="$(DotNetPreviewTool) build @(_GlobalProperties, ' ')"
+        EnvironmentVariables="NUGET_PACKAGES=$(DotNetPreviewPath)packs"
+        WorkingDirectory="$(MSBuildThisFileDirectory)..\..\src\dotnet-runtime"
+    />
+  </Target>
+
   <Target Name="CreateAllPacks"
-      DependsOnTargets="BuildILLinkCustomStep;DeleteExtractedWorkloadPacks;_SetGlobalProperties">
+      DependsOnTargets="BuildILLinkCustomStep;DeleteExtractedWorkloadPacks;GetDotNetRuntimePacks;_SetGlobalProperties">
     <RemoveDir Directories="$(XamarinAndroidSourcePath)bin\Build$(Configuration)\nupkgs" />
     <Exec Command="$(DotNetPreviewTool) pack @(_GlobalProperties, ' ') -p:AndroidRID=android-arm -p:AndroidABI=armeabi-v7a &quot;$(MSBuildThisFileDirectory)Microsoft.Android.Runtime.proj&quot;" />
     <Exec Command="$(DotNetPreviewTool) pack @(_GlobalProperties, ' ') -p:AndroidRID=android-arm64 -p:AndroidABI=arm64-v8a &quot;$(MSBuildThisFileDirectory)Microsoft.Android.Runtime.proj&quot;" />
@@ -99,6 +108,7 @@
       <_WLPacks Include="$(XamarinAndroidSourcePath)bin\Build$(Configuration)\nupkgs\Microsoft.Android.Sdk.win-x64.*.nupkg" Condition=" '$(HostOS)' == 'Windows' " />
       <_WLPacks Include="$(XamarinAndroidSourcePath)bin\Build$(Configuration)\nupkgs\Microsoft.Android.Sdk.BundleTool.*.nupkg" />
       <_WLPacks Include="$(XamarinAndroidSourcePath)bin\Build$(Configuration)\nupkgs\Microsoft.Android.Ref.*.nupkg" />
+      <_WLPacks Include="$(XamarinAndroidSourcePath)bin\Build$(Configuration)\nupkgs\Microsoft.Android.Runtime.*.nupkg" />
       <_WLTemplates Include="$(XamarinAndroidSourcePath)bin\Build$(Configuration)\nupkgs\Microsoft.Android.Templates.*.nupkg" />
       <!-- Runtime packs are not yet supported by workloads -->
       <!-- <_WLPacks Include="$(XamarinAndroidSourcePath)bin\Build$(Configuration)\nupkgs\Microsoft.Android.Runtime.*.nupkg" /> -->
@@ -117,7 +127,7 @@
     <MakeDir Directories="$(DotNetPreviewPath)template-packs" />
     <Copy SourceFiles="@(_WLTemplates)" DestinationFolder="$(DotNetPreviewPath)template-packs" />
     <ItemGroup>
-      <_UnixExecutables Include="$(DotNetPreviewPath)packs\Microsoft.Android.Sdk.*\*\tools\$(HostOS)\**\*.*" />
+      <_UnixExecutables Include="$(DotNetPreviewPath)packs\Microsoft.Android.Sdk.*\*\tools\$(HostOS)\**\*" />
       <_FilesToTouch Include="$(DotNetPreviewPath)sdk-manifests\$(DotNetPreviewVersionBand)\Microsoft.NET.Workload.Android\**" />
       <_FilesToTouch Include="$(DotNetPreviewPath)packs\$([System.String]::Copy('%(_WLPacks.Filename)').Replace('.$(_WLPackVersion)', ''))\$(_WLPackVersion)\**" />
     </ItemGroup>
@@ -136,9 +146,10 @@
 
   <Target Name="DeleteExtractedWorkloadPacks" >
     <ItemGroup>
-      <_PackFilesToDelete Include="$(DotNetPreviewPath)sdk-manifests\$(DotNetPreviewVersionBand)\Microsoft.Android.Workload\**\*.*" />
-      <_PackFilesToDelete Include="$(DotNetPreviewPath)sdk-manifests\$(DotNetPreviewVersionBand)\Microsoft.NET.Workload.Android\**\*.*" />
-      <_PackFilesToDelete Include="$(DotNetPreviewPath)packs\Microsoft.Android*\**\*.*" />
+      <_PackFilesToDelete Include="$(DotNetPreviewPath)sdk-manifests\$(DotNetPreviewVersionBand)\Microsoft.Android.Workload\**\*" />
+      <_PackFilesToDelete Include="$(DotNetPreviewPath)sdk-manifests\$(DotNetPreviewVersionBand)\Microsoft.NET.Workload.Android\**\*" />
+      <_PackFilesToDelete Include="$(DotNetPreviewPath)packs\Microsoft.Android*\**\*" />
+      <_PackFilesToDelete Include="$(DotNetPreviewPath)packs\Microsoft.NETCore.App.Runtime.android-*\**\*" />
       <_PackFilesToDelete Include="$(DotNetPreviewPath)template-packs\Microsoft.Android.Templates.*.nupkg" />
     </ItemGroup>
     <RemoveDir Directories="%(_PackFilesToDelete.RootDir)%(_PackFilesToDelete.Directory)" />

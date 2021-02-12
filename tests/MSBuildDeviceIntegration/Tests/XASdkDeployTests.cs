@@ -70,7 +70,6 @@ namespace Xamarin.Android.Build.Tests
 			TestOutputDirectories [TestContext.CurrentContext.Test.ID] = fullProjDir;
 			var files = proj.Save ();
 			proj.Populate (relativeProjDir, files);
-			proj.CopyNuGetConfig (relativeProjDir);
 			var dotnet = new DotNetCLI (proj, Path.Combine (fullProjDir, proj.ProjectFilePath));
 
 			Assert.IsTrue (dotnet.Run (), "`dotnet run` should succeed");
@@ -98,7 +97,6 @@ namespace Xamarin.Android.Build.Tests
 			TestOutputDirectories [TestContext.CurrentContext.Test.ID] = fullProjDir;
 			var files = proj.Save ();
 			proj.Populate (relativeProjDir, files);
-			proj.CopyNuGetConfig (relativeProjDir);
 			var dotnet = new DotNetCLI (proj, Path.Combine (fullProjDir, proj.ProjectFilePath));
 			Assert.IsTrue (dotnet.Build ("Install"), "`dotnet build` should succeed");
 

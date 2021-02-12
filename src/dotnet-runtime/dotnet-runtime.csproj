@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.Build.NoTargets">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+  </PropertyGroup>
+  <Import Project="..\..\Configuration.props" />
+  <ItemGroup>
+    <PackageDownload Include="Microsoft.NETCore.App.Runtime.android-arm"   Version="[$(DotNetRuntimeVersion)]" />
+    <PackageDownload Include="Microsoft.NETCore.App.Runtime.android-arm64" Version="[$(DotNetRuntimeVersion)]" />
+    <PackageDownload Include="Microsoft.NETCore.App.Runtime.android-x86"   Version="[$(DotNetRuntimeVersion)]" />
+    <PackageDownload Include="Microsoft.NETCore.App.Runtime.android-x64"   Version="[$(DotNetRuntimeVersion)]" />
+  </ItemGroup>
+</Project>

@@ -112,6 +112,9 @@ namespace Xamarin.Android.Tools.BootstrapTasks
 				foreach (var directory in Directory.EnumerateDirectories (packs_dir, "Microsoft.Android.*")) {
 					RecurseDirectory (packs_dir, packWriter, componentWriter, directory);
 				}
+				foreach (var directory in Directory.EnumerateDirectories (packs_dir, "Microsoft.NETCore.App.Runtime.android-*")) {
+					RecurseDirectory (packs_dir, packWriter, componentWriter, directory);
+				}
 				packWriter.WriteEndElement (); // </Directory> packs
 
 				// template-packs

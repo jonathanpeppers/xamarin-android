@@ -53,8 +53,6 @@ namespace Xamarin.ProjectTools
 					}
 					project.Populate (ProjectDirectory, files);
 				}
-
-				project.CopyNuGetConfig (ProjectDirectory);
 			}
 			else
 				project.UpdateProjectFiles (ProjectDirectory, files, doNotCleanupOnUpdate);
