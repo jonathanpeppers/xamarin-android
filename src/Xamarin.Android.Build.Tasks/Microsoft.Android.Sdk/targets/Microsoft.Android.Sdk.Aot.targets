@@ -13,19 +13,47 @@ For <MonoAOTCompiler/> usage, see:
 -->
 <Project>
 
+  <UsingTask TaskName="Xamarin.Android.Tasks.AotMSBuild"      AssemblyFile="$(_XamarinAndroidBuildTasksAssembly)" />
   <UsingTask TaskName="Xamarin.Android.Tasks.GetAotArguments" AssemblyFile="$(_XamarinAndroidBuildTasksAssembly)" />
 
   <Target Name="_AndroidAot"
-      Condition=" '$(RunAOTCompilation)' == 'true' "
-      Inputs="$(_BuildApkEmbedInputs)"
-      Outputs="$(_BuildApkEmbedOutputs)">
+      Condition=" '$(RunAOTCompilation)' == 'true' ">
+    <PropertyGroup>
+      <_AotProperties>
+        _AndroidAotBinDirectory=$(_AndroidAotBinDirectory);
+        _AndroidApiLevel=$(_AndroidApiLevel);
+        _AndroidNdkDirectory=$(_AndroidNdkDirectory);
+        _AndroidStampDirectory=$(_AndroidStampDirectory);
+        _SequencePointsMode=$(_SequencePointsMode);
+        AndroidAotAdditionalArguments=$(AndroidAotAdditionalArguments);
+        AndroidAotMode=$(AndroidAotMode);
+        AndroidBinUtilsDirectory=$(AndroidBinUtilsDirectory);
+        EnableLLVM=$(EnableLLVM);
+        IntermediateOutputPath=$(IntermediateOutputPath);
+      </_AotProperties>
+    </PropertyGroup>
+    <AotMSBuild
+        Projects="$(MSBuildProjectFile)"
+        Targets="_AndroidAotPerRuntimeIdentifier"
+        RuntimeIdentifier="%(_AndroidRuntimeIdentifier.Identity)"
+        Assemblies="@(_ShrunkAssemblies)"
+        Properties="$(_AotProperties)">
+      <Output TaskParameter="TargetOutputs" ItemName="_AdditionalNativeLibraryReferences" />
+    </AotMSBuild>
+  </Target>
 
-    <!--TODO: $(MonoAotCrossCompilerPath) is only set to the arm64 path -->
-    <Error
-        Condition=" '$(RuntimeIdentifier)' != 'android-arm64' "
-        Text=" AOT is currently only supported when %24(RuntimeIdentifier) is set to 'android-arm64'."
-    />
+  <Target Name="_AndroidAotInputs">
+    <ItemGroup>
+      <_MonoAOTAssemblies Include="$([MSBuild]::Unescape($(_Assemblies)))" AotArguments="$(_AotArguments)" />
+    </ItemGroup>
+  </Target>
 
+  <Target Name="_AndroidAotPerRuntimeIdentifier"
+      Condition=" '$(RuntimeIdentifier)' != '' "
+      DependsOnTargets="_AndroidAotInputs"
+      Inputs="@(_MonoAOTAssemblies)"
+      Outputs="$(_AndroidStampDirectory)_AndroidAot-$(RuntimeIdentifier).stamp"
+      Returns="@(_AdditionalNativeLibraryReferences)">
     <GetAotArguments
         AndroidAotMode="$(AndroidAotMode)"
         AndroidNdkDirectory="$(_AndroidNdkDirectory)"
@@ -40,17 +68,8 @@ For <MonoAOTCompiler/> usage, see:
         Profiles="@(_AotProfiles)">
       <Output PropertyName="_AotArguments" TaskParameter="Arguments" />
     </GetAotArguments>
-    <ItemGroup>
-      <_MonoAOTAssemblies Include="@(_ShrunkAssemblies->'%(FullPath)')" AotArguments="$(_AotArguments)" />
-    </ItemGroup>
     <MakeDir Directories="$(IntermediateOutputPath)aot\$(RuntimeIdentifier)\" />
-    <!--
-      TODO:
-      * I set every [Input] with a non-existent property.
-      * AotProfilePath is a single string, not sure how to pass @(_AotProfiles)?
-    -->
     <MonoAOTCompiler
-        AotProfilePath="$(_AotProfilePath)"
         Assemblies="@(_MonoAOTAssemblies)"
         CompilerBinaryPath="@(MonoAotCrossCompiler->WithMetadataValue('RuntimeIdentifier', '$(RuntimeIdentifier)'))"
         DisableParallelAot="$(_DisableParallelAot)"
@@ -59,12 +78,11 @@ For <MonoAOTCompiler/> usage, see:
         Mode="$(AndroidAotMode)"
         OutputDir="$(IntermediateOutputPath)aot\$(RuntimeIdentifier)\"
         OutputType="Library"
-        Profilers="@(_AotProfiles)"
         UseAotDataFile="false"
         UseLLVM="$(EnableLLVM)">
       <Output TaskParameter="CompiledAssemblies" ItemName="_AotCompiledAssemblies" />
-      <Output TaskParameter="FileWrites"         ItemName="FileWrites" />
     </MonoAOTCompiler>
+    <Touch Files="$(_AndroidStampDirectory)_AndroidAot-$(RuntimeIdentifier).stamp" AlwaysCreate="true" />
     <ItemGroup>
       <_AdditionalNativeLibraryReferences
           Include="@(_AotCompiledAssemblies->'%(LibraryFile)')"

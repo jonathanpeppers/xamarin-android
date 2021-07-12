@@ -40,6 +40,7 @@ projects, these properties are set in Xamarin.Android.Legacy.targets.
     </BuildDependsOn>
     <IncrementalCleanDependsOn>
       _PrepareAssemblies;
+      _AndroidAot;
       _CompileDex;
       $(_AfterCompileDex);
       _AddFilesToFileWrites;
@@ -70,6 +71,7 @@ projects, these properties are set in Xamarin.Android.Legacy.targets.
       _CreateBaseApk;
       _PrepareAssemblies;
       _ResolveSatellitePaths;
+      _AndroidAot;
       _CheckApkPerAbiFlag;
       _LintChecks;
       _IncludeNativeSystemLibraries;

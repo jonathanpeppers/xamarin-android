@@ -1968,7 +1968,7 @@ because xbuild doesn't support framework reference assemblies.
 </PropertyGroup>
 
 <Target Name="_BuildApkEmbed"
-  DependsOnTargets="_PrepareBuildApk;_AndroidAot"
+  DependsOnTargets="_PrepareBuildApk"
   Inputs="$(_BuildApkEmbedInputs)"
   Outputs="$(_BuildApkEmbedOutputs)"
   Condition="'$(EmbedAssembliesIntoApk)' == 'True'">

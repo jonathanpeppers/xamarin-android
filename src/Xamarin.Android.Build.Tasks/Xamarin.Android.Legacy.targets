@@ -149,6 +149,7 @@ projects. .NET 5 projects will not import this file.
       _LintChecks;
       _IncludeNativeSystemLibraries;
       _CheckGoogleSdkRequirements;
+      _AndroidAot;
     </_PrepareBuildApkDependsOnTargets>
     <_UpdateAndroidResourcesDependsOn>
       $(CoreResolveReferencesDependsOn);
