@@ -116,8 +116,8 @@
   <ItemGroup>
     <_MSBuildFiles Include="$(MSBuildSrcDir)\android-support-multidex.jar" />
     <_MSBuildFiles Include="$(MSBuildSrcDir)\apksigner.jar" />
-    <_MSBuildFiles Include="$(MSBuildSrcDir)\aprofutil.exe"   ExcludeFromAndroidNETSdk="true" />
-    <_MSBuildFiles Include="$(MSBuildSrcDir)\aprofutil.pdb"   ExcludeFromAndroidNETSdk="true" />
+    <_MSBuildFiles Include="$(MSBuildSrcDir)\aprofutil.exe" />
+    <_MSBuildFiles Include="$(MSBuildSrcDir)\aprofutil.pdb" />
     <_MSBuildFiles Include="$(MSBuildSrcDir)\cil-strip.exe"   ExcludeFromAndroidNETSdk="true" />
     <_MSBuildFiles Include="$(MSBuildSrcDir)\cil-strip.pdb"   ExcludeFromAndroidNETSdk="true" />
     <_MSBuildFiles Include="$(MSBuildSrcDir)\class-parse.exe" ExcludeFromAndroidNETSdk="true" />
@@ -355,7 +355,7 @@
     <_MSBuildFilesUnixSignAndHarden Include="$(MSBuildSrcDir)\$(HostOS)\ndk\x86_64-linux-android-strip" />
     <_MSBuildFilesUnix Include="$(MSBuildSrcDir)\$(HostOS)\illinkanalyzer" Permission="755" />
     <_MSBuildFilesUnix Include="$(MSBuildSrcDir)\$(HostOS)\jit-times" Permission="755" />
-    <_MSBuildFilesUnix Include="$(MSBuildSrcDir)\$(HostOS)\aprofutil" ExcludeFromAndroidNETSdk="true" />
+    <_MSBuildFilesUnix Include="$(MSBuildSrcDir)\$(HostOS)\aprofutil" Permission="755" />
     <_MSBuildFilesUnixSignAndHarden Include="$(MSBuildSrcDir)\$(HostOS)\mono" ExcludeFromAndroidNETSdk="true" />
     <_MSBuildFilesUnix Include="$(MSBuildSrcDir)\$(HostOS)\mono.config" />
     <_MSBuildFilesUnix Include="$(MSBuildSrcDir)\$(HostOS)\mono-symbolicate" ExcludeFromAndroidNETSdk="true" />

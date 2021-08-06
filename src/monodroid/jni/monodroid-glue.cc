@@ -1567,7 +1567,6 @@ MonodroidRuntime::set_trace_options (void)
 	mono_jit_set_trace_options (value.get ());
 }
 
-#if defined (NET6)
 inline void
 MonodroidRuntime::set_profile_options ()
 {
@@ -1582,23 +1581,10 @@ MonodroidRuntime::set_profile_options ()
 		value.assign (prop_value);
 	}
 
+#if defined (NET6)
 	// setenv(3) makes copies of its arguments
 	setenv ("DOTNET_DiagnosticPorts", value.get (), 1);
-}
-#else // def NET6
-inline void
-MonodroidRuntime::set_profile_options ()
-{
-	// We want to avoid dynamic allocation, thus let’s create a buffer that can take both the property value and a
-	// path without allocation
-	dynamic_local_string<SENSIBLE_PATH_MAX + PROPERTY_VALUE_BUFFER_LEN> value;
-	{
-		dynamic_local_string<PROPERTY_VALUE_BUFFER_LEN> prop_value;
-		if (androidSystem.monodroid_get_system_property (Debug::DEBUG_MONO_PROFILE_PROPERTY, prop_value) == 0)
-			return;
-
-		value.assign (prop_value.get (), prop_value.length ());
-	}
+#endif // def NET6
 
 	constexpr char OUTPUT_ARG[] = "output=";
 	constexpr size_t OUTPUT_ARG_LEN = sizeof(OUTPUT_ARG) - 1;
@@ -1673,7 +1659,6 @@ MonodroidRuntime::set_profile_options ()
 	log_warn (LOG_DEFAULT, "Initializing profiler with options: %s", value.get ());
 	debug.monodroid_profiler_load (androidSystem.get_runtime_libdir (), value.get (), output_path.get ());
 }
-#endif // ndef NET6
 
 /*
 Disable LLVM signal handlers.

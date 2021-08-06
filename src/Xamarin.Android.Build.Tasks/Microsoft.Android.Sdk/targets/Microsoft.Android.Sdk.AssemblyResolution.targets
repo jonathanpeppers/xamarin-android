@@ -193,6 +193,7 @@ _ResolveAssemblies MSBuild target.
     <ProcessNativeLibraries
         InputLibraries="@(_ResolvedNativeLibraries)"
         Components="@(_MonoComponent->Distinct())"
+        AndroidEmbedProfilers="$(AndroidEmbedProfilers)"
         IncludeDebugSymbols="$(AndroidIncludeDebugSymbols)">
       <Output TaskParameter="OutputLibraries" ItemName="FrameworkNativeLibrary" />
     </ProcessNativeLibraries>

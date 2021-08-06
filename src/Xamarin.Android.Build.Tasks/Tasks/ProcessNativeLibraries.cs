@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Microsoft.Build.Framework;
 using Microsoft.Android.Build.Tasks;
 
@@ -29,6 +30,8 @@ namespace Xamarin.Android.Tasks
 
 		public bool IncludeDebugSymbols { get; set; }
 
+		public string [] AndroidEmbedProfilers { get ; set; }
+
 		[Output]
 		public ITaskItem [] OutputLibraries { get; set; }
 
@@ -45,6 +48,8 @@ namespace Xamarin.Android.Tasks
 			}
 
 			var output = new List<ITaskItem> (InputLibraries.Length);
+			bool includeAotProfiler = AndroidEmbedProfilers != null &&
+				AndroidEmbedProfilers.Any (p => string.Equals ("aot", p, StringComparison.OrdinalIgnoreCase) || string.Equals ("all", p, StringComparison.OrdinalIgnoreCase));
 
 			foreach (var library in InputLibraries) {
 				var abi = AndroidRidAbiHelper.GetNativeLibraryAbi (library);
@@ -78,6 +83,11 @@ namespace Xamarin.Android.Tasks
 					}
 				} else if (fileName.StartsWith (MonoComponentPrefix, StringComparison.OrdinalIgnoreCase)) {
 					if (!wantedComponents.Contains (fileName)) {
+						continue;
+					}
+				} else if (string.Equals ("libmono-profiler-aot", fileName, StringComparison.OrdinalIgnoreCase)) {
+					if (!includeAotProfiler) {
+						Log.LogDebugMessage ($"Excluding '{library.ItemSpec}'. Not included in $(AndroidEmbedProfilers).");
 						continue;
 					}
 				}
