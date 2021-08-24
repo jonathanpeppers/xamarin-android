@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace Android.Runtime
@@ -6,6 +7,11 @@ namespace Android.Runtime
 	public static class ResourceIdManager
 	{
 		static bool id_initialized;
+
+#if NET
+		[UnconditionalSuppressMessage ("Trimming", "IL2026",
+			Justification = "UpdateIdValues() in user code should always be preserved -- called directly by Resource.designer.cs.")]
+#endif
 		public static void UpdateIdValues ()
 		{
 			if (id_initialized)
@@ -30,6 +36,9 @@ namespace Android.Runtime
 			}
 		}
 
+#if NET
+		[RequiresUnreferencedCode ("Types might be removed.")]
+#endif
 		static Type? GetResourceTypeFromAssembly (Assembly assembly)
 		{
 			foreach (var customAttribute in assembly.GetCustomAttributes (typeof (ResourceDesignerAttribute), true)) {
