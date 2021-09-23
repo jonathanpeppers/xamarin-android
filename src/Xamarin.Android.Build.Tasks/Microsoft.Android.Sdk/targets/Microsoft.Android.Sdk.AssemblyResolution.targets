@@ -63,11 +63,22 @@ _ResolveAssemblies MSBuild target.
     </ItemGroup>
   </Target>
 
-  <Target Name="_ResolveAssemblies">
+  <Target Name="_SetRuntimeIdentifiers">
     <ItemGroup>
       <_RIDs Include="$(RuntimeIdentifier)"  Condition=" '$(RuntimeIdentifiers)' == '' " />
       <_RIDs Include="$(RuntimeIdentifiers)" Condition=" '$(RuntimeIdentifiers)' != '' " />
     </ItemGroup>
+  </Target>
+
+  <Target Name="_ResolveAssembliesForSingleRID"
+      Condition=" '@(_RIDs->Count())' == '1' ">
+    <CallTarget Targets="_ComputeFilesToPublishForRuntimeIdentifiers">
+      <Output TaskParameter="TargetOutputs" ItemName="ResolvedFileToPublish" />
+    </CallTarget>
+  </Target>
+
+  <Target Name="_ResolveAssembliesForMultiRID"
+      Condition=" '@(_RIDs->Count())' &gt; '1' ">
     <PropertyGroup>
       <_ProguardProjectConfiguration Condition=" '$(AndroidLinkTool)' != '' ">$(IntermediateOutputPath)proguard\proguard_project_references.cfg</_ProguardProjectConfiguration>
       <_AdditionalProperties>
@@ -86,6 +97,17 @@ _ResolveAssemblies MSBuild target.
         Properties="RuntimeIdentifier=%(_RIDs.Identity);$(_AdditionalProperties)">
       <Output TaskParameter="TargetOutputs" ItemName="ResolvedFileToPublish" />
     </MSBuild>
+  </Target>
+
+  <PropertyGroup>
+    <_ResolveAssembliesDependsOn>
+      _SetRuntimeIdentifiers;
+      _ResolveAssembliesForSingleRID;
+      _ResolveAssembliesForMultiRID;
+    </_ResolveAssembliesDependsOn>
+  </PropertyGroup>
+
+  <Target Name="_ResolveAssemblies" DependsOnTargets="$(_ResolveAssembliesDependsOn)">
     <ItemGroup>
       <_ResolvedAssemblyFiles Include="@(ResolvedFileToPublish)" Condition=" '%(ResolvedFileToPublish.Extension)' == '.dll' " />
       <_ResolvedSymbolFiles   Include="@(ResolvedFileToPublish)" Condition=" '%(ResolvedFileToPublish.Extension)' == '.pdb' " />
