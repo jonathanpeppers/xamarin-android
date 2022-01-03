@@ -896,6 +896,34 @@ public abstract class Foo<TVirtualView, TNativeView> : ViewHandler<TVirtualView,
 			Assert.IsTrue (builder.Build (), $"{proj.ProjectName} should succeed");
 		}
 
+		[Test]
+		public void AdaptiveIcon()
+		{
+			var proj = new XASdkProject {
+				SupportedOSPlatformVersion = "26",
+				Sources = {
+					new AndroidItem.AndroidResource("Resources\\mipmap-anydpi-v26\\adaptiveicon.xml") {
+						TextContent = () =>
+@"<adaptive-icon xmlns:android=""http://schemas.android.com/apk/res/android"">
+<background android:drawable=""@mipmap/AdaptiveIcon_background"" />
+<foreground android:drawable=""@mipmap/AdaptiveIcon_foreground"" />
+</adaptive-icon>",
+					},
+					new AndroidItem.AndroidResource("Resources\\mipmap-mdpi\\adaptiveicon.png") {
+						BinaryContent = () => XamarinAndroidApplicationProject.icon_binary_mdpi,
+					},
+					new AndroidItem.AndroidResource("Resources\\mipmap-mdpi\\adaptiveicon_background.png") {
+						BinaryContent = () => XamarinAndroidApplicationProject.icon_binary_mdpi,
+					},
+					new AndroidItem.AndroidResource("Resources\\mipmap-mdpi\\adaptiveicon_foreground.png") {
+						BinaryContent = () => XamarinAndroidApplicationProject.icon_binary_mdpi,
+					},
+				}
+			};
+			var builder = CreateDotNetBuilder (proj);
+			Assert.IsTrue (builder.Build (), $"{proj.ProjectName} should succeed");
+		}
+
 		DotNetCLI CreateDotNetBuilder (string relativeProjectDir = null)
 		{
 			if (string.IsNullOrEmpty (relativeProjectDir)) {
