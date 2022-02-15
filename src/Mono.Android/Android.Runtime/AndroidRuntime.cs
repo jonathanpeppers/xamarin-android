@@ -376,6 +376,8 @@ namespace Android.Runtime {
 			}
 		}
 
+		const string ManagedMethodNotFound = "Specified managed method '{0}' was not found on type '{1}'. Signature: {2}";
+
 		public override void RegisterNativeMembers (JniType nativeClass, Type type, string? methods)
 		{
 			try {
@@ -397,7 +399,8 @@ namespace Android.Runtime {
 
 				JniNativeMethodRegistration [] natives = new JniNativeMethodRegistration [methodCount];
 				int nativesIndex = 0;
-				MethodInfo []? typeMethods = null;
+				MethodInfo []? exportMethods = null;
+				List<MethodInfo>? staticMethods = null;
 
 				ReadOnlySpan<char> methodsSpan = methods;
 				while (!methodsSpan.IsEmpty) {
@@ -415,15 +418,15 @@ namespace Android.Runtime {
 						if (callbackString.SequenceEqual ("__export__")) {
 							var mname = name.Slice (2);
 							MethodInfo? minfo = null;
-							typeMethods ??= type.GetMethods (BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
-							foreach (var mi in typeMethods)
+							exportMethods ??= type.GetMethods (BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+							foreach (var mi in exportMethods) {
 								if (mname.SequenceEqual (mi.Name) && signature.SequenceEqual (JavaNativeTypeManager.GetJniSignature (mi))) {
 									minfo = mi;
 									break;
 								}
-
+							}
 							if (minfo == null)
-								throw new InvalidOperationException (String.Format ("Specified managed method '{0}' was not found. Signature: {1}", mname.ToString (), signature.ToString ()));
+								throw new InvalidOperationException (String.Format (ManagedMethodNotFound, mname.ToString (), type.FullName, signature.ToString ()));
 							callback = CreateDynamicCallback (minfo);
 						} else {
 							Type callbackDeclaringType = type;
@@ -433,9 +436,23 @@ namespace Android.Runtime {
 							while (callbackDeclaringType.ContainsGenericParameters) {
 								callbackDeclaringType = callbackDeclaringType.BaseType!;
 							}
-							GetCallbackHandler connector = (GetCallbackHandler) Delegate.CreateDelegate (typeof (GetCallbackHandler),
-								callbackDeclaringType, callbackString.ToString ());
-							callback = connector ();
+							if (callbackDeclaringType == type) {
+								MethodInfo? minfo = null;
+								staticMethods ??= FindStaticMethods (type);
+								foreach (var mi in staticMethods) {
+									if (callbackString.SequenceEqual (mi.Name)) {
+										minfo = mi;
+										break;
+									}
+								}
+								if (minfo == null)
+									throw new InvalidOperationException (String.Format (ManagedMethodNotFound, callbackString.ToString (), callbackDeclaringType.FullName, signature.ToString ()));
+								callback = (Delegate) minfo.Invoke (null, null);
+							} else {
+								var connector = (GetCallbackHandler) Delegate.CreateDelegate (typeof (GetCallbackHandler),
+									callbackDeclaringType, callbackString.ToString ());
+								callback = connector ();
+							}
 						}
 						natives [nativesIndex++] = new JniNativeMethodRegistration (name.ToString (), signature.ToString (), callback);
 					}
@@ -480,6 +497,23 @@ namespace Android.Runtime {
 			callback = methodLine.Slice (0, colonIndex != -1 ? colonIndex : methodLine.Length);
 
 			callbackDeclaringType = colonIndex != -1 ? methodLine.Slice (colonIndex + 1) : default;
+		}
+
+		static List<MethodInfo> FindStaticMethods (Type type)
+		{
+			// NOTE: we can't use FlattenHierarchy here, because `internal static` methods from base classes aren't returned
+			const BindingFlags flags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
+			var methods = new List<MethodInfo>();
+			for (Type? targetType = type; targetType != null; targetType = targetType.BaseType) {
+				foreach (var method in targetType.GetMethods (flags)) {
+					if (method.ReturnType != typeof (Delegate))
+						continue;
+					if (method.GetParameters ().Length != 0)
+						continue;
+					methods.Add (method);
+				}
+			}
+			return methods;
 		}
 	}
 
