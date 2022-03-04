@@ -38,17 +38,9 @@ namespace Java.Interop {
 	}
 
 	public static partial class TypeManager {
-		[DllImport (AndroidRuntime.InternalDllName, CallingConvention = CallingConvention.Cdecl)]
-		extern static IntPtr monodroid_TypeManager_get_java_class_name (IntPtr klass);
-
-		internal static string GetClassName (IntPtr class_ptr)
-		{
-			IntPtr ptr = monodroid_TypeManager_get_java_class_name (class_ptr);
-			string ret = Marshal.PtrToStringAnsi (ptr)!;
-			JNIEnv.monodroid_free (ptr);
-
-			return ret;
-		}
+		[DllImport (AndroidRuntime.InternalDllName, EntryPoint = "monodroid_TypeManager_get_java_class_name", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+		[return: MarshalAs (UnmanagedType.LPStr)]
+		internal extern static string GetClassName (IntPtr klass);
 
 		internal static string? GetJniTypeName (Type type)
 		{

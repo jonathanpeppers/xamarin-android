@@ -262,18 +262,9 @@ namespace Android.Runtime {
 		//    Java code (invoked from our native runtime) will always return the default timezone and no
 		//    exceptions are documented for the Java API.
 		//
-		static string GetDefaultTimeZone ()
-		{
-			IntPtr id = _monodroid_timezone_get_default_id ();
-			try {
-				return Marshal.PtrToStringAnsi (id)!;
-			} finally {
-				JNIEnv.monodroid_free (id);
-			}
-		}
-
-		[DllImport (AndroidRuntime.InternalDllName, CallingConvention = CallingConvention.Cdecl)]
-		static extern IntPtr _monodroid_timezone_get_default_id ();
+		[DllImport (AndroidRuntime.InternalDllName, EntryPoint = "_monodroid_timezone_get_default_id", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+		[return: MarshalAs (UnmanagedType.LPStr)]
+		static extern string GetDefaultTimeZone ();
 
 		// This is invoked by
 		// mscorlib.dll!System.AndroidPlatform.GetDefaultSyncContext()
