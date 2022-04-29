@@ -116,6 +116,7 @@ public class MonoPackageManager {
 				mono.android.app.ApplicationRegistration.registerApplications ();
 
 				initialized = true;
+				Log.d("FOO", "End of MonoPackageManager.LoadApplication");
 			}
 		}
 	}

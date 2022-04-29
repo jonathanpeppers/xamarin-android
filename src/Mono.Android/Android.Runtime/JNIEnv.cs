@@ -124,8 +124,11 @@ namespace Android.Runtime {
 #endif
 		static unsafe void RegisterJniNatives (IntPtr typeName_ptr, int typeName_len, IntPtr jniClass, IntPtr methods_ptr, int methods_len)
 		{
+			Logger.Log (LogLevel.Info, "monodroid", $"FOO RegisterJniNatives: {typeName_ptr}, {typeName_len}, {jniClass}, {methods_ptr}, {methods_len}");
 			string typeName = new string ((char*) typeName_ptr, 0, typeName_len);
+			Logger.Log (LogLevel.Info, "monodroid", $"FOO RegisterJniNatives: typeName: {typeName}");
 			var type = Type.GetType (typeName);
+			Logger.Log (LogLevel.Info, "monodroid", $"FOO RegisterJniNatives: Type: {type}");
 			if (type == null) {
 				monodroid_log (LogLevel.Error,
 				               LogCategories.Default,
@@ -134,13 +137,16 @@ namespace Android.Runtime {
 			}
 
 			var className = Java.Interop.TypeManager.GetClassName (jniClass);
+			Logger.Log (LogLevel.Info, "monodroid", $"FOO Java.Interop.TypeManager.GetClassName: {className}");
 			Java.Interop.TypeManager.RegisterType (className, type);
 
 			JniType? jniType = null;
 			JniType.GetCachedJniType (ref jniType, className);
+			Logger.Log (LogLevel.Info, "monodroid", $"FOO JniType.GetCachedJniType: {jniType}");
 
 			ReadOnlySpan<char> methods = new ReadOnlySpan<char> ((void*) methods_ptr, methods_len);
 			((AndroidTypeManager)androidRuntime!.TypeManager).RegisterNativeMembers (jniType, type, methods);
+			Logger.Log (LogLevel.Info, "monodroid", $"FOO end RegisterJniNatives: {typeName_ptr}, {methods_ptr}");
 		}
 
 #if NETCOREAPP

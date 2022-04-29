@@ -1149,13 +1149,20 @@ MonodroidRuntime::init_android_runtime (
 	 * so always make sure we have the freshest handle to the method.
 	 */
 	if (registerType == nullptr || is_running_on_desktop) {
+		log_warn (LOG_DEFAULT, "FOO registerType is nullptr");
 		if constexpr (is_running_on_desktop) {
 			registerType = mono_class_get_method_from_name (runtime, "RegisterJniNatives", 5);
 		} else {
+			log_warn (LOG_DEFAULT, "FOO calling mono_get_method");
 			registerType = mono_get_method (image, application_config.jnienv_registerjninatives_method_token, runtime);
+			MonoMethod *registerType_byname = mono_class_get_method_from_name (runtime, "RegisterJniNatives", 5);
+			abort_unless (registerType == registerType_byname, "getting RegisterJniNatives by token did not return the expected method");
 #if defined (NET6) && defined (ANDROID)
+			log_warn (LOG_DEFAULT, "FOO calling mono_method_get_unmanaged_callers_only_ftnptr");
 			MonoError error;
 			jnienv_register_jni_natives = reinterpret_cast<jnienv_register_jni_natives_fn>(mono_method_get_unmanaged_callers_only_ftnptr (registerType, &error));
+			abort_unless (jnienv_register_jni_natives != nullptr, "jnienv_register_jni_natives is nullptr!");
+			log_warn (LOG_DEFAULT, "FOO called mono_method_get_unmanaged_callers_only_ftnptr");
 #endif // def NET6 && def ANDROID
 		}
 	}
@@ -2493,9 +2500,12 @@ MonodroidRuntime::Java_mono_android_Runtime_register (JNIEnv *env, jstring manag
 	utils.monodroid_runtime_invoke (domain, register_jni_natives, nullptr, args, nullptr);
 #else // ndef NET6
 #if !defined (ANDROID)
+	log_warn (LOG_DEFAULT, "FOO mono_runtime_invoke shouldn't get here");
 	mono_runtime_invoke (register_jni_natives, nullptr, args, nullptr);
 #else
+	log_warn (LOG_DEFAULT, "FOO before jnienv_register_jni_natives %i, %i, %i, %i, %i", managedType_ptr, managedType_len, nativeClass, methods_ptr, methods_len);
 	jnienv_register_jni_natives (managedType_ptr, managedType_len, nativeClass, methods_ptr, methods_len);
+	log_warn (LOG_DEFAULT, "FOO after jnienv_register_jni_natives");
 #endif // ndef ANDROID
 #endif // def NET6
 

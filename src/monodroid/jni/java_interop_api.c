@@ -5,6 +5,9 @@
  */
 
 #include "java_interop_api.h"
+#ifdef ANDROID
+#include <android/log.h>
+#endif
 
 JI_API jint
 java_interop_jnienv_get_version (JNIEnv *env)
@@ -1354,9 +1357,15 @@ java_interop_jnienv_set_double_array_region (JNIEnv *env, jthrowable *_thrown, j
 JI_API jint
 java_interop_jnienv_register_natives (JNIEnv *env, jthrowable *_thrown, jclass type, const JNINativeMethod* methods, jint numMethods)
 {
+	#ifdef ANDROID
+	__android_log_print (ANDROID_LOG_INFO, "monodroid-default", "FOO inside java_interop_jnienv_register_natives, %p, %p, %p, %p, %i", env, _thrown, type, methods, numMethods);
+	#endif
 	*_thrown = 0;
 	jint _r_ = (*env)->RegisterNatives (env, type, methods, numMethods);
 	*_thrown = (*env)->ExceptionOccurred (env);
+	#ifdef ANDROID
+	__android_log_print (ANDROID_LOG_INFO, "monodroid-default", "FOO leaving java_interop_jnienv_register_natives");
+	#endif
 	return _r_;
 }
 

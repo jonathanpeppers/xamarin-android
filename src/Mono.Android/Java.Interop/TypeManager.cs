@@ -171,6 +171,7 @@ namespace Java.Interop {
 
 		internal static void Activate (IntPtr jobject, ConstructorInfo cinfo, object? []? parms)
 		{
+			Logger.Log (LogLevel.Info, "monodroid", $"FOO TypeManager.Activate: {cinfo.DeclaringType}");
 			try {
 				var newobj = RuntimeHelpers.GetUninitializedObject (cinfo.DeclaringType);
 				if (newobj is Java.Lang.Object o) {

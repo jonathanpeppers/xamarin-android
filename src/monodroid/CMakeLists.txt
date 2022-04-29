@@ -566,7 +566,7 @@ if(NOT (ANDROID AND ENABLE_NET6))
 
   target_link_options(
     ${XAMARIN_INTERNAL_API_LIB}
-    PRIVATE -fvisibility=default
+    PRIVATE -fvisibility=default -llog
     )
 endif()
 

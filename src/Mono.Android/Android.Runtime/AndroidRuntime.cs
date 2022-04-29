@@ -381,6 +381,7 @@ namespace Android.Runtime {
 
 		public void RegisterNativeMembers (JniType nativeClass, Type type, ReadOnlySpan<char> methods)
 		{
+			Logger.Log (LogLevel.Info, "monodroid", $"FOO begin RegisterNativeMembers");
 			try {
 				if (FastRegisterNativeMembers (nativeClass, type, methods))
 					return;
@@ -392,6 +393,7 @@ namespace Android.Runtime {
 				}
 
 				int methodCount = CountMethods (methods);
+				Logger.Log (LogLevel.Info, "monodroid", $"FOO RegisterNativeMembers, methodCount: {methodCount}");
 				if (methodCount < 1) {
 					if (jniAddNativeMethodRegistrationAttributePresent)
 						base.RegisterNativeMembers (nativeClass, type, methods.ToString ());
@@ -436,20 +438,27 @@ namespace Android.Runtime {
 							while (callbackDeclaringType.ContainsGenericParameters) {
 								callbackDeclaringType = callbackDeclaringType.BaseType!;
 							}
+							Logger.Log (LogLevel.Info, "monodroid", $"FOO RegisterNativeMembers, callbackDeclaringType: {callbackDeclaringType}");
 							GetCallbackHandler connector = (GetCallbackHandler) Delegate.CreateDelegate (typeof (GetCallbackHandler),
 								callbackDeclaringType, callbackString.ToString ());
+							Logger.Log (LogLevel.Info, "monodroid", $"FOO RegisterNativeMembers, connector: {connector}");
 							callback = connector ();
+							Logger.Log (LogLevel.Info, "monodroid", $"FOO RegisterNativeMembers, callback: {callback}");
 						}
+						Logger.Log (LogLevel.Info, "monodroid", $"FOO new JniNativeMethodRegistration {nativesIndex}, {name.ToString ()}, {signature.ToString ()}, {callback}");
 						natives [nativesIndex++] = new JniNativeMethodRegistration (name.ToString (), signature.ToString (), callback);
 					}
 
 					methodsSpan = newLineIndex != -1 ? methodsSpan.Slice (newLineIndex + 1) : default;
 				}
 
+				Logger.Log (LogLevel.Info, "monodroid", $"FOO before JniEnvironment.Types.RegisterNatives");
 				JniEnvironment.Types.RegisterNatives (nativeClass.PeerReference, natives, natives.Length);
+				Logger.Log (LogLevel.Info, "monodroid", $"FOO after JniEnvironment.Types.RegisterNatives");
 			} catch (Exception e) {
 				JniEnvironment.Runtime.RaisePendingException (e);
 			}
+			Logger.Log (LogLevel.Info, "monodroid", $"FOO end RegisterNativeMembers");
 		}
 
 		static int CountMethods (ReadOnlySpan<char> methodsSpan)
