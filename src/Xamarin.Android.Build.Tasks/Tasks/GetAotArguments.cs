@@ -50,6 +50,8 @@ namespace Xamarin.Android.Tasks
 
 		public bool StripLibraries { get; set; }
 
+		public bool NoRelax { get; set; } = true;
+
 		public string AndroidSequencePointsMode { get; set; } = "";
 
 		public ITaskItem [] Profiles { get; set; } = Array.Empty<ITaskItem> ();
@@ -293,7 +295,9 @@ namespace Xamarin.Android.Tasks
 				libs.Add (Path.Combine (androidLibPath, "libm.so"));
 
 				ldFlags.Append ($"\\\"{string.Join ("\\\";\\\"", libs)}\\\"");
-			} else {
+			}
+			
+			if (NoRelax) {
 				if (ldFlags.Length > 0) {
 					ldFlags.Append (' ');
 				}

@@ -189,6 +189,7 @@ Copyright (C) 2011-2012 Xamarin. All rights reserved.
 	<AndroidAotMode Condition=" '$(AndroidAotMode)' == '' ">None</AndroidAotMode>
 	<AotAssemblies Condition=" '$(AndroidAotMode)' != '' And '$(AndroidAotMode)' != 'None' And '$(AndroidAotMode)' != 'Interpreter' ">True</AotAssemblies>
 	<AotAssemblies Condition=" '$(AotAssemblies)' == '' ">False</AotAssemblies>
+	<_AndroidNoRelax Condition=" '$(_AndroidNoRelax)' == '' ">True</_AndroidNoRelax>
 
 	<AndroidUseDebugRuntime
 			Condition="'$(AndroidUseDebugRuntime)' == '' And '$(EmbedAssembliesIntoApk)' == 'True' And '$(Optimize)' == 'True' "

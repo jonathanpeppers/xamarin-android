@@ -58,6 +58,7 @@ They run in a context of an inner build with a single $(RuntimeIdentifier).
         AotOutputDirectory="$(_AndroidAotBinDirectory)"
         RuntimeIdentifier="$(RuntimeIdentifier)"
         EnableLLVM="$(EnableLLVM)"
+        NoRelax="$(_AndroidNoRelax)"
         Profiles="@(AndroidAotProfile)"
         StripLibraries="$(_AndroidAotStripLibraries)">
       <Output PropertyName="_Triple"     TaskParameter="Triple" />
