@@ -1,0 +1,32 @@
+<Project>
+
+  <PropertyGroup>
+    <_Destination>$(XAInstallPrefix)xbuild\Xamarin\Android\profgen-cli.jar</_Destination>
+  </PropertyGroup>
+
+  <Target Name="_GradleBuild"
+      BeforeTargets="Build"
+      Inputs="$(MSBuildThisFile);build.gradle"
+      Outputs="$(_Destination)">
+    <Exec
+        Command="&quot;$(GradleWPath)&quot; jar $(GradleArgs)"
+        EnvironmentVariables="JAVA_HOME=$(JavaSdkDirectory);APP_HOME=$(GradleHome)"
+        WorkingDirectory="$(MSBuildThisFileDirectory)"
+    />
+    <Copy
+        SourceFiles="build\libs\profgen-cli.jar"
+        DestinationFiles="$(_Destination)"
+    />
+    <Touch Files="$(_Destination)" />
+  </Target>
+
+  <Target Name="_GradleClean" BeforeTargets="Clean">
+    <Delete Files="$(_Destination)" />
+    <Exec
+        Command="&quot;$(GradleWPath)&quot; clean $(GradleArgs)"
+        EnvironmentVariables="JAVA_HOME=$(JavaSdkDirectory);APP_HOME=$(GradleHome)"
+        WorkingDirectory="$(MSBuildThisFileDirectory)"
+    />
+  </Target>
+
+</Project>
