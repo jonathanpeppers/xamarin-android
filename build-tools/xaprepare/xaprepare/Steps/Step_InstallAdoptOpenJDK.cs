@@ -40,11 +40,6 @@ namespace Xamarin.Android.Prepare
 
 		protected override async Task<bool> Execute (Context context)
 		{
-			if (Directory.Exists (Configurables.Paths.OldOpenJDKInstallDir)) {
-				Log.DebugLine ($"Found old OpenJDK directory at {Configurables.Paths.OldOpenJDKInstallDir}, removing");
-				Utilities.DeleteDirectorySilent (Configurables.Paths.OldOpenJDKInstallDir);
-			}
-
 			AddToInventory ();
 
 			string jdkInstallDir = JdkInstallDir;
@@ -265,24 +260,6 @@ namespace Xamarin.Android.Prepare
 				Context.Instance.BuildToolsInventory.Add (BuildToolName, BuildToolVersion);
 			}
 		}
-	}
-
-	class Step_InstallAdoptOpenJDK8 : Step_InstallOpenJDK {
-
-		const string _ProductName = "AdoptOpenJDK";
-
-		public Step_InstallAdoptOpenJDK8 ()
-			: base ($"Installing {_ProductName} 1.8")
-		{
-		}
-
-		protected   override    string  ProductName      => _ProductName;
-		protected   override    string  JdkInstallDir    => Configurables.Paths.OpenJDK8InstallDir;
-		protected   override    Version JdkVersion       => Configurables.Defaults.AdoptOpenJDK8Version;
-		protected   override    Version JdkRelease       => Configurables.Defaults.AdoptOpenJDK8Release;
-		protected   override    Uri     JdkUrl           => Configurables.Urls.AdoptOpenJDK8;
-		protected   override    string  JdkCacheDir      => Configurables.Paths.OpenJDK8CacheDir;
-		protected   override    string  RootDirName      => Configurables.Defaults.AdoptOpenJDK8RootDirName;
 	}
 
 	class Step_InstallMicrosoftOpenJDK11 : Step_InstallOpenJDK {

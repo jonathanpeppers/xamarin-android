@@ -30,11 +30,6 @@ namespace Xamarin.Android.Prepare
 
 		public static partial class Urls
 		{
-			// https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u345-b01/OpenJDK8U-jdk_x64_linux_hotspot_8u345b01.tar.gz
-			// https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u332-b09/OpenJDK8U-jdk_x64_mac_hotspot_8u332b09.tar.gz
-			// https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u345-b01/OpenJDK8U-jdk_x64_windows_hotspot_8u345b01.zip
-			public static readonly Uri AdoptOpenJDK8 = new Uri ($"https://github.com/adoptium/temurin8-binaries/releases/download/{AdoptOpenJDKTag}/OpenJDK8U-jdk_{AdoptOpenJDKOperatingSystem}_hotspot_{AdoptOpenJDKUrlVersion}.{AdoptOpenJDKArchiveExtension}");
-
 			// https://aka.ms/download-jdk/microsoft-jdk-11.0.16-linux-x64.tar.gz
 			// https://aka.ms/download-jdk/microsoft-jdk-11.0.16-macOS-x64.tar.gz
 			// https://aka.ms/download-jdk/microsoft-jdk-11.0.16-windows-x64.zip
@@ -62,10 +57,6 @@ namespace Xamarin.Android.Prepare
 			public static readonly Version MicrosoftOpenJDK11Version = new Version (Configurables.MicrosoftOpenJDK11Version);
 			public static readonly Version MicrosoftOpenJDK11Release = new Version (Configurables.MicrosoftOpenJDK11Release);
 			public static readonly string  MicrosoftOpenJDK11RootDirName   = Configurables.MicrosoftOpenJDK11RootDirName;
-
-			public static readonly Version AdoptOpenJDK8Version     = new Version (Configurables.AdoptOpenJDKVersion);
-			public static readonly Version AdoptOpenJDK8Release     = new Version (Configurables.AdoptOpenJDKRelease);
-			public static readonly string  AdoptOpenJDK8RootDirName = Configurables.AdoptOpenJDKTag;
 
 			public const string DotNetTestRuntimeVersion                   = "3.1.11";
 
@@ -302,11 +293,6 @@ namespace Xamarin.Android.Prepare
 			public static string Mingw32CmakePath                    => GetCachedPath (ref mingw32CmakePath, ()                    => Path.Combine (BuildBinDir, "mingw-32.cmake"));
 			public static string Mingw64CmakePath                    => GetCachedPath (ref mingw64CmakePath, ()                    => Path.Combine (BuildBinDir, "mingw-64.cmake"));
 
-			// AdoptOpenJDK
-			public static string OldOpenJDKInstallDir                => GetCachedPath (ref oldOpenJDKInstallDir, ()                => Path.Combine (ctx.Properties.GetRequiredValue (KnownProperties.AndroidToolchainDirectory), "jdk"));
-			public static string OpenJDK8InstallDir                  => GetCachedPath (ref openJDK8InstallDir, ()                   => Path.Combine (ctx.Properties.GetRequiredValue (KnownProperties.AndroidToolchainDirectory), "jdk-1.8"));
-			public static string OpenJDK8CacheDir                    => GetCachedPath (ref openJDK8CacheDir, ()                     => ctx.Properties.GetRequiredValue (KnownProperties.AndroidToolchainCacheDirectory));
-
 			public static string OpenJDK11InstallDir                 => GetCachedPath (ref openJDK11InstallDir, ()                   => Path.Combine (ctx.Properties.GetRequiredValue (KnownProperties.AndroidToolchainDirectory), "jdk-11"));
 			public static string OpenJDK11CacheDir                   => GetCachedPath (ref openJDK11CacheDir, ()                     => ctx.Properties.GetRequiredValue (KnownProperties.AndroidToolchainCacheDirectory));
 			// bundle
@@ -454,9 +440,8 @@ namespace Xamarin.Android.Prepare
 			static string? monoSdksTpnExternalPath;
 			static string? monoSDKSIncludeDestDir;
 			static string? monoLlvmTpnPath;
-			static string? openJDK8InstallDir,  openJDK11InstallDir;
-			static string? openJDK8CacheDir,    openJDK11CacheDir;
-			static string? oldOpenJDKInstallDir;
+			static string? openJDK11InstallDir;
+			static string? openJDK11CacheDir;
 			static string? configurationPropsGeneratedPath;
 			static string? windowsBinutilsInstallDir;
 			static string? hostBinutilsInstallDir;
