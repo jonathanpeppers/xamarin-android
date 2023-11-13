@@ -19,6 +19,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)Android.Content.Res\AssetManagerTest.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Android.Content\IntentTest.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Android.Graphics\NinePatchTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Android.OS\BundleTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Android.OS\HandlerTest.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Android.Runtime\AndroidEnvironmentTest.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Android.Runtime\CharSequenceTest.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Android.Runtime\InputStreamInvokerTest.cs" />
@@ -27,6 +29,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Android.Runtime\XmlReaderPullParserTest.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Android.Runtime\XmlReaderResourceParserTest.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Android.Widget\AdapterTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Android.Views\ViewTest.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Java.Interop\JavaConvertTest.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Java.Interop\JavaListTest.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Java.Lang\ObjectArrayMarshaling.cs" />
@@ -59,6 +62,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Android.OS\BundleTest.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Mono.Data.Sqlite\SqliteTests.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Android.Widget\CustomWidgetTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\external\java.interop\tests\Java.Interop-Tests\Java.Interop\FinalizerHelpers.cs" />
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="$(MSBuildThisFileDirectory)..\..\src\Xamarin.Android.Build.Tasks\Tests\Xamarin.ProjectTools\Resources\Base\Image.9.png">
