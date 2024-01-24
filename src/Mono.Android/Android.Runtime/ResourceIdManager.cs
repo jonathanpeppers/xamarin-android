@@ -32,6 +32,7 @@ namespace Android.Runtime
 		}
 
 		[UnconditionalSuppressMessage ("Trimming", "IL2026", Justification = "Types in Resource.designer.cs are preserved, because it is the root assembly passed to the linker.")]
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 		static Type? GetResourceTypeFromAssembly (Assembly assembly)
 		{
 			foreach (var customAttribute in assembly.GetCustomAttributes (typeof (ResourceDesignerAttribute), true)) {

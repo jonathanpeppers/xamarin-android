@@ -316,7 +316,7 @@ namespace Xamarin.Android.Net
 			FieldInfo? field = null;
 
 			for (var type = GetType (); type != null; type = type.BaseType) {
-				field = type.GetField (fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+				field = GetField (type, fieldName);
 				if (field != null)
 					break;
 			}
@@ -327,5 +327,8 @@ namespace Xamarin.Android.Net
 
 			return field.GetValue (this);
 		}
+
+		static FieldInfo GetField ([return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicFields)] Type type, string fieldName) =>
+			type.GetField (fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
 	}
 }

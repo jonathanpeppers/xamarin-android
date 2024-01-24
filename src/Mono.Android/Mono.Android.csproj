@@ -23,7 +23,7 @@
     <Nullable>enable</Nullable>
     <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
     <IsAotCompatible>true</IsAotCompatible>
-    <WarningsAsErrors>IL2046</WarningsAsErrors>
+    <WarningsAsErrors>IL2046;IL2075</WarningsAsErrors>
   </PropertyGroup>
 
   <PropertyGroup>
