@@ -24,6 +24,7 @@
 
 #if !MONOTOUCH
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -109,6 +110,7 @@ namespace Mono.CodeGeneration
 			exp2.PrintCode (cp);
 		}
 		
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
 		public override Type GetResultType ()
 		{
 			return typeof (bool);

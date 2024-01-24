@@ -25,6 +25,7 @@
 using System;
 using System.IO;
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -51,12 +52,12 @@ namespace Mono.CodeGeneration
 		{
 		}
 
-		public CodeClass (ModuleBuilder mb, string name, Type baseType, params Type[] interfaces)
+		public CodeClass (ModuleBuilder mb, string name, [DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type baseType, params Type[] interfaces)
 		: this (mb, name, TypeAttributes.Public, baseType, interfaces)
 		{
 		}
 
-		public CodeClass (ModuleBuilder mb, string name, TypeAttributes attr, Type baseType, params Type[] interfaces)
+		public CodeClass (ModuleBuilder mb, string name, TypeAttributes attr, [DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type baseType, params Type[] interfaces)
 		{
 			typeBuilder = mb.DefineType (name, attr, baseType, interfaces);
 			this.baseType = baseType;

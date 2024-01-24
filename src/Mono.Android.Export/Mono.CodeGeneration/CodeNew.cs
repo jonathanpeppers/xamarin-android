@@ -23,6 +23,7 @@
 
 #if !MONOTOUCH
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -64,6 +65,7 @@ namespace Mono.CodeGeneration
 			cp.Write (")");
 		}
 		
+		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)]
 		public override Type GetResultType ()
 		{
 			return type;

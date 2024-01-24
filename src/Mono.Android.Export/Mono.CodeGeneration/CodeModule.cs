@@ -25,6 +25,7 @@
 using System;
 using System.IO;
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -62,12 +63,12 @@ namespace Mono.CodeGeneration
 			return CreateClass (name, TypeAttributes.Public, typeof(object));
 		}
 		
-		public CodeClass CreateClass (string name, Type baseType, params Type[] interfaces)
+		public CodeClass CreateClass (string name, [DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type baseType, params Type[] interfaces)
 		{
 			return CreateClass (name, TypeAttributes.Public, baseType, interfaces);
 		}
 		
-		public CodeClass CreateClass (string name, TypeAttributes attr, Type baseType, params Type[] interfaces)
+		public CodeClass CreateClass (string name, TypeAttributes attr, [DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.All)] Type baseType, params Type[] interfaces)
 		{
 			return new CodeClass (module, name, attr, baseType, interfaces);
 		}

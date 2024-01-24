@@ -9,7 +9,6 @@ using System.Runtime.Versioning;
 [assembly: AssemblyCopyright ("Xamarin Inc.")]
 [assembly: AssemblyTrademark ("Xamarin")]
 [assembly: AssemblyCulture ("")]
-[assembly: AssemblyMetadata ("IsTrimmable", "True")]
 [assembly: SupportedOSPlatform ("Android21.0")]
 
 // The following attributes are used to specify the signing key for the assembly, 

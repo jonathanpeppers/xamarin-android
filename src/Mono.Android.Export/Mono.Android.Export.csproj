@@ -10,7 +10,8 @@
     <NoStdLib>true</NoStdLib>
     <ImplicitlyExpandDesignTimeFacades>false</ImplicitlyExpandDesignTimeFacades>
     <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
-    <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
+    <IsAotCompatible>true</IsAotCompatible>
+    <WarningsAsErrors>IL2067;IL2075;IL2093;IL3050</WarningsAsErrors>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <OutputPath>$(_MonoAndroidNETDefaultOutDir)</OutputPath>
 

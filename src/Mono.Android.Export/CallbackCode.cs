@@ -519,6 +519,7 @@ namespace Java.Interop
 	
 	static class DynamicCallbackFactory
 	{
+		[RequiresDynamicCode ("Uses AssemblyBuilder.DefineDynamicAssembly")]
 		static DynamicCallbackFactory ()
 		{
 			var assembly = AssemblyBuilder.DefineDynamicAssembly (
