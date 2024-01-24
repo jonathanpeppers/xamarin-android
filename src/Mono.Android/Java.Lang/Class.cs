@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Android.Runtime;
 using Java.Interop;
 using Java.Lang.Invoke;
@@ -22,7 +23,9 @@ namespace Java.Lang {
 			CharSequence_toString = JNIEnv.GetMethodID (CharSequence, "toString", "()Ljava/lang/String;");
 		}
 
-		public static Class FromType (System.Type type)
+		public static Class FromType (
+				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.Interfaces)]
+				Type type)
 		{
 			if (!(typeof (IJavaObject).IsAssignableFrom (type)))
 				throw new ArgumentException ("type", "Type is not derived from a java type.");

@@ -9,7 +9,16 @@ namespace Android.OS {
 
 	[global::System.Runtime.Versioning.ObsoletedOSPlatform ("android30.0")]
 	[Register ("android/os/AsyncTask", DoNotGenerateAcw=true)]
-	public abstract class AsyncTask<TParams, TProgress, TResult> : AsyncTask {
+	public abstract class AsyncTask<
+			[DynamicallyAccessedMembers (ConstructorsInterfaces)]
+			TParams,
+			[DynamicallyAccessedMembers (ConstructorsInterfaces)]
+			TProgress,
+			[DynamicallyAccessedMembers (ConstructorsInterfaces)]
+			TResult
+	> : AsyncTask {
+
+		const DynamicallyAccessedMemberTypes ConstructorsInterfaces = DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors | DynamicallyAccessedMemberTypes.Interfaces;
 
 		static IntPtr java_class_handle;
 		internal static IntPtr class_ref {

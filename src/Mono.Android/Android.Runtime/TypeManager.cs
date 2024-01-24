@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Linq;
 
@@ -13,7 +14,10 @@ namespace Android.Runtime {
 			return Java.Interop.TypeManager.LookupTypeMapping (mappings, javaType);
 		}
 
-		public static void RegisterType (string java_class, Type t)
+		public static void RegisterType (
+				string java_class,
+				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.Interfaces)]
+				Type t)
 		{
 			Java.Interop.TypeManager.RegisterType (java_class, t);
 		}

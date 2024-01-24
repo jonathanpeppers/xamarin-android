@@ -237,6 +237,9 @@ namespace Java.Interop {
 
 		internal static Type? TypeRegistrationFallback (string class_name)
 		{
+			[UnconditionalSuppressMessage ("Trimming", "IL2057", Justification = "Type is preserved by the MarkJavaObjects trimmer step.")]
+			static Type? GetType (string name) => Type.GetType (name);
+
 			__TypeRegistrations.RegisterPackages ();
 
 			Type? type = null;
@@ -250,7 +253,7 @@ namespace Java.Interop {
 					return type;
 				}
 			}
-			if ((type = Type.GetType (JavaNativeTypeManager.ToCliType (class_name))) != null) {
+			if ((type = GetType (JavaNativeTypeManager.ToCliType (class_name))) != null) {
 				return type;
 			}
 			return null;
@@ -361,7 +364,10 @@ namespace Java.Interop {
 					CreateJavaLocationException ());
 		}
 
-		public static void RegisterType (string java_class, Type t)
+		public static void RegisterType (
+				string java_class,
+				[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.Interfaces)]
+				Type t)
 		{
 			string jniFromType = JNIEnv.GetJniName (t);
 			lock (TypeManagerMapDictionaries.AccessLock) {

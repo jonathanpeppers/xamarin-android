@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 using StackTraceElement = Java.Lang.StackTraceElement;
@@ -36,6 +37,7 @@ namespace Android.Runtime {
 			return proxy;
 		}
 
+		[UnconditionalSuppressMessage ("Trimming", "IL2026", Justification = "We attempt to call StackFrame.GetMethod() for all possible info")]
 		void TranslateStackTrace ()
 		{
 			var trace = new StackTrace (InnerException, fNeedFileInfo: true);

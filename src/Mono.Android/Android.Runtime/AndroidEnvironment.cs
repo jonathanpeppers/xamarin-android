@@ -333,6 +333,8 @@ namespace Android.Runtime {
 		// System.Net.Http.dll!System.Net.Http.HttpClient.cctor
 		// DO NOT REMOVE
 		[DynamicDependency (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor, typeof (Xamarin.Android.Net.AndroidMessageHandler))]
+		[UnconditionalSuppressMessage ("Trimming", "IL2057", Justification = "DynamicDependency should preserve AndroidMessageHandler.")]
+		[UnconditionalSuppressMessage ("Trimming", "IL2077", Justification = "DynamicDependency should preserve AndroidMessageHandler.")]
 		static object GetHttpMessageHandler ()
 		{
 			if (httpMessageHandlerType is null) {
@@ -369,11 +371,13 @@ namespace Android.Runtime {
 			return true;
 		}
 
+		[UnconditionalSuppressMessage ("Trimming", "IL2057", Justification = "DynamicDependency should preserve AndroidMessageHandler.")]
 		static bool Extends (Type handlerType, string baseTypeName) {
 			var baseType = Type.GetType (baseTypeName, throwOnError: false);
 			return baseType?.IsAssignableFrom (handlerType) ?? false;
 		}
 
+		[UnconditionalSuppressMessage ("Trimming", "IL2057", Justification = "DynamicDependency should preserve AndroidMessageHandler.")]
 		static Type GetFallbackHttpMessageHandlerType (string typeName = "Xamarin.Android.Net.AndroidMessageHandler, Mono.Android")
 		{
 			var handlerType = Type.GetType (typeName, throwOnError: false)
