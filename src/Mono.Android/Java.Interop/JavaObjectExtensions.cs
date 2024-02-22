@@ -17,7 +17,10 @@ namespace Java.Interop {
 		}
 
 		[Obsolete ("Use Android.Runtime.JavaCollection<T>.ToLocalJniHandle()")]
-		public static JavaCollection<T> ToInteroperableCollection<T> (this ICollection<T> instance)
+		public static JavaCollection<T> ToInteroperableCollection<
+				[DynamicallyAccessedMembers (Constructors)]
+				T
+		> (this ICollection<T> instance)
 		{
 			return instance is JavaCollection<T> ? (JavaCollection<T>) instance : new JavaCollection<T> (instance);
 		}
