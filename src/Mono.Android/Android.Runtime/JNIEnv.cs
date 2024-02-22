@@ -16,6 +16,8 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Android.Runtime {
 	public static partial class JNIEnv {
+		const DynamicallyAccessedMemberTypes Constructors = DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors;
+
 		[ThreadStatic]
 		static byte[]? mvid_bytes;
 
@@ -1130,7 +1132,10 @@ namespace Android.Runtime {
 			return ret;
 		}
 
-		public static T[]? GetArray<T> (Java.Lang.Object[] array)
+		public static T[]? GetArray<
+				[DynamicallyAccessedMembers (Constructors)]
+				T
+		> (Java.Lang.Object[] array)
 		{
 			if (array == null)
 				return null;
@@ -1244,7 +1249,10 @@ namespace Android.Runtime {
 			return FindClass (elementType);
 		}
 
-		public static void CopyObjectArray<T>(IntPtr source, T[] destination)
+		public static void CopyObjectArray<
+				[DynamicallyAccessedMembers (Constructors)]
+				T
+		>(IntPtr source, T[] destination)
 		{
 			if (source == IntPtr.Zero)
 				return;
