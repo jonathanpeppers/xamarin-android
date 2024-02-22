@@ -41,7 +41,12 @@ namespace Java.Interop {
 		}
 
 		[Obsolete ("Use Android.Runtime.JavaDictionary<K, V>.ToLocalJniHandle()")]
-		public static JavaDictionary<K,V> ToInteroperableCollection<K,V> (this IDictionary<K,V> instance)
+		public static JavaDictionary<K,V> ToInteroperableCollection<
+				[DynamicallyAccessedMembers (Constructors)]
+				K,
+				[DynamicallyAccessedMembers (Constructors)]
+				V
+		> (this IDictionary<K,V> instance)
 		{
 			return instance is JavaDictionary<K,V> ? (JavaDictionary<K,V>) instance : new JavaDictionary<K,V> (instance);
 		}
