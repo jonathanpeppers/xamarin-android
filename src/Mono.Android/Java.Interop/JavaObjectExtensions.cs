@@ -29,7 +29,10 @@ namespace Java.Interop {
 		}
 
 		[Obsolete ("Use Android.Runtime.JavaList<T>.ToLocalJniHandle()")]
-		public static JavaList<T> ToInteroperableCollection<T> (this IList<T> instance)
+		public static JavaList<T> ToInteroperableCollection<
+				[DynamicallyAccessedMembers (Constructors)]
+				T
+		> (this IList<T> instance)
 		{
 			return instance is JavaList<T> ? (JavaList<T>) instance : new JavaList<T> (instance);
 		}
