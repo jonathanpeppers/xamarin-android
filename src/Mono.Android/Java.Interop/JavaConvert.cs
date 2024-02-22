@@ -56,6 +56,14 @@ namespace Java.Interop {
 
 		static Func<IntPtr, JniHandleOwnership, object?>? GetJniHandleConverter (Type? target)
 		{
+			// FIXME: https://github.com/xamarin/xamarin-android/issues/8724
+			const string justification = "JavaDictionary<,>, JavaList<>, and JavaCollection<> TODO I don't see what preserves these";
+			[UnconditionalSuppressMessage ("Trimming", "IL2055", Justification = justification)]
+			[UnconditionalSuppressMessage ("Trimming", "IL2068", Justification = justification)]
+			[UnconditionalSuppressMessage ("AOT",      "IL3050", Justification = justification)]
+			[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
+			static Type MakeGenericType (Type type, params Type [] typeArguments) => type.MakeGenericType (typeArguments);
+
 			if (target == null)
 				return null;
 
@@ -64,19 +72,19 @@ namespace Java.Interop {
 			if (target.IsArray)
 				return (h, t) => JNIEnv.GetArray (h, t, target.GetElementType ());
 			if (target.IsGenericType && target.GetGenericTypeDefinition() == typeof (IDictionary<,>)) {
-				Type t = typeof (JavaDictionary<,>).MakeGenericType (target.GetGenericArguments ());
+				Type t = MakeGenericType (typeof (JavaDictionary<,>), target.GetGenericArguments ());
 				return GetJniHandleConverterForType (t);
 			}
 			if (typeof (IDictionary).IsAssignableFrom (target))
 				return (h, t) => JavaDictionary.FromJniHandle (h, t);
 			if (target.IsGenericType && target.GetGenericTypeDefinition() == typeof (IList<>)) {
-				Type t = typeof (JavaList<>).MakeGenericType (target.GetGenericArguments ());
+				Type t = MakeGenericType (typeof (JavaList<>), target.GetGenericArguments ());
 				return GetJniHandleConverterForType (t);
 			}
 			if (typeof (IList).IsAssignableFrom (target))
 				return (h, t) => JavaList.FromJniHandle (h, t);
 			if (target.IsGenericType && target.GetGenericTypeDefinition() == typeof (ICollection<>)) {
-				Type t = typeof (JavaCollection<>).MakeGenericType (target.GetGenericArguments ());
+				Type t = MakeGenericType (typeof (JavaCollection<>), target.GetGenericArguments ());
 				return GetJniHandleConverterForType (t);
 			}
 			if (typeof (ICollection).IsAssignableFrom (target))
