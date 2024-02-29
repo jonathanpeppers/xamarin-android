@@ -34,18 +34,10 @@ namespace Android.Runtime
 		[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
 		static Type? GetResourceTypeFromAssembly (Assembly assembly)
 		{
-			const string rootAssembly = "Types in Resource.designer.cs are preserved, because it is the @(TrimmerRootAssembly).";
-
-			[UnconditionalSuppressMessage ("Trimming", "IL2026", Justification = rootAssembly)]
-			[UnconditionalSuppressMessage ("Trimming", "IL2073", Justification = rootAssembly)]
-			[return: DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicMethods)]
-			static Type AssemblyGetType (Assembly a, string name) => a.GetType (name);
-
 			foreach (var customAttribute in assembly.GetCustomAttributes (typeof (ResourceDesignerAttribute), true)) {
 				if (customAttribute is ResourceDesignerAttribute resourceDesignerAttribute && resourceDesignerAttribute.IsApplication) {
-					var type = AssemblyGetType (assembly, resourceDesignerAttribute.FullName);
-					if (type != null)
-						return type;
+					if (resourceDesignerAttribute.ResourceDesignerType != null)
+						return resourceDesignerAttribute.ResourceDesignerType;
 				}
 			}
 			return null;
