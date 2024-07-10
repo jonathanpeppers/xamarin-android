@@ -84,18 +84,21 @@ namespace MonoDroid.Tuner {
 				if (customViewMap.ContainsKey (type.FullName)) {
 					Annotations.Mark (type);
 					PreserveJavaObjectImplementation (type);
+					continue;
 				}
 
 				// Types found in AndroidManifest.xml
 				if (acw_map.TryGetValue (type.FullName, out string value) && manifest_roots.Contains (value)) {
 					Annotations.Mark (type);
 					PreserveJavaObjectImplementation (type);
+					continue;
 				}
 
 				// Types with special attributes
 				if (ShouldPreserveBasedOnAttributes (type)) {
 					Annotations.Mark (type);
 					PreserveJavaObjectImplementation (type);
+					continue;
 				}
 			}
 		}
