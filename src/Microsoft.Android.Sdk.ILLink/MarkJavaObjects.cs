@@ -91,7 +91,30 @@ namespace MonoDroid.Tuner {
 					Annotations.Mark (type);
 					PreserveJavaObjectImplementation (type);
 				}
+
+				// Types with special attributes
+				if (ShouldPreserveBasedOnAttributes (type)) {
+					Annotations.Mark (type);
+					PreserveJavaObjectImplementation (type);
+				}
 			}
+		}
+
+		bool ShouldPreserveBasedOnAttributes (TypeDefinition type)
+		{
+			if (!type.HasCustomAttributes)
+				return false;
+
+			foreach (var attr in type.CustomAttributes) {
+				switch (attr.AttributeType.FullName) {
+					case "Android.App.ServiceAttribute":
+						return true;
+					default:
+						break;
+				}
+			}
+
+			return false;
 		}
 
 		public void ProcessType (TypeDefinition type)
