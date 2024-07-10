@@ -61,7 +61,20 @@ namespace Xamarin.Android.Tasks
 					.Any (p => assembly.StartsWith (p, StringComparison.OrdinalIgnoreCase));
 		}
 
-		static readonly char [] CustomViewMapSeparator = [';'];
+		static readonly char [] MapSeparator = [';'];
+
+		public static Dictionary<string, string> LoadMapFile (string mapFile, StringComparer comparer)
+		{
+			var acw_map = new Dictionary<string, string> (comparer);
+			if (!File.Exists (mapFile))
+				return acw_map;
+			foreach (var s in File.ReadLines (mapFile)) {
+				var items = s.Split (MapSeparator, count: 2);
+				if (!acw_map.ContainsKey (items [0]))
+					acw_map.Add (items [0], items [1]);
+			}
+			return acw_map;
+		}
 
 		public static Dictionary<string, HashSet<string>> LoadCustomViewMapFile (string mapFile)
 		{
@@ -69,7 +82,7 @@ namespace Xamarin.Android.Tasks
 			if (!File.Exists (mapFile))
 				return map;
 			foreach (var s in File.ReadLines (mapFile)) {
-				var items = s.Split (CustomViewMapSeparator, count: 2);
+				var items = s.Split (MapSeparator, count: 2);
 				var key = items [0];
 				var value = items [1];
 				HashSet<string> set;

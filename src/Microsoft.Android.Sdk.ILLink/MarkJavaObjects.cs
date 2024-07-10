@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml.Linq;
 using Mono.Cecil;
 using Mono.Linker;
 using Mono.Linker.Steps;
@@ -18,19 +19,47 @@ namespace MonoDroid.Tuner {
 		{
 			base.Initialize (context, markContext);
 			context.TryGetCustomData ("AndroidHttpClientHandlerType", out string androidHttpClientHandlerType);
+			context.TryGetCustomData ("AndroidAcwMapFile", out string androidAcwMapFile);
+			context.TryGetCustomData ("AndroidManifestOutput", out string androidManifestOutput);
 			context.TryGetCustomData ("AndroidCustomViewMapFile", out string androidCustomViewMapFile);
+
+			var acw_map = MonoAndroidHelper.LoadMapFile (androidAcwMapFile, StringComparer.Ordinal);
+			var manifest_roots = GetManifestRoots (androidManifestOutput);
 			var customViewMap = MonoAndroidHelper.LoadCustomViewMapFile (androidCustomViewMapFile);
 
-			markContext.RegisterMarkAssemblyAction (assembly => ProcessAssembly (assembly, androidHttpClientHandlerType, customViewMap));
+			markContext.RegisterMarkAssemblyAction (assembly => ProcessAssembly (assembly, androidHttpClientHandlerType, customViewMap, manifest_roots, acw_map));
 			markContext.RegisterMarkTypeAction (type => ProcessType (type));
+		}
+
+		HashSet<string> GetManifestRoots (string androidManifestOutput)
+		{
+			var hashSet = new HashSet<string> (StringComparer.Ordinal);
+			var manifest = XDocument.Load (androidManifestOutput);
+			var app = manifest.Element ("manifest")?.Element ("application");
+			if (app != null) {
+				XNamespace androidNs = "http://schemas.android.com/apk/res/android";
+				foreach (var service in app.Elements ("service")) {
+					var name = service.Attribute (androidNs + "name")?.Value;
+					if (!string.IsNullOrEmpty (name))
+						hashSet.Add (name);
+				}
+			}
+			return hashSet;
 		}
 
 		bool IsActiveFor (AssemblyDefinition assembly)
 		{
-			return assembly.MainModule.HasTypeReference ("System.Net.Http.HttpMessageHandler") || assembly.MainModule.HasTypeReference ("Android.Util.IAttributeSet");
+			return assembly.MainModule.HasTypeReference ("System.Net.Http.HttpMessageHandler") ||
+				assembly.MainModule.HasTypeReference ("Java.Lang.Object") ||
+				assembly.MainModule.HasTypeReference ("Android.Util.IAttributeSet");
 		}
 
-		public void ProcessAssembly (AssemblyDefinition assembly, string androidHttpClientHandlerType, Dictionary<string, HashSet<string>> customViewMap)
+		public void ProcessAssembly (
+				AssemblyDefinition assembly,
+				string androidHttpClientHandlerType,
+				Dictionary<string, HashSet<string>> customViewMap,
+				HashSet<string> manifest_roots,
+				Dictionary<string, string> acw_map)
 		{
 			if (!IsActiveFor (assembly))
 				return;
@@ -47,10 +76,18 @@ namespace MonoDroid.Tuner {
 					}
 				}
 
-				// Custom views in Android .xml files
+				// Continue if not an IJavaObject
 				if (!type.ImplementsIJavaObject (cache))
 					continue;
+
+				// Custom views in Android .xml files
 				if (customViewMap.ContainsKey (type.FullName)) {
+					Annotations.Mark (type);
+					PreserveJavaObjectImplementation (type);
+				}
+
+				// Types found in AndroidManifest.xml
+				if (acw_map.TryGetValue (type.FullName, out string value) && manifest_roots.Contains (value)) {
 					Annotations.Mark (type);
 					PreserveJavaObjectImplementation (type);
 				}

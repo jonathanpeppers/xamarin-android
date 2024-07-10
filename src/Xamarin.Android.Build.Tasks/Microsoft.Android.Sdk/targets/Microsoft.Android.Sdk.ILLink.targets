@@ -35,6 +35,8 @@ This file contains the .NET 5-specific targets to customize ILLink
         https://github.com/dotnet/sdk/blob/a5393731b5b7b225692fff121f747fbbc9e8b140/src/Tasks/Microsoft.NET.Build.Tasks/targets/Microsoft.NET.ILLink.targets#L147
         -->
       <_TrimmerCustomData Include="AndroidHttpClientHandlerType" Value="$(AndroidHttpClientHandlerType)" />
+      <_TrimmerCustomData Include="AndroidAcwMapFile" Value="$(_OuterAcwMapFile)" />
+      <_TrimmerCustomData Include="AndroidManifestOutput" Value="$(_OuterManifestOutput)" />
       <_TrimmerCustomData Include="AndroidCustomViewMapFile" Value="$(_OuterCustomViewMapFile)" />
       <_TrimmerCustomData Include="XATargetFrameworkDirectories" Value="$(_XATargetFrameworkDirectories)" />
       <_TrimmerCustomData
