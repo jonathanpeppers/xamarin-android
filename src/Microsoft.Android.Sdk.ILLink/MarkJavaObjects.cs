@@ -20,21 +20,21 @@ namespace MonoDroid.Tuner {
 			base.Initialize (context, markContext);
 			context.TryGetCustomData ("AndroidHttpClientHandlerType", out string androidHttpClientHandlerType);
 			context.TryGetCustomData ("AndroidAcwMapFile", out string androidAcwMapFile);
-			context.TryGetCustomData ("AndroidManifestOutput", out string androidManifestOutput);
+			context.TryGetCustomData ("AndroidManifest", out string androidManifest);
 			context.TryGetCustomData ("AndroidCustomViewMapFile", out string androidCustomViewMapFile);
 
 			var acw_map = MonoAndroidHelper.LoadMapFile (androidAcwMapFile, StringComparer.Ordinal);
-			var manifest_roots = GetManifestRoots (androidManifestOutput);
+			var manifest_roots = GetManifestRoots (androidManifest);
 			var customViewMap = MonoAndroidHelper.LoadCustomViewMapFile (androidCustomViewMapFile);
 
 			markContext.RegisterMarkAssemblyAction (assembly => ProcessAssembly (assembly, androidHttpClientHandlerType, customViewMap, manifest_roots, acw_map));
 			markContext.RegisterMarkTypeAction (type => ProcessType (type));
 		}
 
-		HashSet<string> GetManifestRoots (string androidManifestOutput)
+		HashSet<string> GetManifestRoots (string androidManifest)
 		{
 			var hashSet = new HashSet<string> (StringComparer.Ordinal);
-			var manifest = XDocument.Load (androidManifestOutput);
+			var manifest = XDocument.Load (androidManifest);
 			var app = manifest.Element ("manifest")?.Element ("application");
 			if (app != null) {
 				XNamespace androidNs = "http://schemas.android.com/apk/res/android";
