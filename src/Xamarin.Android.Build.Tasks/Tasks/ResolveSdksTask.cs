@@ -32,6 +32,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Microsoft.Android.Build.Tasks;
+using Xamarin.Android.Tools;
 
 namespace Xamarin.Android.Tasks
 {
@@ -100,6 +101,11 @@ namespace Xamarin.Android.Tasks
 
 			try {
 				MonoAndroidHelper.RefreshAndroidSdk (AndroidSdkPath, AndroidNdkPath, JavaSdkPath, Log);
+
+				// Consumed by <ResolveXamarinAndroidTools/> task in xamarin/monodroid
+				// This is purposefully *not* assembly local, as it's used by another assembly
+				BuildEngine4.RegisterTaskObject (typeof (AndroidSdkInfo).FullName, MonoAndroidHelper.AndroidSdk, RegisteredTaskObjectLifetime.Build, allowEarlyCollection: false);
+				Log.LogDebugMessage ($"RegisterTaskObject: {typeof (AndroidSdkInfo).FullName}, isnull? {MonoAndroidHelper.AndroidSdk is null}");
 			}
 			catch (InvalidOperationException e) {
 				if (e.Message.Contains (" Android ")) {
