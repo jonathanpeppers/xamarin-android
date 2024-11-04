@@ -9,6 +9,9 @@
     <ApplicationId>com.microsoft.android.benchmarks</ApplicationId>
     <ApplicationVersion>1</ApplicationVersion>
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <AndroidPackageFormat>apk</AndroidPackageFormat>
+    <!-- Physical device recommended -->
+    <RuntimeIdentifier>android-arm64</RuntimeIdentifier>
     <!-- Workarounds for BenchmarkDotNet on Android -->
     <PublishTrimmed>false</PublishTrimmed>
     <RunAOTCompilation>false</RunAOTCompilation>
