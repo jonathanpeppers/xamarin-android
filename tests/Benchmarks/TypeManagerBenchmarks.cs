@@ -1,3 +1,5 @@
+using BenchmarkDotNet.Attributes;
+
 namespace Benchmarks;
 
 public class TypeManagerBenchmarks
