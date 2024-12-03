@@ -116,7 +116,9 @@ namespace Xamarin.Android.Build.Tests
 			var proj = new XamarinAndroidApplicationProject {
 				IsRelease = true,
 			};
-			proj.SetProperty("PublishAot", "true");
+			proj.SetRuntimeIdentifier ("arm64-v8a");
+			proj.SetProperty ("PublishAot", "true");
+			proj.SetProperty ("PublishAotUsingRuntimePack", "true");
 
 			using var b = CreateApkBuilder ();
 			Assert.IsTrue (b.Build (proj), "Build should have succeeded.");
