@@ -408,8 +408,9 @@
   <Target Name="_CopyToPackDirs">
     <ItemGroup>
       <_RefExtras Include="$(OutputPath)*.*" Exclude="$(OutputPath)*.dll" />
-      <_SourceFiles Include="$(OutputPath)Mono.Android.*" AndroidRID="%(AndroidAbiAndRuntimeFlavor.AndroidRID)" AndroidRuntime="%(AndroidAbiAndRuntimeFlavor.AndroidRuntime)" />
-      <_SourceFiles Include="$(OutputPath)Java.Interop.*" AndroidRID="%(AndroidAbiAndRuntimeFlavor.AndroidRID)" AndroidRuntime="%(AndroidAbiAndRuntimeFlavor.AndroidRuntime)" />
+      <_SourceFiles Include="$(OutputPath)Mono.Android.*" />
+      <_SourceFiles Include="$(OutputPath)Java.Interop.*" />
+      <_RuntimePackFiles Include="@(_SourceFiles)" AndroidRID="%(AndroidAbiAndRuntimeFlavor.AndroidRID)" AndroidRuntime="%(AndroidAbiAndRuntimeFlavor.AndroidRuntime)" />
     </ItemGroup>
     <Copy
         SourceFiles="@(_RefExtras)"
@@ -422,7 +423,7 @@
         SkipUnchangedFiles="true"
     />
     <Copy
-        SourceFiles="%(_SourceFiles.Identity)"
+        SourceFiles="%(_RuntimePackFiles.Identity)"
         DestinationFolder="$(BuildOutputDirectory)lib\packs\Microsoft.Android.Runtime.%(_RuntimePackFiles.AndroidRuntime).$(AndroidApiLevel).%(_RuntimePackFiles.AndroidRID)\$(AndroidPackVersion)\runtimes\%(_RuntimePackFiles.AndroidRID)\lib\$(DotNetTargetFramework)"
         SkipUnchangedFiles="true"
     />
