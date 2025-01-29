@@ -662,7 +662,7 @@ namespace Android.Runtime {
 					AssertIsJavaObject (type);
 
 					IntPtr elem = GetObjectArrayElement (source, index);
-					return Java.Lang.Object.GetObject (elem, JniHandleOwnership.TransferLocalRef, type);
+					return GetObject (elem, type);
 				} },
 				{ typeof (Array), (type, source, index) => {
 					IntPtr  elem      = GetObjectArrayElement (source, index);
@@ -670,6 +670,10 @@ namespace Android.Runtime {
 				} },
 			};
 		}
+
+		[UnconditionalSuppressMessage ("Trimming", "IL2067", Justification = "FIXME")]
+		static IJavaPeerable? GetObject (IntPtr handle, Type type) =>
+			Java.Lang.Object.GetObject (handle, JniHandleOwnership.TransferLocalRef, type);
 
 		static TValue GetConverter<TValue>(Dictionary<Type, TValue> dict, Type? elementType, IntPtr array)
 		{
