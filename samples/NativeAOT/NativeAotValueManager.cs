@@ -3,19 +3,25 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Android.Runtime;
 using Java.Interop;
 
 namespace NativeAOT;
 
 class NativeAotValueManager : JniRuntime.JniValueManager {
 
+	readonly NativeAotTypeManager TypeManager;
 	Dictionary<int, List<IJavaPeerable>>?   RegisteredInstances = new Dictionary<int, List<IJavaPeerable>>();
+
+	public NativeAotValueManager(NativeAotTypeManager typeManager) =>
+		TypeManager = typeManager;
 
 	public override void WaitForGCBridgeProcessing ()
 	{
@@ -52,6 +58,7 @@ class NativeAotValueManager : JniRuntime.JniValueManager {
 
 	public override void AddPeer (IJavaPeerable value)
 	{
+		Console.WriteLine ("FOO: AddPeer");
 		if (RegisteredInstances == null)
 			throw new ObjectDisposedException (nameof (NativeAotValueManager));
 
@@ -117,7 +124,7 @@ class NativeAotValueManager : JniRuntime.JniValueManager {
 
 	public override IJavaPeerable? PeekPeer (JniObjectReference reference)
 	{
-		try {
+		Console.WriteLine ("FOO: PeekPeer " + Environment.StackTrace);
 		if (RegisteredInstances == null)
 			throw new ObjectDisposedException (nameof (NativeAotValueManager));
 
@@ -140,14 +147,11 @@ class NativeAotValueManager : JniRuntime.JniValueManager {
 				RegisteredInstances.Remove (key);
 		}
 		return null;
-		} catch (Exception e) {
-			Console.WriteLine ($"FOO: {e}");
-			throw;
-		}
 	}
 
 	public override void RemovePeer (IJavaPeerable value)
 	{
+		Console.WriteLine ("FOO: RemovePeer");
 		if (RegisteredInstances == null)
 			throw new ObjectDisposedException (nameof (NativeAotValueManager));
 
@@ -173,6 +177,7 @@ class NativeAotValueManager : JniRuntime.JniValueManager {
 
 	public override void FinalizePeer (IJavaPeerable value)
 	{
+		Console.WriteLine ("FOO: FinalizePeer");
 		var h = value.PeerReference;
 		var o = Runtime.ObjectReferenceManager;
 		// MUST NOT use SafeHandle.ReferenceType: local refs are tied to a JniEnvironment
@@ -208,14 +213,13 @@ class NativeAotValueManager : JniRuntime.JniValueManager {
 
 	public override void ActivatePeer (IJavaPeerable? self, JniObjectReference reference, ConstructorInfo cinfo, object?[]? argumentValues)
 	{
-		var runtime = JniEnvironment.Runtime;
-
+		Console.WriteLine ("FOO: ActivatePeer");
 		try {
 			ActivateViaReflection (reference, cinfo, argumentValues);
 		} catch (Exception e) {
 			var m = string.Format ("Could not activate {{ PeerReference={0} IdentityHashCode=0x{1} Java.Type={2} }} for managed type '{3}'.",
 					reference,
-					runtime.ValueManager.GetJniIdentityHashCode (reference).ToString ("x"),
+					GetJniIdentityHashCode (reference).ToString ("x"),
 					JniEnvironment.Types.GetJniTypeNameFromInstance (reference),
 					cinfo.DeclaringType?.FullName);
 			Debug.WriteLine (m);
@@ -250,5 +254,112 @@ class NativeAotValueManager : JniRuntime.JniValueManager {
 			}
 			return peers;
 		}
+	}
+
+	public override IJavaPeerable? CreatePeer (
+			ref JniObjectReference reference,
+			JniObjectReferenceOptions options,
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)]
+			Type? targetType)
+	{
+		Console.WriteLine ("FOO: CreatePeer");
+		if (!reference.IsValid)
+			return null;
+
+		var peer = CreateInstance (reference.Handle, JniHandleOwnership.DoNotTransfer, targetType);
+		JniObjectReference.Dispose (ref reference, options);
+		return peer;
+	}
+
+	internal IJavaPeerable? CreateInstance (
+			IntPtr handle,
+			JniHandleOwnership transfer,
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)]
+			Type? targetType)
+	{
+		Console.WriteLine ("FOO: CreateInstance");
+		if (targetType.IsInterface || targetType.IsAbstract) {
+			var invokerType = JavaObjectExtensions.GetInvokerType (targetType);
+			if (invokerType == null)
+				throw new NotSupportedException ("Unable to find Invoker for type '" + targetType.FullName + "'. Was it linked away?",
+						CreateJavaLocationException ());
+			targetType = invokerType;
+		}
+
+		var typeSig  = TypeManager.GetTypeSignature (targetType);
+		if (!typeSig.IsValid || typeSig.SimpleReference == null) {
+			throw new ArgumentException ($"Could not determine Java type corresponding to `{targetType.AssemblyQualifiedName}`.", nameof (targetType));
+		}
+
+		JniObjectReference typeClass = default;
+		JniObjectReference handleClass = default;
+		try {
+			try {
+				typeClass = JniEnvironment.Types.FindClass (typeSig.SimpleReference);
+			} catch (Exception e) {
+				throw new ArgumentException ($"Could not find Java class `{typeSig.SimpleReference}`.",
+						nameof (targetType),
+						e);
+			}
+
+			handleClass = JniEnvironment.Types.GetObjectClass (new JniObjectReference (handle));
+			if (!JniEnvironment.Types.IsAssignableFrom (handleClass, typeClass)) {
+				return null;
+			}
+		} finally {
+			JniObjectReference.Dispose (ref handleClass);
+			JniObjectReference.Dispose (ref typeClass);
+		}
+
+		IJavaPeerable? result = null;
+
+		try {
+			result = (IJavaPeerable) CreateProxy (targetType, handle, transfer);
+			//if (JNIEnv.IsGCUserPeer (result.PeerReference.Handle)) {
+				result.SetJniManagedPeerState (JniManagedPeerStates.Replaceable | JniManagedPeerStates.Activatable);
+			//}
+		} catch (MissingMethodException e) {
+			var key_handle  = JNIEnv.IdentityHash (handle);
+			JNIEnv.DeleteRef (handle, transfer);
+			throw new NotSupportedException (FormattableString.Invariant (
+				$"Unable to activate instance of type {targetType} from native handle 0x{handle:x} (key_handle 0x{key_handle:x})."), e);
+		}
+		return result;
+	}
+
+	static  readonly    Type[]  XAConstructorSignature  = new Type [] { typeof (IntPtr), typeof (JniHandleOwnership) };
+	static  readonly    Type[]  JIConstructorSignature  = new Type [] { typeof (JniObjectReference).MakeByRefType (), typeof (JniObjectReferenceOptions) };
+
+	internal static object CreateProxy (
+			[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)]
+			Type type,
+			IntPtr handle,
+			JniHandleOwnership transfer)
+	{
+		Console.WriteLine ("FOO: CreateProxy");
+		// Skip Activator.CreateInstance() as that requires public constructors,
+		// and we want to hide some constructors for sanity reasons.
+		BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+		var c = type.GetConstructor (flags, null, XAConstructorSignature, null);
+		if (c != null) {
+			return c.Invoke (new object [] { handle, transfer });
+		}
+		c = type.GetConstructor (flags, null, JIConstructorSignature, null);
+		if (c != null) {
+			JniObjectReference          r = new JniObjectReference (handle);
+			JniObjectReferenceOptions   o = JniObjectReferenceOptions.Copy;
+			var peer = (IJavaPeerable) c.Invoke (new object [] { r, o });
+			JNIEnv.DeleteRef (handle, transfer);
+			return peer;
+		}
+		throw new MissingMethodException (
+				"No constructor found for " + type.FullName + "::.ctor(System.IntPtr, Android.Runtime.JniHandleOwnership)",
+				CreateJavaLocationException ());
+	}
+
+	static Exception CreateJavaLocationException ()
+	{
+		using (var loc = new Java.Lang.Error ("Java callstack:"))
+			return new JavaLocationException (loc.ToString ());
 	}
 }
