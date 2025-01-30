@@ -1,5 +1,6 @@
 using Android.Runtime;
 using Android.Util;
+using Java.Interop;
 
 /// <summary>
 /// NOTE: This class is not required, but used for testing Android.App.Application subclasses.
@@ -8,8 +9,8 @@ using Android.Util;
 [Application]
 public class MainApplication : Application
 {
-    public MainApplication (IntPtr handle, JniHandleOwnership transfer)
-        : base (handle, transfer)
+    public MainApplication (ref JniObjectReference reference, JniObjectReferenceOptions options)
+        : base (reference.Handle, JniHandleOwnership.DoNotRegister)
     {
     }
 
