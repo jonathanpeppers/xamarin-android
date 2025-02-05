@@ -3,7 +3,7 @@ using System.Reflection;
 using Java.Interop;
 using Java.Interop.Tools.TypeNameMappings;
 
-namespace NativeAOT;
+namespace Android.Runtime.NativeAOT;
 
 partial class NativeAotTypeManager : JniRuntime.JniTypeManager {
 
@@ -11,7 +11,7 @@ partial class NativeAotTypeManager : JniRuntime.JniTypeManager {
 	internal const DynamicallyAccessedMemberTypes Methods = DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods;
 	internal const DynamicallyAccessedMemberTypes MethodsAndPrivateNested = Methods | DynamicallyAccessedMemberTypes.NonPublicNestedTypes;
 
-	// TODO: list of types specific to this application
+	// TODO: list of types specific to "hello world"
 	Dictionary<string, Type> typeMappings = new () {
 		["android/app/Activity"]                = typeof (Android.App.Activity),
 		["android/app/Application"]             = typeof (Android.App.Application),
@@ -20,8 +20,10 @@ partial class NativeAotTypeManager : JniRuntime.JniTypeManager {
 		["android/os/BaseBundle"]               = typeof (Android.OS.BaseBundle),
 		["android/os/Bundle"]                   = typeof (Android.OS.Bundle),
 		["android/view/ContextThemeWrapper"]    = typeof (Android.Views.ContextThemeWrapper),
-		["my/MainActivity"]                     = typeof (MainActivity),
-		["my/MainApplication"]                  = typeof (MainApplication),
+
+		// TODO: pass these in from an application
+		//["my/MainActivity"]                     = typeof (MainActivity),
+		//["my/MainApplication"]                  = typeof (MainApplication),
 	};
 
 	public NativeAotTypeManager ()
@@ -29,7 +31,10 @@ partial class NativeAotTypeManager : JniRuntime.JniTypeManager {
 		AndroidLog.Print (AndroidLogLevel.Info, "NativeAotTypeManager", $"# jonp: NativeAotTypeManager()");
 	}
 
-	protected override Type? GetInvokerTypeCore (Type type)
+	[return: DynamicallyAccessedMembers (Constructors)]
+	protected override Type? GetInvokerTypeCore (
+			[DynamicallyAccessedMembers (Constructors)]
+			Type type)
 	{
 		const string suffix = "Invoker";
 
@@ -68,6 +73,10 @@ partial class NativeAotTypeManager : JniRuntime.JniTypeManager {
 		return MakeGenericType (suffixDefinition, arguments);
 	}
 
+	// NOTE: suppressions below also in `src/Mono.Android/Android.Runtime/AndroidRuntime.cs`
+	[UnconditionalSuppressMessage ("Trimming", "IL2057", Justification = "Type.GetType() can never statically know the string value parsed from parameter 'methods'.")]
+	[UnconditionalSuppressMessage ("Trimming", "IL2067", Justification = "Delegate.CreateDelegate() can never statically know the string value parsed from parameter 'methods'.")]
+	[UnconditionalSuppressMessage ("Trimming", "IL2072", Justification = "Delegate.CreateDelegate() can never statically know the string value parsed from parameter 'methods'.")]
 	public override void RegisterNativeMembers (
 			JniType nativeClass,
 			[DynamicallyAccessedMembers (MethodsAndPrivateNested)]

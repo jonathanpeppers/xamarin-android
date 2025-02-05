@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\Configuration.props" />
+  <Import Project="$(XamarinAndroidSourcePath)\build-tools\trim-analyzers\trim-analyzers.props" />
+
+  <PropertyGroup>
+    <TargetFrameworks>$(DotNetAndroidTargetFramework)</TargetFrameworks>
+    <SupportedOSPlatformVersion>$(AndroidMinimumDotNetApiLevel)</SupportedOSPlatformVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AssemblyOriginatorKeyFile>..\..\product.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>true</SignAssembly>
+    <OutputPath>$(_MonoAndroidNETDefaultOutDir)</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\external\Java.Interop\src\Java.Interop\Java.Interop.csproj" />
+    <ProjectReference Include="..\Mono.Android\Mono.Android.csproj" />
+  </ItemGroup>
+
+</Project>
