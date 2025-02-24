@@ -149,10 +149,10 @@ namespace Xamarin.Android.Build.Tests
 			];
 			string[] mono_files = [
 				"lib/arm64-v8a/libmonosgen-2.0.so",
+				"lib/arm64-v8a/libc++_shared.so",
 			];
 			string [] nativeaot_files = [
 				$"lib/arm64-v8a/lib{proj.ProjectName}.so",
-				"lib/arm64-v8a/libc++_shared.so",
 			];
 
 			var intermediate = Path.Combine (Root, b.ProjectDirectory, proj.IntermediateOutputPath, proj.RuntimeIdentifier);

@@ -81,6 +81,10 @@ This file contains the NativeAOT-specific MSBuild logic for .NET for Android.
     <ItemGroup>
       <!-- Android needs a proper soname property or it will refuse to load the library -->
       <LinkerArg Include="-Wl,-soname,lib$(TargetName)$(NativeBinaryExt)" />
+      <!-- $(LinkStandardCPlusPlusLibrary) does not work `-lc++` we need `-static` -->
+      <LinkerArg Include="-static" />
+      <!-- ld.lld unable to find library -llog -->
+      <LinkerArg Remove="-llog" />
       <!-- Required for [UnmanagedCallersOnly] to work inside this assembly -->
       <UnmanagedEntryPointsAssembly Include="Microsoft.Android.Runtime.NativeAOT" />
       <!-- Give ILLink's output to ILC -->
@@ -94,8 +98,6 @@ This file contains the NativeAOT-specific MSBuild logic for .NET for Android.
       <TrimmerRootAssembly Include="@(_AndroidILLinkAssemblies->'%(Filename)')" Exclude="System.Private.CoreLib" TrimMode="All" />
       <!-- Passes linked assemblies to outer MSBuild tasks/targets -->
       <ResolvedFileToPublish Include="@(IlcCompileInput);@(_AndroidILLinkAssemblies)" RuntimeIdentifier="$(_OriginalRuntimeIdentifier)" />
-      <!-- Include libc++ -->
-      <ResolvedFileToPublish Include="$(_NdkSysrootDir)libc++_shared.so" RuntimeIdentifier="$(_OriginalRuntimeIdentifier)" />
     </ItemGroup>
   </Target>
 
