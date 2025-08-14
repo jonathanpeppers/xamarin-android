@@ -59,7 +59,9 @@ namespace Android.Runtime
 				Type.GetType (typeName, throwOnError: false);
 
 			string typeName = new string ((char*) typeName_ptr, 0, typeName_len);
-			var type = TypeGetType (typeName);
+			var type =  RuntimeFeature.IsMonoRuntime ?
+				RuntimeTypeHandleAccessor.GetType (typeName) :
+				TypeGetType (typeName);
 			if (type == null) {
 				RuntimeNativeMethods.monodroid_log (LogLevel.Error,
 				               LogCategories.Default,
