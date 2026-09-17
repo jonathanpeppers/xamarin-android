@@ -150,6 +150,7 @@
     <Compile Include="Java.Interop\RawInterfaceCollectionHolder.cs" />
     <Compile Include="Java.Interop\TrimmableTypeMapRuntimeCoverageTests.cs" />
     <Compile Include="Java.Interop\TrimmableTypeMapTypeManagerTests.cs" />
+    <Compile Include="Java.Interop\TypeMapAssemblyCacheTests.cs" />
     <Compile Include="Java.Interop\VirtualCallbackConstructorTests.cs" />
     <Compile Include="Java.Lang\ObjectArrayMarshaling.cs" />
     <Compile Include="Java.Lang\ObjectTest.cs" />

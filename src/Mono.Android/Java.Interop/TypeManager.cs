@@ -233,6 +233,8 @@ namespace Java.Interop {
 			return monodroid_typemap_java_to_managed (java_type_name);
 		}
 
+		static TypeMapAssemblyCache? clrTypeMapAssemblies;
+
 		[UnconditionalSuppressMessage ("Trimming", "IL2026", Justification = "Value of java_type_name isn't statically known.")]
 		static Type? clr_typemap_java_to_managed (string java_type_name)
 		{
@@ -246,7 +248,8 @@ namespace Java.Interop {
 				return null;
 			}
 
-			Assembly assembly = Assembly.Load (managedAssemblyName);
+			var assemblyCache = clrTypeMapAssemblies ??= new TypeMapAssemblyCache (Assembly.Load);
+			Assembly assembly = assemblyCache.GetOrLoad (managedAssemblyName);
 			Type? ret = null;
 			foreach (Module module in assembly.Modules) {
 				ret = module.ResolveType ((int)managedTypeTokenId);

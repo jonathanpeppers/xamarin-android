@@ -39,6 +39,7 @@
     <Compile Remove="Expected\**" />
     <Compile Include="..\..\..\..\.github\skills\read-assembly-store\src\AssemblyStore\*.cs" />
     <Compile Include="..\..\..\..\.github\skills\read-assembly-store\src\AssemblyStore\V1\*.cs" />
+    <Compile Include="..\..\..\Mono.Android\Java.Interop\TypeMapAssemblyCache.cs" Link="Runtime\TypeMapAssemblyCache.cs" />
     <Content Include="Expected\GenerateDesignerFileExpected.cs">
       <Link>..\Expected\GenerateDesignerFileExpected.cs</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
